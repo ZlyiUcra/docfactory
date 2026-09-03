@@ -1,0 +1,571 @@
+# 29 Memory Model
+# джерело: https://tc39.es/ecma262/multipage/memory-model.html#sec-memory-model
+# отримано: 2026-09-01
+
+29 Memory Model
+
+The memory consistency model, or memory model , specifies the possible orderings of Shared Data Block events , arising via accessing TypedArray instances backed by a SharedArrayBuffer and via methods on the Atomics object. When the program has no data races (defined below), the ordering of events appears as sequentially consistent, i.e., as an interleaving of actions from each agent . When the program has data races, shared memory operations may appear sequentially inconsistent. For example, programs may exhibit causality-violating behaviour and other astonishments. These astonishments arise from compiler transforms and the design of CPUs (e.g., out-of-order execution and speculation). The memory model defines both the precise conditions under which a program exhibits sequentially consistent behaviour as well as the possible values read from data races. To wit, there is no undefined behaviour.
+
+The memory model is defined as relational constraints on Memory events introduced by abstract operations on SharedArrayBuffer or by methods on the Atomics object during an evaluation.
+
+Note
+This section provides an axiomatic model on Memory events introduced by the abstract operations on SharedArrayBuffers. It bears stressing that the model is not expressible algorithmically, unlike the rest of this specification. The nondeterministic introduction of events by abstract operations is the interface between the operational semantics of ECMAScript evaluation and the axiomatic semantics of the memory model. The semantics of these events is defined by considering graphs of all events in an evaluation. These are neither Static Semantics nor Runtime Semantics. There is no demonstrated algorithmic implementation, but instead a set of constraints that determine if a particular event graph is allowed or disallowed.
+
+29.1 Memory Model Fundamentals
+
+Shared memory accesses (reads and writes) are divided into two groups, atomic accesses and data accesses, defined below. Atomic accesses are sequentially consistent, i.e., there is a strict total ordering of events agreed upon by all agents in an agent cluster . Non-atomic accesses do not have a strict total ordering agreed upon by all agents , i.e., unordered.
+
+Note 1
+No orderings weaker than sequentially consistent and stronger than unordered, such as release-acquire, are supported.
+
+A Shared Data Block event is either a ReadSharedMemory , WriteSharedMemory , or ReadModifyWriteSharedMemory Record . A read event is either a ReadSharedMemory or a ReadModifyWriteSharedMemory. A write event is either a WriteSharedMemory or a ReadModifyWriteSharedMemory.
+
+Table 97: ReadSharedMemory Event Fields
+
+Field Name
+Value
+Meaning
+
+[[Order]]
+seq-cst or unordered
+The weakest ordering guaranteed by the memory model for the event.
+
+[[NoTear]]
+a Boolean
+Whether this event is allowed to read from multiple write events with equal memory range as this event.
+
+[[Block]]
+a Shared Data Block
+The block the event operates on.
+
+[[ByteIndex]]
+a non-negative integer
+The byte address of the read in [[Block]] .
+
+[[ElementSize]]
+a non-negative integer
+The size of the read.
+
+Table 98: WriteSharedMemory Event Fields
+
+Field Name
+Value
+Meaning
+
+[[Order]]
+seq-cst , unordered , or init
+The weakest ordering guaranteed by the memory model for the event.
+
+[[NoTear]]
+a Boolean
+Whether this event is allowed to be read from multiple read events with equal memory range as this event.
+
+[[Block]]
+a Shared Data Block
+The block the event operates on.
+
+[[ByteIndex]]
+a non-negative integer
+The byte address of the write in [[Block]] .
+
+[[ElementSize]]
+a non-negative integer
+The size of the write.
+
+[[Payload]]
+a List of byte values
+The List of byte values to be read by other events.
+
+Table 99: ReadModifyWriteSharedMemory Event Fields
+
+Field Name
+Value
+Meaning
+
+[[Order]]
+seq-cst
+Read-modify- write events are always sequentially consistent.
+
+[[NoTear]]
+true
+Read-modify- write events cannot tear.
+
+[[Block]]
+a Shared Data Block
+The block the event operates on.
+
+[[ByteIndex]]
+a non-negative integer
+The byte address of the read-modify-write in [[Block]] .
+
+[[ElementSize]]
+a non-negative integer
+The size of the read-modify-write.
+
+[[Payload]]
+a List of byte values
+The List of byte values to be passed to [[ModifyOp]] .
+
+[[ModifyOp]]
+a read-modify-write modification function
+An Abstract Closure that returns a modified List of byte values from a read List of byte values and [[Payload]] .
+
+Shared Data Block events are introduced to candidate execution Agent Events Records by abstract operations or by methods on the Atomics object. Some operations also introduce Synchronize events , which have no fields and exist purely to directly constrain the permitted orderings of other events. And finally, there are host -specific events. A Memory event is either a Shared Data Block event, Synchronize event, or such a host -specific event.
+
+Let the memory range of a Shared Data Block event e be the Set of all integers in the interval from e . [[ByteIndex]] (inclusive) to e . [[ByteIndex]] + e . [[ElementSize]] (exclusive). Two events' memory ranges are equal when the events have the same [[Block]] , [[ByteIndex]] , and [[ElementSize]] . Two events' memory ranges are overlapping when the events have the same [[Block]] , the ranges are not equal, and their intersection is non-empty. Two events' memory ranges are disjoint when the events do not have the same [[Block]] or their ranges are neither equal nor overlapping.
+
+Note 2
+Examples of host -specific synchronizing events that should be accounted for are: sending a SharedArrayBuffer from one agent to another (e.g., by postMessage in a browser), starting and stopping agents , and communicating within the agent cluster via channels other than shared memory. For a particular execution execution , those events are provided by the host via the host-synchronizes-with strict partial order . Additionally, hosts can add host -specific synchronizing events to execution . [[EventList]] so as to participate in the is-agent-order-before Relation .
+
+Events are ordered within candidate executions by the relations defined below.
+
+29.2 Agent Events Records
+
+An Agent Events Record is a Record with the following fields.
+
+Table 100: Agent Events Record Fields
+
+Field Name
+Value
+Meaning
+
+[[AgentSignifier]]
+an agent signifier
+The agent whose evaluation resulted in this ordering.
+
+[[EventList]]
+a List of Memory events
+Events are appended to the list during evaluation.
+
+[[AgentSynchronizesWith]]
+a List of pairs of Synchronize events
+Synchronize relationships introduced by the operational semantics.
+
+29.3 Chosen Value Records
+
+A Chosen Value Record is a Record with the following fields.
+
+Table 101: Chosen Value Record Fields
+
+Field Name
+Value
+Meaning
+
+[[Event]]
+a Shared Data Block event
+The ReadSharedMemory or ReadModifyWriteSharedMemory event that was introduced for this chosen value.
+
+[[ChosenValue]]
+a List of byte values
+The bytes that were nondeterministically chosen during evaluation.
+
+29.4 Candidate Executions
+
+A candidate execution of the evaluation of an agent cluster is a Record with the following fields.
+
+Table 102: Candidate Execution Record Fields
+
+Field Name
+Value
+Meaning
+
+[[EventsRecords]]
+a List of Agent Events Records
+Maps an agent to Lists of Memory events appended during the evaluation.
+
+[[ChosenValues]]
+a List of Chosen Value Records
+Maps ReadSharedMemory or ReadModifyWriteSharedMemory events to the List of byte values chosen during the evaluation.
+
+An empty candidate execution is a candidate execution Record whose fields are empty Lists .
+
+29.5 Abstract Operations for the Memory Model
+
+29.5.1 EventSet ( execution )
+
+The abstract operation EventSet takes argument execution (a candidate execution ) and returns a Set of Memory events . It performs the following steps when called:
+
+- Let events be an empty Set.
+
+- For each Agent Events Record eventsRecord of execution . [[EventsRecords]] , do
+- For each Memory event event of eventsRecord . [[EventList]] , do
+- Add event to events .
+
+- Return events .
+
+29.5.2 SharedDataBlockEventSet ( execution )
+
+The abstract operation SharedDataBlockEventSet takes argument execution (a candidate execution ) and returns a Set of Shared Data Block events . It performs the following steps when called:
+
+- Let events be an empty Set.
+
+- For each Memory event event of EventSet ( execution ), do
+- If event is a Shared Data Block event , add event to events .
+
+- Return events .
+
+29.5.3 HostEventSet ( execution )
+
+The abstract operation HostEventSet takes argument execution (a candidate execution ) and returns a Set of Memory events . It performs the following steps when called:
+
+- Return a new Set containing all elements of EventSet ( execution ) that are not in SharedDataBlockEventSet ( execution ).
+
+29.5.4 ComposeWriteEventBytes ( execution , byteIndex , writes )
+
+The abstract operation ComposeWriteEventBytes takes arguments execution (a candidate execution ), byteIndex (a non-negative integer ), and writes (a List of either WriteSharedMemory or ReadModifyWriteSharedMemory events) and returns a List of byte values . It performs the following steps when called:
+
+- Let byteLocation be byteIndex .
+
+- Let bytesRead be a new empty List .
+
+- For each element writeEvent of writes , do
+- Assert : writeEvent has byteLocation in its memory range .
+
+- Let payloadIndex be byteLocation - writeEvent . [[ByteIndex]] .
+
+- If writeEvent is a WriteSharedMemory event, then
+- Let byte be writeEvent . [[Payload]] [ payloadIndex ].
+
+- Else,
+- Assert : writeEvent is a ReadModifyWriteSharedMemory event.
+
+- Let bytes be ValueOfReadEvent ( execution , writeEvent ).
+
+- Let bytesModified be writeEvent . [[ModifyOp]] ( bytes , writeEvent . [[Payload]] ).
+
+- Let byte be bytesModified [ payloadIndex ].
+
+- Append byte to bytesRead .
+
+- Set byteLocation to byteLocation + 1.
+
+- Return bytesRead .
+
+Note 1
+The read-modify-write modification [[ModifyOp]] is given by the function properties on the Atomics object that introduce ReadModifyWriteSharedMemory events.
+
+Note 2
+This abstract operation composes a List of write events into a List of byte values . It is used in the event semantics of ReadSharedMemory and ReadModifyWriteSharedMemory events.
+
+29.5.5 ValueOfReadEvent ( execution , readEvent )
+
+The abstract operation ValueOfReadEvent takes arguments execution (a candidate execution ) and readEvent (a ReadSharedMemory or ReadModifyWriteSharedMemory event) and returns a List of byte values . It performs the following steps when called:
+
+- Let writes be reads-bytes-from ( readEvent ) in execution .
+
+- Assert : writes is a List of WriteSharedMemory or ReadModifyWriteSharedMemory events with length equal to readEvent . [[ElementSize]] .
+
+- Return ComposeWriteEventBytes ( execution , readEvent . [[ByteIndex]] , writes ).
+
+29.6 Relations of Candidate Executions
+
+The following relations and mathematical functions are parameterized over a particular candidate execution and order its Memory events .
+
+29.6.1 is-agent-order-before
+
+For a candidate execution execution , its is-agent-order-before Relation is the least Relation on Memory events that satisfies the following.
+
+- For events eventA and eventB , eventA is-agent-order-before eventB in execution if there is some Agent Events Record eventsRecord in execution . [[EventsRecords]] such that eventsRecord . [[EventList]] contains both eventA and eventB and eventA is before eventB in List order of eventsRecord . [[EventList]] .
+
+Note
+Each agent introduces events in a per- agent strict total order during the evaluation. This is the union of those strict total orders .
+
+29.6.2 reads-bytes-from
+
+For a candidate execution execution , its reads-bytes-from function is a mathematical function mapping Memory events in SharedDataBlockEventSet ( execution ) to Lists of events in SharedDataBlockEventSet ( execution ) that satisfies the following conditions.
+
+-
+For each ReadSharedMemory or ReadModifyWriteSharedMemory event readEvent in SharedDataBlockEventSet ( execution ), reads-bytes-from( readEvent ) in execution is a List of length readEvent . [[ElementSize]] whose elements are WriteSharedMemory or ReadModifyWriteSharedMemory events writes such that all of the following are true.
+
+- Each event writeEvent with index i in writes has readEvent . [[ByteIndex]] + i in its memory range .
+
+- result is not in writes .
+
+A candidate execution always admits a reads-bytes-from function.
+
+29.6.3 reads-from
+
+For a candidate execution execution , its reads-from Relation is the least Relation on Memory events that satisfies the following.
+
+- For events readEvent and writeEvent , readEvent reads-from writeEvent in execution if SharedDataBlockEventSet ( execution ) contains both readEvent and writeEvent , and reads-bytes-from ( readEvent ) in execution contains writeEvent .
+
+29.6.4 host-synchronizes-with
+
+For a candidate execution execution , its host-synchronizes-with Relation is a host -provided strict partial order on host -specific Memory events that satisfies at least the following.
+
+- If eventA host-synchronizes-with eventB in execution , HostEventSet ( execution ) contains eventA and eventB .
+
+- There is no cycle in the union of host-synchronizes-with and is-agent-order-before in execution .
+
+Note 1
+For two host -specific events eventA and eventB in a candidate execution execution , eventA host-synchronizes-with eventB in execution implies eventA happens-before eventB in execution .
+
+Note 2
+This Relation allows the host to provide additional synchronization mechanisms, such as postMessage between HTML workers.
+
+29.6.5 synchronizes-with
+
+For a candidate execution execution , its synchronizes-with Relation is the least Relation on Memory events that satisfies the following.
+
+-
+For events readEvent and writeEvent , writeEvent synchronizes-with readEvent in execution if readEvent reads-from writeEvent in execution , readEvent . [[Order]] is seq-cst , writeEvent . [[Order]] is seq-cst , and readEvent and writeEvent have equal memory ranges .
+
+-
+For each element eventsRecord of execution . [[EventsRecords]] , the following is true.
+
+- For events eventA and eventB , eventA synchronizes-with eventB in execution if eventsRecord . [[AgentSynchronizesWith]] contains ( eventA , eventB ).
+
+- For events eventA and eventB , eventA synchronizes-with eventB in execution if eventA host-synchronizes-with eventB in execution .
+
+Note 1
+Owing to convention in memory model literature, in a candidate execution execution , write events synchronizes-with read events , instead of read events synchronizes-with write events .
+
+Note 2
+In a candidate execution execution , init events do not participate in this Relation and are instead constrained directly by happens-before .
+
+Note 3
+In a candidate execution execution , not all seq-cst events related by reads-from are related by synchronizes-with. Only events that also have equal memory ranges are related by synchronizes-with.
+
+Note 4
+For Shared Data Block events readEvent and writeEvent in a candidate execution execution such that writeEvent synchronizes-with readEvent , readEvent may reads-from other writes than writeEvent .
+
+29.6.6 happens-before
+
+For a candidate execution execution , its happens-before Relation is the least Relation on Memory events that satisfies the following.
+
+-
+For events eventA and eventB , eventA happens-before eventB in execution if any of the following conditions are true.
+
+- eventA is-agent-order-before eventB in execution .
+
+- eventA synchronizes-with eventB in execution .
+
+- SharedDataBlockEventSet ( execution ) contains both eventA and eventB , eventA . [[Order]] is init , and eventA and eventB have overlapping memory ranges .
+
+- There is an event eventC such that eventA happens-before eventC and eventC happens-before eventB in execution .
+
+Note
+Because happens-before is a superset of agent -order, a candidate execution is consistent with the single-thread evaluation semantics of ECMAScript.
+
+29.7 Properties of Valid Executions
+
+29.7.1 Valid Chosen Reads
+
+A candidate execution execution has valid chosen reads if the following algorithm returns true .
+
+- For each ReadSharedMemory or ReadModifyWriteSharedMemory event readEvent of SharedDataBlockEventSet ( execution ), do
+- Let chosenValueRecord be the element of execution . [[ChosenValues]] whose [[Event]] field is readEvent .
+
+- Let chosenValue be chosenValueRecord . [[ChosenValue]] .
+
+- Let readValue be ValueOfReadEvent ( execution , readEvent ).
+
+- Let chosenLength be the number of elements in chosenValue .
+
+- Let readLength be the number of elements in readValue .
+
+- If chosenLength ≠ readLength , then
+- Return false .
+
+- If chosenValue [ i ] ≠ readValue [ i ] for some integer i in the interval from 0 (inclusive) to chosenLength (exclusive), then
+- Return false .
+
+- Return true .
+
+29.7.2 Coherent Reads
+
+A candidate execution execution has coherent reads if the following algorithm returns true .
+
+- For each ReadSharedMemory or ReadModifyWriteSharedMemory event readEvent of SharedDataBlockEventSet ( execution ), do
+- Let writes be reads-bytes-from ( readEvent ) in execution .
+
+- Let byteLocation be readEvent . [[ByteIndex]] .
+
+- For each element writeEvent of writes , do
+- If readEvent happens-before writeEvent in execution , then
+- Return false .
+
+- If there exists a WriteSharedMemory or ReadModifyWriteSharedMemory event value that has byteLocation in its memory range such that writeEvent happens-before value in execution and value happens-before readEvent in execution , then
+- Return false .
+
+- Set byteLocation to byteLocation + 1.
+
+- Return true .
+
+29.7.3 Tear Free Reads
+
+A candidate execution execution has tear free reads if the following algorithm returns true .
+
+- For each ReadSharedMemory or ReadModifyWriteSharedMemory event readEvent of SharedDataBlockEventSet ( execution ), do
+- If readEvent . [[NoTear]] is true , then
+- Assert : The remainder of dividing readEvent . [[ByteIndex]] by readEvent . [[ElementSize]] is 0.
+
+- For each Memory event writeEvent such that readEvent reads-from writeEvent in execution and writeEvent . [[NoTear]] is true , do
+- If readEvent and writeEvent have equal memory ranges and there exists a Memory event value such that value and writeEvent have equal memory ranges , value . [[NoTear]] is true , writeEvent and value are not the same Shared Data Block event , and readEvent reads-from value in execution , then
+- Return false .
+
+- Return true .
+
+Note
+A Shared Data Block event 's [[NoTear]] field is true when that event was introduced via accessing an integer TypedArray , and false when introduced via accessing a floating point TypedArray or DataView.
+
+Intuitively, this requirement says when a memory range is accessed in an aligned fashion via an integer TypedArray , a single write event on that range must “win” when in a data race with other write events with equal ranges. More precisely, this requirement says an aligned read event cannot read a value composed of bytes from multiple, different write events all with equal ranges. It is possible, however, for an aligned read event to read from multiple write events with overlapping ranges.
+
+29.7.4 Sequentially Consistent Atomics
+
+For a candidate execution execution , is-memory-order-before is a strict total order of all Memory events in EventSet ( execution ) that satisfies the following.
+
+- For events eventA and eventB , eventA is-memory-order-before eventB in execution if eventA happens-before eventB in execution .
+
+-
+For events readEvent and writeEvent such that readEvent reads-from writeEvent in execution , there is no WriteSharedMemory or ReadModifyWriteSharedMemory event value in SharedDataBlockEventSet ( execution ) such that value . [[Order]] is seq-cst , writeEvent is-memory-order-before value in execution , value is-memory-order-before readEvent in execution , and any of the following conditions are true.
+
+- writeEvent synchronizes-with readEvent in execution , and value and readEvent have equal memory ranges .
+
+- writeEvent happens-before readEvent and value happens-before readEvent in execution , writeEvent . [[Order]] is seq-cst , and writeEvent and value have equal memory ranges .
+
+- writeEvent happens-before readEvent and writeEvent happens-before value in execution , readEvent . [[Order]] is seq-cst , and value and readEvent have equal memory ranges .
+
+Note 1
+This clause additionally constrains seq-cst events on equal memory ranges .
+
+-
+For each WriteSharedMemory or ReadModifyWriteSharedMemory event writeEvent in SharedDataBlockEventSet ( execution ), if writeEvent . [[Order]] is seq-cst , then it is not the case that there is an infinite number of ReadSharedMemory or ReadModifyWriteSharedMemory events in SharedDataBlockEventSet ( execution ) with equal memory range that is memory-order before writeEvent .
+
+Note 2
+This clause together with the forward progress guarantee on agents ensure the liveness condition that seq-cst writes become visible to seq-cst reads with equal memory range in finite time.
+
+A candidate execution has sequentially consistent atomics if it admits an is-memory-order-before Relation .
+
+Note 3
+While is-memory-order-before includes all events in EventSet ( execution ), those that are not constrained by happens-before or synchronizes-with in execution are allowed to occur anywhere in the order.
+
+29.7.5 Valid Executions
+
+A candidate execution execution is a valid execution (or simply an execution) if all of the following are true.
+
+- The host provides a host-synchronizes-with Relation for execution .
+
+- execution admits a happens-before Relation that is a strict partial order .
+
+- execution has valid chosen reads.
+
+- execution has coherent reads.
+
+- execution has tear free reads.
+
+- execution has sequentially consistent atomics.
+
+All programs have at least one valid execution.
+
+29.8 Races
+
+For an execution execution and events eventA and eventB that are contained in SharedDataBlockEventSet ( execution ), eventA and eventB are in a race if the following algorithm returns true .
+
+- If eventA and eventB are not the same Shared Data Block event , then
+- If it is not the case that both eventA happens-before eventB in execution and eventB happens-before eventA in execution , then
+- If eventA is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, eventB is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, and eventA and eventB do not have disjoint memory ranges , then
+- Return true .
+
+- If eventA reads-from eventB in execution or eventB reads-from eventA in execution , then
+- Return true .
+
+- Return false .
+
+29.9 Data Races
+
+For an execution execution and events eventA and eventB that are contained in SharedDataBlockEventSet ( execution ), eventA and eventB are in a data race if the following algorithm returns true .
+
+- If eventA and eventB are in a race in execution , then
+- If eventA . [[Order]] is not seq-cst or eventB . [[Order]] is not seq-cst , then
+- Return true .
+
+- If eventA and eventB have overlapping memory ranges , then
+- Return true .
+
+- Return false .
+
+29.10 Data Race Freedom
+
+An execution execution is data race free if there are no two events in SharedDataBlockEventSet ( execution ) that are in a data race .
+
+A program is data race free if all its executions are data race free.
+
+The memory model guarantees sequential consistency of all events for data race free programs.
+
+29.11 Shared Memory Guidelines
+
+Note 1
+The following are guidelines for ECMAScript programmers working with shared memory.
+
+We recommend programs be kept data race free , i.e., make it so that it is impossible for there to be concurrent non-atomic operations on the same memory location. Data race free programs have interleaving semantics where each step in the evaluation semantics of each agent are interleaved with each other. For data race free programs, it is not necessary to understand the details of the memory model . The details are unlikely to build intuition that will help one to better write ECMAScript.
+
+More generally, even if a program is not data race free it may have predictable behaviour, so long as atomic operations are not involved in any data races and the operations that race all have the same access size. The simplest way to arrange for atomics not to be involved in races is to ensure that different memory cells are used by atomic and non-atomic operations and that atomic accesses of different sizes are not used to access the same cells at the same time. Effectively, the program should treat shared memory as strongly typed as much as possible. One still cannot depend on the ordering and timing of non-atomic accesses that race, but if memory is treated as strongly typed the racing accesses will not “tear” (bits of their values will not be mixed).
+
+Note 2
+The following are guidelines for ECMAScript implementers writing compiler transformations for programs using shared memory.
+
+It is desirable to allow most program transformations that are valid in a single- agent setting in a multi- agent setting, to ensure that the performance of each agent in a multi- agent program is as good as it would be in a single- agent setting. Frequently these transformations are hard to judge. We outline some rules about program transformations that are intended to be taken as normative (in that they are implied by the memory model or stronger than what the memory model implies) but which are likely not exhaustive. These rules are intended to apply to program transformations that precede the introductions of the Memory events that make up the is-agent-order-before Relation .
+
+Let an agent-order slice be the subset of the is-agent-order-before Relation pertaining to a single agent .
+
+Let possible read values of a read event be the set of all values of ValueOfReadEvent for that event across all valid executions.
+
+Any transformation of an agent-order slice that is valid in the absence of shared memory is valid in the presence of shared memory, with the following exceptions.
+
+-
+Atomics are carved in stone : Program transformations must not cause any Shared Data Block events whose [[Order]] is seq-cst to be removed from the is-agent-order-before Relation , nor to be reordered with respect to each other, nor to be reordered inside an agent-order slice with respect to events whose [[Order]] is unordered .
+
+(In practice, the prohibition on reorderings forces a compiler to assume that every seq-cst operation is a synchronization and included in the final is-memory-order-before Relation , which it would usually have to assume anyway in the absence of inter- agent program analysis. It also forces the compiler to assume that every call where the callee's effects on the memory-order are unknown may contain seq-cst operations.)
+
+-
+Reads must be stable : Any given shared memory read must only observe a single value in an execution.
+
+(For example, if what is semantically a single read in the program is executed multiple times then the program is subsequently allowed to observe only one of the values read. A transformation known as rematerialization can violate this rule.)
+
+-
+Writes must be stable : All observable writes to shared memory must follow from program semantics in an execution.
+
+(For example, a transformation may not introduce certain observable writes, such as by using read-modify-write operations on a larger location to write a smaller datum, writing a value to memory that the program could not have written, or writing a just-read value back to the location it was read from, if that location could have been overwritten by another agent after the read.)
+
+-
+Possible read values must be non-empty : Program transformations cannot cause the possible read values of a shared memory read to become empty.
+
+(Counterintuitively, this rule in effect restricts transformations on writes, because writes have force in memory model insofar as to be read by read events . For example, writes may be moved and coalesced and sometimes reordered between two seq-cst operations, but the transformation may not remove every write that updates a location; some write must be preserved.)
+
+Examples of transformations that remain valid are: merging multiple non-atomic reads from the same location, reordering non-atomic reads, introducing speculative non-atomic reads, merging multiple non-atomic writes to the same location, reordering non-atomic writes to different locations, and hoisting non-atomic reads out of loops even if that affects termination. Note in general that aliased TypedArrays make it hard to prove that locations are different.
+
+Note 3
+The following are guidelines for ECMAScript implementers generating machine code for shared memory accesses.
+
+For architectures with memory models no weaker than those of ARM or Power, non-atomic stores and loads may be compiled to bare stores and loads on the target architecture. Atomic stores and loads may be compiled down to instructions that guarantee sequential consistency. If no such instructions exist, memory barriers are to be employed, such as placing barriers on both sides of a bare store or load. Read-modify-write operations may be compiled to read-modify-write instructions on the target architecture, such as LOCK -prefixed instructions on x86, load-exclusive/store-exclusive instructions on ARM, and load-link/store-conditional instructions on Power.
+
+Specifically, the memory model is intended to allow code generation as follows.
+
+- Every atomic operation in the program is assumed to be necessary.
+
+- Atomic operations are never rearranged with each other or with non-atomic operations.
+
+- Functions are always assumed to perform atomic operations.
+
+- Atomic operations are never implemented as read-modify-write operations on larger data, but as non-lock-free atomics if the platform does not have atomic operations of the appropriate size. (We already assume that every platform has normal memory access operations of every interesting size.)
+
+Naive code generation uses these patterns:
+
+- Regular loads and stores compile to single load and store instructions.
+
+- Lock-free atomic loads and stores compile to a full (sequentially consistent) fence, a regular load or store, and a full fence.
+
+- Lock-free atomic read-modify-write accesses compile to a full fence, an atomic read-modify-write instruction sequence, and a full fence.
+
+- Non-lock-free atomics compile to a spinlock acquire, a full fence, a series of non-atomic load and store instructions, a full fence, and a spinlock release.
+
+That mapping is correct so long as an atomic operation on a memory range does not race with a non-atomic write or with an atomic operation of different size. However, that is all we need: the memory model effectively demotes the atomic operations involved in a race to non-atomic status. On the other hand, the naive mapping is quite strong: it allows atomic operations to be used as sequentially consistent fences, which the memory model does not actually guarantee.
+
+Local improvements to those basic patterns are also allowed, subject to the constraints of the memory model . For example:
+
+- There are obvious platform-dependent improvements that remove redundant fences. For example, on x86 the fences around lock-free atomic loads and stores can always be omitted except for the fence following a store, and no fence is needed for lock-free read-modify-write instructions, as these all use LOCK -prefixed instructions. On many platforms there are fences of several strengths, and weaker fences can be used in certain contexts without destroying sequential consistency.
+
+- Most modern platforms support lock-free atomics for all the data sizes required by ECMAScript atomics. Should non-lock-free atomics be needed, the fences surrounding the body of the atomic operation can usually be folded into the lock and unlock steps. The simplest solution for non-lock-free atomics is to have a single lock word per SharedArrayBuffer.
+
+- There are also more complicated platform-dependent local improvements, requiring some code analysis. For example, two back-to-back fences often have the same effect as a single fence, so if code is generated for two atomic operations in sequence, only a single fence need separate them. On x86, even a single fence separating atomic stores can be omitted, as the fence following a store is only needed to separate the store from a subsequent load.

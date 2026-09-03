@@ -1,0 +1,359 @@
+# 14 ListFormat Objects
+# джерело: https://tc39.es/ecma402/#listformat-objects
+# отримано: 2026-09-01
+
+14 ListFormat Objects
+
+14.1 The Intl.ListFormat Constructor
+
+The Intl.ListFormat constructor :
+
+- is %Intl.ListFormat% .
+
+- is the initial value of the "ListFormat" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+14.1.1 Intl.ListFormat ( [ locales [ , options ] ] )
+
+When the Intl.ListFormat function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let listFormat be ? OrdinaryCreateFromConstructor (NewTarget, "%Intl.ListFormat.prototype%" , « [[InitializedListFormat]] , [[Locale]] , [[Type]] , [[Style]] , [[Templates]] »).
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.ListFormat% , %Intl.ListFormat% . [[LocaleData]] , locales , options ).
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set listFormat . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Let type be ? GetOption ( options , "type" , string , « "conjunction" , "disjunction" , "unit" », "conjunction" ).
+
+- Set listFormat . [[Type]] to type .
+
+- Let style be ? GetOption ( options , "style" , string , « "long" , "short" , "narrow" », "long" ).
+
+- Set listFormat . [[Style]] to style .
+
+- Let resolvedLocaleData be resolvedLocale . [[LocaleData]] .
+
+- Let dataLocaleTypes be resolvedLocaleData .[[< type >]].
+
+- Set listFormat . [[Templates]] to dataLocaleTypes .[[< style >]].
+
+- Return listFormat .
+
+14.2 Properties of the Intl.ListFormat Constructor
+
+The Intl.ListFormat constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+14.2.1 Intl.ListFormat.prototype
+
+The value of Intl.ListFormat.prototype is %Intl.ListFormat.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+14.2.2 Intl.ListFormat.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.ListFormat% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+14.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « ».
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « ».
+
+Note 1
+Intl.ListFormat does not have any relevant extension keys.
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 and the following additional constraints, for each locale value locale in %Intl.ListFormat% . [[AvailableLocales]] :
+
+- [[LocaleData]] .[[< locale >]] is a Record which has three fields [[conjunction]] , [[disjunction]] , and [[unit]] . Each of these is a Record which must have fields with the names of three formatting styles: [[long]] , [[short]] , and [[narrow]] .
+
+- Each of those fields is considered a ListFormat template set , which must be a List of Records with fields named: [[Pair]] , [[Start]] , [[Middle]] , and [[End]] . Each of those fields must be a template string as specified in LDML List Format Rules. Each template string must contain the substrings "{0}" and "{1}" exactly once. The substring "{0}" should occur before the substring "{1}" .
+
+Note 2
+It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ). In LDML's listPattern , conjunction corresponds to "standard", disjunction corresponds to "or", and unit corresponds to "unit".
+
+Note 3
+Among the list types, conjunction stands for "and"-based lists (e.g., "A, B, and C"), disjunction stands for "or"-based lists (e.g., "A, B, or C"), and unit stands for lists of values with units (e.g., "5 pounds, 12 ounces").
+
+14.3 Properties of the Intl.ListFormat Prototype Object
+
+The Intl.ListFormat prototype object :
+
+- is %Intl.ListFormat.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.ListFormat instance and does not have an [[InitializedListFormat]] internal slot or any of the other internal slots of Intl.ListFormat instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+14.3.1 Intl.ListFormat.prototype.constructor
+
+The initial value of Intl.ListFormat.prototype.constructor is %Intl.ListFormat% .
+
+14.3.2 Intl.ListFormat.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let lf be the this value.
+
+- Perform ? RequireInternalSlot ( lf , [[InitializedListFormat]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 25 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of lf 's internal slot whose name is the Internal Slot value of the current row.
+
+- Assert : value is not undefined .
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 25: Resolved Options of ListFormat Instances
+
+Internal Slot
+Property
+
+[[Locale]]
+"locale"
+
+[[Type]]
+"type"
+
+[[Style]]
+"style"
+
+14.3.3 Intl.ListFormat.prototype.format ( list )
+
+When the format method is called with an argument list , the following steps are taken:
+
+- Let lf be the this value.
+
+- Perform ? RequireInternalSlot ( lf , [[InitializedListFormat]] ).
+
+- Let stringList be ? StringListFromIterable ( list ).
+
+- Return FormatList ( lf , stringList ).
+
+14.3.4 Intl.ListFormat.prototype.formatToParts ( list )
+
+When the formatToParts method is called with an argument list , the following steps are taken:
+
+- Let lf be the this value.
+
+- Perform ? RequireInternalSlot ( lf , [[InitializedListFormat]] ).
+
+- Let stringList be ? StringListFromIterable ( list ).
+
+- Return FormatListToParts ( lf , stringList ).
+
+14.3.5 Intl.ListFormat.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.ListFormat" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+14.4 Properties of Intl.ListFormat Instances
+
+Intl.ListFormat instances inherit properties from %Intl.ListFormat.prototype% .
+
+Intl.ListFormat instances have an [[InitializedListFormat]] internal slot.
+
+Intl.ListFormat instances also have several internal slots that are computed by The Intl.ListFormat Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used by the list format styles.
+
+- [[Type]] is one of the String values "conjunction" , "disjunction" , or "unit" , identifying the list of types used.
+
+- [[Style]] is one of the String values "long" , "short" , or "narrow" , identifying the list formatting style used.
+
+- [[Templates]] is a ListFormat template set .
+
+14.5 Abstract Operations for ListFormat Objects
+
+14.5.1 DeconstructPattern ( pattern , placeables )
+
+The abstract operation DeconstructPattern takes arguments pattern (a Pattern String ) and placeables (a Record ) and returns a List .
+
+It deconstructs the pattern string into a List of parts.
+
+placeables is a Record whose keys are placeables tokens used in the pattern string, and values are parts Records (as from PartitionPattern ) which will be used in the result List to represent the token part.
+Example:
+
+Input:
+DeconstructPattern("AA{xx}BB{yy}CC", {
+[[xx]]: {[[Type]]: "hour", [[Value]]: "15"},
+[[yy]]: {[[Type]]: "minute", [[Value]]: "06"}
+})
+
+Output (List of parts Records):
+«
+{[[Type]]: "literal", [[Value]]: "AA"},
+{[[Type]]: "hour", [[Value]]: "15"},
+{[[Type]]: "literal", [[Value]]: "BB"},
+{[[Type]]: "minute", [[Value]]: "06"},
+{[[Type]]: "literal", [[Value]]: "CC"}
+»
+
+It performs the following steps when called:
+
+- Let patternParts be PartitionPattern ( pattern ).
+
+- Let result be a new empty List .
+
+- For each Record { [[Type]] , [[Value]] } patternPart of patternParts , do
+- Let partType be patternPart . [[Type]] .
+
+- If partType is "literal" , then
+- Append the Record { [[Type]] : "literal" , [[Value]] : patternPart . [[Value]] } to result .
+
+- Else,
+- Assert : placeables has a field [[< partType >]].
+
+- Let substitution be placeables .[[< partType >]].
+
+- If substitution is a List , then
+- For each element part of substitution , do
+- Append part to result .
+
+- Else,
+- Append substitution to result .
+
+- Return result .
+
+14.5.2 CreatePartsFromList ( listFormat , list )
+
+The abstract operation CreatePartsFromList takes arguments listFormat (an Intl.ListFormat) and list (a List of Strings) and returns a List of Records with fields [[Type]] ( "element" or "literal" ) and [[Value]] (a String). It creates the corresponding List of parts according to the effective locale and the formatting options of listFormat . It performs the following steps when called:
+
+- Let size be the number of elements of list .
+
+- If size is 0, then
+- Return a new empty List .
+
+- If size is 2, then
+- Let n be an index into listFormat . [[Templates]] based on listFormat . [[Locale]] , list [0], and list [1].
+
+- Let pattern be listFormat . [[Templates]] [ n ]. [[Pair]] .
+
+- Let first be the Record { [[Type]] : "element" , [[Value]] : list [0] }.
+
+- Let second be the Record { [[Type]] : "element" , [[Value]] : list [1] }.
+
+- Let placeables be the Record { [[0]] : first , [[1]] : second }.
+
+- Return DeconstructPattern ( pattern , placeables ).
+
+- Let last be the Record { [[Type]] : "element" , [[Value]] : list [ size - 1] }.
+
+- Let parts be « last ».
+
+- Let i be size - 2.
+
+- Repeat, while i ≥ 0,
+- Let head be the Record { [[Type]] : "element" , [[Value]] : list [ i ] }.
+
+- Let n be an implementation-defined index into listFormat . [[Templates]] based on listFormat . [[Locale]] , head , and parts .
+
+- If i is 0, then
+- Let pattern be listFormat . [[Templates]] [ n ]. [[Start]] .
+
+- Else if i is less than size - 2, then
+- Let pattern be listFormat . [[Templates]] [ n ]. [[Middle]] .
+
+- Else,
+- Let pattern be listFormat . [[Templates]] [ n ]. [[End]] .
+
+- Let placeables be the Record { [[0]] : head , [[1]] : parts }.
+
+- Set parts to DeconstructPattern ( pattern , placeables ).
+
+- Set i to i - 1.
+
+- Return parts .
+
+Note
+The index n to select across multiple templates permits the conjunction to be dependent on the context, as in Spanish, where either "y" or "e" may be selected, depending on the following word.
+
+14.5.3 FormatList ( listFormat , list )
+
+The abstract operation FormatList takes arguments listFormat (an Intl.ListFormat) and list (a List of Strings) and returns a String. It performs the following steps when called:
+
+- Let parts be CreatePartsFromList ( listFormat , list ).
+
+- Let result be the empty String.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+14.5.4 FormatListToParts ( listFormat , list )
+
+The abstract operation FormatListToParts takes arguments listFormat (an Intl.ListFormat) and list (a List of Strings) and returns an Array. It performs the following steps when called:
+
+- Let parts be CreatePartsFromList ( listFormat , list ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "value" , part . [[Value]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( 𝔽 ( n )), obj ).
+
+- Set n to n + 1.
+
+- Return result .
+
+14.5.5 StringListFromIterable ( iterable )
+
+The abstract operation StringListFromIterable takes argument iterable (an ECMAScript language value ) and returns either a normal completion containing a List of Strings or a throw completion . It performs the following steps when called:
+
+- If iterable is undefined , then
+- Return a new empty List .
+
+- Let iteratorRecord be ? GetIterator ( iterable , sync ).
+
+- Let list be a new empty List .
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Return list .
+
+- If next is not a String , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iteratorRecord , error ).
+
+- Append next to list .
+
+Note
+This algorithm raises exceptions when it encounters values that are not Strings, because there is no obvious locale-aware coercion for arbitrary values.

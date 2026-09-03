@@ -1,0 +1,3160 @@
+# 10 Ordinary and Exotic Objects Behaviours
+# джерело: https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-ordinary-and-exotic-objects-behaviours
+# отримано: 2026-09-01
+
+10 Ordinary and Exotic Objects Behaviours
+
+10.1 Ordinary Object Internal Methods and Internal Slots
+
+All ordinary objects have an internal slot called [[Prototype]] . The value of this internal slot is either null or an object and is used for implementing inheritance. Assume a property named propertyKey is missing from an ordinary object obj but exists on its [[Prototype]] object. If propertyKey refers to a data property on the [[Prototype]] object, obj inherits it for get access, making it behave as if propertyKey was a property of obj . If propertyKey refers to a writable data property on the [[Prototype]] object, set access of propertyKey on obj creates a new data property named propertyKey on obj . If propertyKey refers to a non-writable data property on the [[Prototype]] object, set access of propertyKey on obj fails. If propertyKey refers to an accessor property on the [[Prototype]] object, the accessor is inherited by obj for both get access and set access.
+
+Every ordinary object has a Boolean-valued [[Extensible]] internal slot which is used to fulfill the extensibility-related internal method invariants specified in 6.1.7.3 . Namely, once the value of an object's [[Extensible]] internal slot has been set to false , it is no longer possible to add properties to the object, to modify the value of the object's [[Prototype]] internal slot, or to subsequently change the value of [[Extensible]] to true .
+
+In the following algorithm descriptions, assume obj is an ordinary object , propertyKey is a property key value, value is any ECMAScript language value , and propertyDesc is a Property Descriptor record.
+
+Each ordinary object internal method delegates to a similarly-named abstract operation. If such an abstract operation depends on another internal method, then the internal method is invoked on obj rather than calling the similarly-named abstract operation directly. These semantics ensure that exotic objects have their overridden internal methods invoked when ordinary object internal methods are applied to them.
+
+10.1.1 [[GetPrototypeOf]] ( )
+
+The [[GetPrototypeOf]] internal method of an ordinary object obj takes no arguments and returns a normal completion containing either an Object or null . It performs the following steps when called:
+
+- Return OrdinaryGetPrototypeOf ( obj ).
+
+10.1.1.1 OrdinaryGetPrototypeOf ( obj )
+
+The abstract operation OrdinaryGetPrototypeOf takes argument obj (an Object) and returns an Object or null . It performs the following steps when called:
+
+- Return obj . [[Prototype]] .
+
+10.1.2 [[SetPrototypeOf]] ( proto )
+
+The [[SetPrototypeOf]] internal method of an ordinary object obj takes argument proto (an Object or null ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- Return OrdinarySetPrototypeOf ( obj , proto ).
+
+10.1.2.1 OrdinarySetPrototypeOf ( obj , proto )
+
+The abstract operation OrdinarySetPrototypeOf takes arguments obj (an Object) and proto (an Object or null ) and returns a Boolean. It performs the following steps when called:
+
+- Let current be obj . [[Prototype]] .
+
+- If SameValue ( proto , current ) is true , return true .
+
+- Let extensible be obj . [[Extensible]] .
+
+- If extensible is false , return false .
+
+- Let cursor be proto .
+
+- Let done be false .
+
+- Repeat, while done is false ,
+- If cursor is null , then
+- Set done to true .
+
+- Else if SameValue ( cursor , obj ) is true , then
+- Return false .
+
+- Else,
+- If cursor . [[GetPrototypeOf]] is not the ordinary object internal method defined in 10.1.1 , set done to true .
+
+- Else, set cursor to cursor . [[Prototype]] .
+
+- Set obj . [[Prototype]] to proto .
+
+- Return true .
+
+Note
+The loop in step 7 guarantees that there will be no cycles in any prototype chain that only includes objects that use the ordinary object definitions for [[GetPrototypeOf]] and [[SetPrototypeOf]] .
+
+10.1.3 [[IsExtensible]] ( )
+
+The [[IsExtensible]] internal method of an ordinary object obj takes no arguments and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- Return OrdinaryIsExtensible ( obj ).
+
+10.1.3.1 OrdinaryIsExtensible ( obj )
+
+The abstract operation OrdinaryIsExtensible takes argument obj (an Object) and returns a Boolean. It performs the following steps when called:
+
+- Return obj . [[Extensible]] .
+
+10.1.4 [[PreventExtensions]] ( )
+
+The [[PreventExtensions]] internal method of an ordinary object obj takes no arguments and returns a normal completion containing true . It performs the following steps when called:
+
+- Return OrdinaryPreventExtensions ( obj ).
+
+10.1.4.1 OrdinaryPreventExtensions ( obj )
+
+The abstract operation OrdinaryPreventExtensions takes argument obj (an Object) and returns true . It performs the following steps when called:
+
+- Set obj . [[Extensible]] to false .
+
+- Return true .
+
+10.1.5 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of an ordinary object obj takes argument propertyKey (a property key ) and returns a normal completion containing either a Property Descriptor or undefined . It performs the following steps when called:
+
+- Return OrdinaryGetOwnProperty ( obj , propertyKey ).
+
+10.1.5.1 OrdinaryGetOwnProperty ( obj , propertyKey )
+
+The abstract operation OrdinaryGetOwnProperty takes arguments obj (an Object) and propertyKey (a property key ) and returns a Property Descriptor or undefined . It performs the following steps when called:
+
+- If obj does not have an own property with key propertyKey , return undefined .
+
+- Let propertyDesc be a newly created Property Descriptor with no fields.
+
+- Let ownProperty be obj 's own property whose key is propertyKey .
+
+- If ownProperty is a data property , then
+- Set propertyDesc . [[Value]] to the value of ownProperty 's [[Value]] attribute.
+
+- Set propertyDesc . [[Writable]] to the value of ownProperty 's [[Writable]] attribute.
+
+- Else,
+- Assert : ownProperty is an accessor property .
+
+- Set propertyDesc . [[Getter]] to the value of ownProperty 's [[Getter]] attribute.
+
+- Set propertyDesc . [[Setter]] to the value of ownProperty 's [[Setter]] attribute.
+
+- Set propertyDesc . [[Enumerable]] to the value of ownProperty 's [[Enumerable]] attribute.
+
+- Set propertyDesc . [[Configurable]] to the value of ownProperty 's [[Configurable]] attribute.
+
+- Return propertyDesc .
+
+10.1.6 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of an ordinary object obj takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ? OrdinaryDefineOwnProperty ( obj , propertyKey , propertyDesc ).
+
+10.1.6.1 OrdinaryDefineOwnProperty ( obj , propertyKey , propertyDesc )
+
+The abstract operation OrdinaryDefineOwnProperty takes arguments obj (an Object), propertyKey (a property key ), and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let current be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- Let extensible be ? IsExtensible ( obj ).
+
+- Return ValidateAndApplyPropertyDescriptor ( obj , propertyKey , extensible , propertyDesc , current ).
+
+10.1.6.2 IsCompatiblePropertyDescriptor ( extensible , propertyDesc , current )
+
+The abstract operation IsCompatiblePropertyDescriptor takes arguments extensible (a Boolean), propertyDesc (a Property Descriptor ), and current (a Property Descriptor or undefined ) and returns a Boolean. It performs the following steps when called:
+
+- Return ValidateAndApplyPropertyDescriptor ( undefined , "" , extensible , propertyDesc , current ).
+
+10.1.6.3 ValidateAndApplyPropertyDescriptor ( obj , propertyKey , extensible , propertyDesc , current )
+
+The abstract operation ValidateAndApplyPropertyDescriptor takes arguments obj (an Object or undefined ), propertyKey (a property key ), extensible (a Boolean), propertyDesc (a Property Descriptor ), and current (a Property Descriptor or undefined ) and returns a Boolean. It returns true if and only if propertyDesc can be applied as the property of an object with specified extensibility and current property current while upholding invariants . When such application is possible and obj is not undefined , it is performed for the property named propertyKey (which is created if necessary). It performs the following steps when called:
+
+- Assert : propertyKey is a property key .
+
+- If current is undefined , then
+- If extensible is false , return false .
+
+- If obj is undefined , return true .
+
+- If IsAccessorDescriptor ( propertyDesc ) is true , then
+- Create an own accessor property named propertyKey of object obj whose [[Getter]] , [[Setter]] , [[Enumerable]] , and [[Configurable]] attributes are set to the value of the corresponding field in propertyDesc if propertyDesc has that field, or to the attribute's default value otherwise.
+
+- Else,
+- Create an own data property named propertyKey of object obj whose [[Value]] , [[Writable]] , [[Enumerable]] , and [[Configurable]] attributes are set to the value of the corresponding field in propertyDesc if propertyDesc has that field, or to the attribute's default value otherwise.
+
+- Return true .
+
+- Assert : current is a fully populated Property Descriptor .
+
+- If propertyDesc does not have any fields, return true .
+
+- If current . [[Configurable]] is false , then
+- If propertyDesc has a [[Configurable]] field and propertyDesc . [[Configurable]] is true , return false .
+
+- If propertyDesc has an [[Enumerable]] field and propertyDesc . [[Enumerable]] is not current . [[Enumerable]] , return false .
+
+- If IsGenericDescriptor ( propertyDesc ) is false and IsAccessorDescriptor ( propertyDesc ) is not IsAccessorDescriptor ( current ), return false .
+
+- If IsAccessorDescriptor ( current ) is true , then
+- If propertyDesc has a [[Getter]] field and SameValue ( propertyDesc . [[Getter]] , current . [[Getter]] ) is false , return false .
+
+- If propertyDesc has a [[Setter]] field and SameValue ( propertyDesc . [[Setter]] , current . [[Setter]] ) is false , return false .
+
+- Else if current . [[Writable]] is false , then
+- If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is true , return false .
+
+- NOTE : SameValue returns true for NaN values which may be distinguishable by other means. Returning here ensures that any existing property of obj remains unmodified.
+
+- If propertyDesc has a [[Value]] field, return SameValue ( propertyDesc . [[Value]] , current . [[Value]] ).
+
+- If obj is not undefined , then
+- If IsDataDescriptor ( current ) is true and IsAccessorDescriptor ( propertyDesc ) is true , then
+- If propertyDesc has a [[Configurable]] field, let configurable be propertyDesc . [[Configurable]] ; else let configurable be current . [[Configurable]] .
+
+- If propertyDesc has an [[Enumerable]] field, let enumerable be propertyDesc . [[Enumerable]] ; else let enumerable be current . [[Enumerable]] .
+
+- Replace the property named propertyKey of object obj with an accessor property whose [[Configurable]] and [[Enumerable]] attributes are set to configurable and enumerable , respectively, and whose [[Getter]] and [[Setter]] attributes are set to the value of the corresponding field in propertyDesc if propertyDesc has that field, or to the attribute's default value otherwise.
+
+- Else if IsAccessorDescriptor ( current ) is true and IsDataDescriptor ( propertyDesc ) is true , then
+- If propertyDesc has a [[Configurable]] field, let configurable be propertyDesc . [[Configurable]] ; else let configurable be current . [[Configurable]] .
+
+- If propertyDesc has an [[Enumerable]] field, let enumerable be propertyDesc . [[Enumerable]] ; else let enumerable be current . [[Enumerable]] .
+
+- Replace the property named propertyKey of object obj with a data property whose [[Configurable]] and [[Enumerable]] attributes are set to configurable and enumerable , respectively, and whose [[Value]] and [[Writable]] attributes are set to the value of the corresponding field in propertyDesc if propertyDesc has that field, or to the attribute's default value otherwise.
+
+- Else,
+- For each field name fieldName of propertyDesc , set the attribute named fieldName of the property named propertyKey of object obj to the value of propertyDesc 's fieldName field.
+
+- Return true .
+
+10.1.7 [[HasProperty]] ( propertyKey )
+
+The [[HasProperty]] internal method of an ordinary object obj takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ? OrdinaryHasProperty ( obj , propertyKey ).
+
+10.1.7.1 OrdinaryHasProperty ( obj , propertyKey )
+
+The abstract operation OrdinaryHasProperty takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let hasOwn be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If hasOwn is not undefined , return true .
+
+- Let parent be ? obj . [[GetPrototypeOf]] () .
+
+- If parent is not null , then
+- Return ? parent . [[HasProperty]] ( propertyKey ) .
+
+- Return false .
+
+10.1.8 [[Get]] ( propertyKey , receiver )
+
+The [[Get]] internal method of an ordinary object obj takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Return ? OrdinaryGet ( obj , propertyKey , receiver ).
+
+10.1.8.1 OrdinaryGet ( obj , propertyKey , receiver )
+
+The abstract operation OrdinaryGet takes arguments obj (an Object), propertyKey (a property key ), and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is undefined , then
+- Let parent be ? obj . [[GetPrototypeOf]] () .
+
+- If parent is null , return undefined .
+
+- Return ? parent . [[Get]] ( propertyKey , receiver ) .
+
+- If IsDataDescriptor ( propertyDesc ) is true , return propertyDesc . [[Value]] .
+
+- Assert : IsAccessorDescriptor ( propertyDesc ) is true .
+
+- Let getter be propertyDesc . [[Getter]] .
+
+- If getter is undefined , return undefined .
+
+- Return ? Call ( getter , receiver ).
+
+10.1.9 [[Set]] ( propertyKey , value , receiver )
+
+The [[Set]] internal method of an ordinary object obj takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ? OrdinarySet ( obj , propertyKey , value , receiver ).
+
+10.1.9.1 OrdinarySet ( obj , propertyKey , value , receiver )
+
+The abstract operation OrdinarySet takes arguments obj (an Object), propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let ownDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- Return ? OrdinarySetWithOwnDescriptor ( obj , propertyKey , value , receiver , ownDesc ).
+
+10.1.9.2 OrdinarySetWithOwnDescriptor ( obj , propertyKey , value , receiver , ownDesc )
+
+The abstract operation OrdinarySetWithOwnDescriptor takes arguments obj (an Object), propertyKey (a property key ), value (an ECMAScript language value ), receiver (an ECMAScript language value ), and ownDesc (a Property Descriptor or undefined ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If ownDesc is undefined , then
+- Let parent be ? obj . [[GetPrototypeOf]] () .
+
+- If parent is not null , return ? parent . [[Set]] ( propertyKey , value , receiver ) .
+
+- Set ownDesc to the PropertyDescriptor { [[Value]] : undefined , [[Writable]] : true , [[Enumerable]] : true , [[Configurable]] : true }.
+
+- If IsDataDescriptor ( ownDesc ) is true , then
+- If ownDesc . [[Writable]] is false , return false .
+
+- If receiver is not an Object , return false .
+
+- Let existingDesc be ? receiver . [[GetOwnProperty]] ( propertyKey ) .
+
+- If existingDesc is undefined , then
+- Assert : receiver does not currently have a property propertyKey .
+
+- Return ? CreateDataProperty ( receiver , propertyKey , value ).
+
+- If IsAccessorDescriptor ( existingDesc ) is true , return false .
+
+- If existingDesc . [[Writable]] is false , return false .
+
+- Let valueDesc be the PropertyDescriptor { [[Value]] : value }.
+
+- Return ? receiver . [[DefineOwnProperty]] ( propertyKey , valueDesc ) .
+
+- Assert : IsAccessorDescriptor ( ownDesc ) is true .
+
+- Let setter be ownDesc . [[Setter]] .
+
+- If setter is undefined , return false .
+
+- Perform ? Call ( setter , receiver , « value »).
+
+- Return true .
+
+10.1.10 [[Delete]] ( propertyKey )
+
+The [[Delete]] internal method of an ordinary object obj takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ? OrdinaryDelete ( obj , propertyKey ).
+
+10.1.10.1 OrdinaryDelete ( obj , propertyKey )
+
+The abstract operation OrdinaryDelete takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is undefined , return true .
+
+- If propertyDesc . [[Configurable]] is true , then
+- Remove the own property with name propertyKey from obj .
+
+- Return true .
+
+- Return false .
+
+10.1.11 [[OwnPropertyKeys]] ( )
+
+The [[OwnPropertyKeys]] internal method of an ordinary object obj takes no arguments and returns a normal completion containing a List of property keys . It performs the following steps when called:
+
+- Return OrdinaryOwnPropertyKeys ( obj ).
+
+10.1.11.1 OrdinaryOwnPropertyKeys ( obj )
+
+The abstract operation OrdinaryOwnPropertyKeys takes argument obj (an Object) and returns a List of property keys . It performs the following steps when called:
+
+- Let keys be a new empty List .
+
+- For each own property key propertyKey of obj such that propertyKey is an array index , in ascending numeric index order, do
+- Append propertyKey to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a String and propertyKey is not an array index , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a Symbol , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- Return keys .
+
+10.1.12 OrdinaryObjectCreate ( proto [ , additionalInternalSlotsList ] )
+
+The abstract operation OrdinaryObjectCreate takes argument proto (an Object or null ) and optional argument additionalInternalSlotsList (a List of names of internal slots) and returns an Object. It is used to specify the runtime creation of new ordinary objects . additionalInternalSlotsList contains the names of additional internal slots that must be defined as part of the object, beyond [[Prototype]] and [[Extensible]] . If additionalInternalSlotsList is not provided, a new empty List is used. It performs the following steps when called:
+
+- Let internalSlotsList be « [[Prototype]] , [[Extensible]] ».
+
+- If additionalInternalSlotsList is present, set internalSlotsList to the list-concatenation of internalSlotsList and additionalInternalSlotsList .
+
+- Let obj be MakeBasicObject ( internalSlotsList ).
+
+- Set obj . [[Prototype]] to proto .
+
+- Return obj .
+
+Note
+Although OrdinaryObjectCreate does little more than call MakeBasicObject , its use communicates the intention to create an ordinary object , and not an exotic one. Thus, within this specification, it is not called by any algorithm that subsequently modifies the internal methods of the object in ways that would make the result non-ordinary. Operations that create exotic objects invoke MakeBasicObject directly.
+
+10.1.13 OrdinaryCreateFromConstructor ( ctor , intrinsicDefaultProto [ , internalSlotsList ] )
+
+The abstract operation OrdinaryCreateFromConstructor takes arguments ctor (a function object ) and intrinsicDefaultProto (a String) and optional argument internalSlotsList (a List of names of internal slots) and returns either a normal completion containing an Object or a throw completion . It creates an ordinary object whose [[Prototype]] value is retrieved from a constructor 's "prototype" property, if it exists. Otherwise the intrinsic named by intrinsicDefaultProto is used for [[Prototype]] . internalSlotsList contains the names of additional internal slots that must be defined as part of the object. If internalSlotsList is not provided, a new empty List is used. It performs the following steps when called:
+
+- Assert : intrinsicDefaultProto is this specification's name of an intrinsic object. The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object.
+
+- Let proto be ? GetPrototypeFromConstructor ( ctor , intrinsicDefaultProto ).
+
+- If internalSlotsList is present, let slots be internalSlotsList .
+
+- Else, let slots be a new empty List .
+
+- Return OrdinaryObjectCreate ( proto , slots ).
+
+10.1.14 GetPrototypeFromConstructor ( ctor , intrinsicDefaultProto )
+
+The abstract operation GetPrototypeFromConstructor takes arguments ctor (a function object ) and intrinsicDefaultProto (a String) and returns either a normal completion containing an Object or a throw completion . It determines the [[Prototype]] value that should be used to create an object corresponding to a specific constructor . The value is retrieved from the constructor 's "prototype" property, if it exists. Otherwise the intrinsic named by intrinsicDefaultProto is used for [[Prototype]] . It performs the following steps when called:
+
+- Assert : intrinsicDefaultProto is this specification's name of an intrinsic object. The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object.
+
+- Let proto be ? Get ( ctor , "prototype" ).
+
+- If proto is not an Object , then
+- Let realm be ? GetFunctionRealm ( ctor ).
+
+- Set proto to realm 's intrinsic object named intrinsicDefaultProto .
+
+- Return proto .
+
+Note
+If ctor does not supply a [[Prototype]] value, the default value that is used is obtained from the realm of the ctor function rather than from the running execution context .
+
+10.1.15 RequireInternalSlot ( obj , internalSlot )
+
+The abstract operation RequireInternalSlot takes arguments obj (an ECMAScript language value ) and internalSlot (an internal slot name) and returns either a normal completion containing unused or a throw completion . It throws an exception unless obj is an Object and has the given internal slot. It performs the following steps when called:
+
+- If obj is not an Object , throw a TypeError exception.
+
+- If obj does not have an internalSlot internal slot, throw a TypeError exception.
+
+- Return unused .
+
+10.2 ECMAScript Function Objects
+
+ECMAScript function objects encapsulate parameterized ECMAScript code closed over a lexical environment and support the dynamic evaluation of that code. An ECMAScript function object is an ordinary object and has the same internal slots and the same internal methods as other ordinary objects . The code of an ECMAScript function object may be either strict mode code ( 11.2.2 ) or non-strict code . An ECMAScript function object whose code is strict mode code is called a strict function . One whose code is not strict mode code is called a non-strict function .
+
+In addition to [[Extensible]] and [[Prototype]] , ECMAScript function objects also have the internal slots listed in Table 26 .
+
+Table 26: Internal Slots of ECMAScript Function Objects
+
+Internal Slot
+
+Type
+
+Description
+
+[[Environment]]
+
+an Environment Record
+
+The Environment Record that the function was closed over. Used as the outer environment when evaluating the code of the function.
+
+[[PrivateEnvironment]]
+
+a PrivateEnvironment Record or null
+
+The PrivateEnvironment Record for Private Names that the function was closed over. null if this function is not syntactically contained within a class. Used as the outer PrivateEnvironment for inner classes when evaluating the code of the function.
+
+[[FormalParameters]]
+
+a Parse Node
+
+The root parse node of the source text that defines the function's formal parameter list.
+
+[[ECMAScriptCode]]
+
+a Parse Node
+
+The root parse node of the source text that defines the function's body.
+
+[[ConstructorKind]]
+
+base or derived
+
+Whether or not the function is a derived class constructor .
+
+[[Realm]]
+
+a Realm Record
+
+The realm in which the function was created and which provides any intrinsic objects that are accessed when evaluating the function.
+
+[[ScriptOrModule]]
+
+a Script Record or a Module Record
+
+The script or module in which the function was created.
+
+[[ThisMode]]
+
+lexical , strict , or global
+
+Defines how this references are interpreted within the formal parameters and code body of the function. lexical means that this refers to the this value of a lexically enclosing function. strict means that the this value is used exactly as provided by an invocation of the function. global means that a this value of undefined or null is interpreted as a reference to the global object , and any other this value is first passed to ToObject .
+
+[[Strict]]
+
+a Boolean
+
+true if this is a strict function , false if this is a non-strict function .
+
+[[HomeObject]]
+
+an Object or undefined
+
+If the function uses super , this is the object whose [[GetPrototypeOf]] provides the object where super property lookups begin.
+
+[[SourceText]]
+
+a sequence of Unicode code points
+
+The source text that defines the function.
+
+[[Fields]]
+
+a List of ClassFieldDefinition Records
+
+If the function is a class, this is a list of Records representing the non-static fields and corresponding initializers of the class.
+
+[[PrivateMethods]]
+
+a List of PrivateElements
+
+If the function is a class, this is a list representing the non-static private methods and accessors of the class.
+
+[[ClassFieldInitializerName]]
+
+a String, a Symbol, a Private Name , or empty
+
+If the function is created as the initializer of a class field, the name to use for NamedEvaluation of the field; empty otherwise.
+
+[[IsClassConstructor]]
+
+a Boolean
+
+Indicates whether the function is a class constructor . (If true , invoking the function's [[Call]] will immediately throw a TypeError exception.)
+
+All ECMAScript function objects have the [[Call]] internal method defined here. ECMAScript functions that are also constructors in addition have the [[Construct]] internal method.
+
+10.2.1 [[Call]] ( thisArg , argList )
+
+The [[Call]] internal method of an ECMAScript function object func takes arguments thisArg (an ECMAScript language value ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let callerContext be the running execution context .
+
+- Let calleeContext be PrepareForOrdinaryCall ( func , undefined ).
+
+- Assert : calleeContext is now the running execution context .
+
+- If func . [[IsClassConstructor]] is true , then
+- Let error be a newly created TypeError object.
+
+- NOTE : error is created in calleeContext with func 's associated Realm Record .
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- Throw error .
+
+- Perform OrdinaryCallBindThis ( func , calleeContext , thisArg ).
+
+- Let result be Completion ( OrdinaryCallEvaluateBody ( func , argList )).
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- If result is a throw completion , return ? result .
+
+- Assert : result is a return completion .
+
+- Return result . [[Value]] .
+
+Note
+When calleeContext is removed from the execution context stack in step 7 it must not be destroyed if it is suspended and retained for later resumption by an accessible Generator.
+
+10.2.1.1 PrepareForOrdinaryCall ( func , newTarget )
+
+The abstract operation PrepareForOrdinaryCall takes arguments func (an ECMAScript function object ) and newTarget (an Object or undefined ) and returns an execution context . It performs the following steps when called:
+
+- Let callerContext be the running execution context .
+
+- Let calleeContext be a new ECMAScript code execution context .
+
+- Set the Function of calleeContext to func .
+
+- Let calleeRealm be func . [[Realm]] .
+
+- Set the Realm of calleeContext to calleeRealm .
+
+- Set the ScriptOrModule of calleeContext to func . [[ScriptOrModule]] .
+
+- Let localEnv be NewFunctionEnvironment ( func , newTarget ).
+
+- Set the LexicalEnvironment of calleeContext to localEnv .
+
+- Set the VariableEnvironment of calleeContext to localEnv .
+
+- Set the PrivateEnvironment of calleeContext to func . [[PrivateEnvironment]] .
+
+- If callerContext is not already suspended, suspend callerContext .
+
+- Push calleeContext onto the execution context stack ; calleeContext is now the running execution context .
+
+- NOTE : Any exception objects produced after this point are associated with calleeRealm .
+
+- Return calleeContext .
+
+10.2.1.2 OrdinaryCallBindThis ( func , calleeContext , thisArg )
+
+The abstract operation OrdinaryCallBindThis takes arguments func (an ECMAScript function object ), calleeContext (an execution context ), and thisArg (an ECMAScript language value ) and returns unused . It performs the following steps when called:
+
+- Let thisMode be func . [[ThisMode]] .
+
+- If thisMode is lexical , return unused .
+
+- Let calleeRealm be func . [[Realm]] .
+
+- Let localEnv be the LexicalEnvironment of calleeContext .
+
+- If thisMode is strict , then
+- Let thisValue be thisArg .
+
+- Else,
+- If thisArg is either undefined or null , then
+- Let globalEnv be calleeRealm . [[GlobalEnv]] .
+
+- Assert : globalEnv is a Global Environment Record .
+
+- Let thisValue be globalEnv . [[GlobalThisValue]] .
+
+- Else,
+- Let thisValue be ! ToObject ( thisArg ).
+
+- NOTE : ToObject produces wrapper objects using calleeRealm .
+
+- Assert : localEnv is a Function Environment Record .
+
+- Assert : The next step never returns an abrupt completion because localEnv . [[ThisBindingStatus]] is not initialized .
+
+- Perform ! BindThisValue ( localEnv , thisValue ).
+
+- Return unused .
+
+10.2.1.3 Runtime Semantics: EvaluateBody
+
+The syntax-directed operation EvaluateBody takes arguments func (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion or a throw completion . It is defined piecewise over the following productions:
+
+FunctionBody : FunctionStatementList
+
+- Return ? EvaluateFunctionBody of FunctionBody with arguments func and argList .
+
+ConciseBody : ExpressionBody
+
+- Return ? EvaluateConciseBody of ConciseBody with arguments func and argList .
+
+GeneratorBody : FunctionBody
+
+- Return ? EvaluateGeneratorBody of GeneratorBody with arguments func and argList .
+
+AsyncGeneratorBody : FunctionBody
+
+- Return ? EvaluateAsyncGeneratorBody of AsyncGeneratorBody with arguments func and argList .
+
+AsyncFunctionBody : FunctionBody
+
+- Return ? EvaluateAsyncFunctionBody of AsyncFunctionBody with arguments func and argList .
+
+AsyncConciseBody : ExpressionBody
+
+- Return ? EvaluateAsyncConciseBody of AsyncConciseBody with arguments func and argList .
+
+Initializer :
+=
+AssignmentExpression
+
+- Assert : argList is empty.
+
+- Assert : func . [[ClassFieldInitializerName]] is not empty .
+
+- If IsAnonymousFunctionDefinition ( AssignmentExpression ) is true , then
+- Let value be ? NamedEvaluation of Initializer with argument func . [[ClassFieldInitializerName]] .
+
+- Else,
+- Let rhs be ? Evaluation of AssignmentExpression .
+
+- Let value be ? GetValue ( rhs ).
+
+- Return ReturnCompletion ( value ).
+
+Note
+Even though field initializers constitute a function boundary, calling FunctionDeclarationInstantiation does not have any observable effect and so is omitted.
+
+ClassStaticBlockBody : ClassStaticBlockStatementList
+
+- Assert : argList is empty.
+
+- Return ? EvaluateClassStaticBlockBody of ClassStaticBlockBody with argument func .
+
+10.2.1.4 OrdinaryCallEvaluateBody ( func , argList )
+
+The abstract operation OrdinaryCallEvaluateBody takes arguments func (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion or a throw completion . It performs the following steps when called:
+
+- Return ? EvaluateBody of func . [[ECMAScriptCode]] with arguments func and argList .
+
+10.2.2 [[Construct]] ( argList , newTarget )
+
+The [[Construct]] internal method of an ECMAScript function object func takes arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let callerContext be the running execution context .
+
+- Let kind be func . [[ConstructorKind]] .
+
+- If kind is base , then
+- Let thisArg be ? OrdinaryCreateFromConstructor ( newTarget , "%Object.prototype%" ).
+
+- Let calleeContext be PrepareForOrdinaryCall ( func , newTarget ).
+
+- Assert : calleeContext is now the running execution context .
+
+- If kind is base , then
+- Perform OrdinaryCallBindThis ( func , calleeContext , thisArg ).
+
+- Let initializeResult be Completion ( InitializeInstanceElements ( thisArg , func )).
+
+- If initializeResult is an abrupt completion , then
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- Return ? initializeResult .
+
+- Let ctorEnv be the LexicalEnvironment of calleeContext .
+
+- Let result be Completion ( OrdinaryCallEvaluateBody ( func , argList )).
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- If result is a throw completion , return ? result .
+
+- Assert : result is a return completion .
+
+- If result . [[Value]] is an Object , return result . [[Value]] .
+
+- If kind is base , return thisArg .
+
+- If result . [[Value]] is not undefined , throw a TypeError exception.
+
+- Let thisBinding be ? ctorEnv . GetThisBinding ().
+
+- Assert : thisBinding is an Object .
+
+- Return thisBinding .
+
+10.2.3 OrdinaryFunctionCreate ( proto , sourceText , paramList , body , thisMode , envRecord , privateEnv )
+
+The abstract operation OrdinaryFunctionCreate takes arguments proto (an Object), sourceText (a sequence of Unicode code points), paramList (a Parse Node ), body (a Parse Node ), thisMode ( lexical-this or non-lexical-this ), envRecord (an Environment Record ), and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is used to specify the runtime creation of a new function with a default [[Call]] internal method and no [[Construct]] internal method (although one may be subsequently added by an operation such as MakeConstructor ). sourceText is the source text of the syntactic definition of the function to be created. It performs the following steps when called:
+
+- Let internalSlotsList be the internal slots listed in Table 26 .
+
+- Let func be OrdinaryObjectCreate ( proto , internalSlotsList ).
+
+- Set func . [[Call]] to the definition specified in 10.2.1 .
+
+- Set func . [[SourceText]] to sourceText .
+
+- Set func . [[FormalParameters]] to paramList .
+
+- Set func . [[ECMAScriptCode]] to body .
+
+- Let strict be IsStrict ( body ).
+
+- Set func . [[Strict]] to strict .
+
+- If thisMode is lexical-this , set func . [[ThisMode]] to lexical .
+
+- Else if strict is true , set func . [[ThisMode]] to strict .
+
+- Else, set func . [[ThisMode]] to global .
+
+- Set func . [[IsClassConstructor]] to false .
+
+- Set func . [[Environment]] to envRecord .
+
+- Set func . [[PrivateEnvironment]] to privateEnv .
+
+- Set func . [[ScriptOrModule]] to GetActiveScriptOrModule ().
+
+- Set func . [[Realm]] to the current Realm Record .
+
+- Set func . [[HomeObject]] to undefined .
+
+- Set func . [[Fields]] to a new empty List .
+
+- Set func . [[PrivateMethods]] to a new empty List .
+
+- Set func . [[ClassFieldInitializerName]] to empty .
+
+- Let length be the ExpectedArgumentCount of paramList .
+
+- Perform SetFunctionLength ( func , length ).
+
+- Return func .
+
+10.2.4 AddRestrictedFunctionProperties ( func , realm )
+
+The abstract operation AddRestrictedFunctionProperties takes arguments func (a function object ) and realm (a Realm Record ) and returns unused . It performs the following steps when called:
+
+- Assert : realm . [[Intrinsics]] .[[ %ThrowTypeError% ]] exists and has been initialized.
+
+- Let thrower be realm . [[Intrinsics]] .[[ %ThrowTypeError% ]].
+
+- Perform ! DefinePropertyOrThrow ( func , "caller" , PropertyDescriptor { [[Getter]] : thrower , [[Setter]] : thrower , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Perform ! DefinePropertyOrThrow ( func , "arguments" , PropertyDescriptor { [[Getter]] : thrower , [[Setter]] : thrower , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Return unused .
+
+10.2.4.1 %ThrowTypeError% ( )
+
+This function is the %ThrowTypeError% intrinsic object.
+
+It is an anonymous built-in function object that is defined once for each realm .
+
+It performs the following steps when called:
+
+- Throw a TypeError exception.
+
+The value of the [[Extensible]] internal slot of this function is false .
+
+The "length" property of this function has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+The "name" property of this function has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+10.2.5 MakeConstructor ( func [ , writableProto [ , proto ] ] )
+
+The abstract operation MakeConstructor takes argument func (an ECMAScript function object or a built-in function object ) and optional arguments writableProto (a Boolean) and proto (an Object) and returns unused . It converts func into a constructor . It performs the following steps when called:
+
+- If func is an ECMAScript function object , then
+- Assert : IsConstructor ( func ) is false .
+
+- Assert : func is an extensible object that does not have a "prototype" own property.
+
+- Set func . [[Construct]] to the definition specified in 10.2.2 .
+
+- Else,
+- Set func . [[Construct]] to the definition specified in 10.3.2 .
+
+- Set func . [[ConstructorKind]] to base .
+
+- If writableProto is not present, set writableProto to true .
+
+- If proto is not present, then
+- Set proto to OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! DefinePropertyOrThrow ( proto , "constructor" , PropertyDescriptor { [[Value]] : func , [[Writable]] : writableProto , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Perform ! DefinePropertyOrThrow ( func , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : writableProto , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return unused .
+
+10.2.6 MakeClassConstructor ( func )
+
+The abstract operation MakeClassConstructor takes argument func (an ECMAScript function object ) and returns unused . It performs the following steps when called:
+
+- Assert : func . [[IsClassConstructor]] is false .
+
+- Set func . [[IsClassConstructor]] to true .
+
+- Return unused .
+
+10.2.7 MakeMethod ( func , homeObj )
+
+The abstract operation MakeMethod takes arguments func (an ECMAScript function object ) and homeObj (an Object) and returns unused . It configures func as a method. It performs the following steps when called:
+
+- Assert : homeObj is an ordinary object .
+
+- Set func . [[HomeObject]] to homeObj .
+
+- Return unused .
+
+10.2.8 DefineMethodProperty ( homeObj , name , closure , enumerable )
+
+The abstract operation DefineMethodProperty takes arguments homeObj (an Object), name (a property key or Private Name ), closure (a function object ), and enumerable (a Boolean) and returns either a normal completion containing either a PrivateElement or empty , or an abrupt completion . It performs the following steps when called:
+
+- Assert : homeObj is an ordinary, extensible object.
+
+- If name is a Private Name , return PrivateElement { [[Key]] : name , [[Kind]] : method , [[Value]] : closure }.
+
+- Let propertyDesc be the PropertyDescriptor { [[Value]] : closure , [[Writable]] : true , [[Enumerable]] : enumerable , [[Configurable]] : true }.
+
+- Perform ? DefinePropertyOrThrow ( homeObj , name , propertyDesc ).
+
+- NOTE : DefinePropertyOrThrow only returns an abrupt completion when attempting to define a class static method whose name is "prototype" .
+
+- Return empty .
+
+10.2.9 SetFunctionName ( func , name [ , prefix ] )
+
+The abstract operation SetFunctionName takes arguments func (a function object ) and name (a property key or Private Name ) and optional argument prefix (a String) and returns unused . It adds a "name" property to func . It performs the following steps when called:
+
+- Assert : func is an extensible object that does not have a "name" own property.
+
+- If name is a Symbol , then
+- Let description be name . [[Description]] .
+
+- If description is undefined , set name to the empty String.
+
+- Else, set name to the string-concatenation of "[" , description , and "]" .
+
+- Else if name is a Private Name , then
+- Set name to name . [[Description]] .
+
+- Let initialName be name .
+
+- If prefix is present, then
+- Let prefixedName be the string-concatenation of prefix , the code unit 0x0020 (SPACE), and name .
+
+- Set initialName to prefixedName .
+
+- Normative Optional , Legacy
+Set initialName to an implementation-defined choice of either name or prefixedName .
+
+- Set name to prefixedName .
+
+- If func has an [[InitialName]] internal slot, set func . [[InitialName]] to initialName .
+
+- Perform ! DefinePropertyOrThrow ( func , "name" , PropertyDescriptor { [[Value]] : name , [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Return unused .
+
+Note
+The choice of whether or not to use prefixedName for func . [[InitialName]] affects the output of Function.prototype.toString ( ) . Making different choices for different built-in functions in step 5.c is discouraged legacy behaviour.
+
+10.2.10 SetFunctionLength ( func , length )
+
+The abstract operation SetFunctionLength takes arguments func (a function object ) and length (a non-negative integer or +∞) and returns unused . It adds a "length" property to func . It performs the following steps when called:
+
+- Assert : func is an extensible object that does not have a "length" own property.
+
+- Perform ! DefinePropertyOrThrow ( func , "length" , PropertyDescriptor { [[Value]] : 𝔽 ( length ), [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Return unused .
+
+10.2.11 FunctionDeclarationInstantiation ( func , argList )
+
+The abstract operation FunctionDeclarationInstantiation takes arguments func (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing unused or a throw completion . func is the function object for which the execution context is being established.
+
+Note
+When an execution context is established for evaluating an ECMAScript function a new Function Environment Record is created and bindings for each formal parameter are instantiated in that Environment Record . Each declaration in the function body is also instantiated. If the function's formal parameters do not include any default value initializers then the body declarations are instantiated in the same Environment Record as the parameters. If default value parameter initializers exist, a second Environment Record is created for the body declarations. Formal parameters and functions are initialized as part of FunctionDeclarationInstantiation. All other bindings are initialized during evaluation of the function body.
+
+It performs the following steps when called:
+
+- Let calleeContext be the running execution context .
+
+- Let code be func . [[ECMAScriptCode]] .
+
+- Let strict be func . [[Strict]] .
+
+- Let formals be func . [[FormalParameters]] .
+
+- Let paramNames be the BoundNames of formals .
+
+- If paramNames has any duplicate entries, let hasDuplicates be true ; else let hasDuplicates be false .
+
+- Let simpleParamList be IsSimpleParameterList of formals .
+
+- Let hasParamExprs be ContainsExpression of formals .
+
+- Let variableNames be the VarDeclaredNames of code .
+
+- Let variableDecls be the VarScopedDeclarations of code .
+
+- Let lexicalNames be the LexicallyDeclaredNames of code .
+
+- Let funcNames be a new empty List .
+
+- Let funcsToInitialize be a new empty List .
+
+- For each element variableDecl of variableDecls , in reverse List order, do
+- If variableDecl is neither a VariableDeclaration nor a ForBinding nor a BindingIdentifier , then
+- Assert : variableDecl is either a FunctionDeclaration , a GeneratorDeclaration , an AsyncFunctionDeclaration , or an AsyncGeneratorDeclaration .
+
+- Let funcName be the sole element of the BoundNames of variableDecl .
+
+- If funcNames does not contain funcName , then
+- Insert funcName as the first element of funcNames .
+
+- NOTE : If there are multiple function declarations for the same name, the last declaration is used.
+
+- Insert variableDecl as the first element of funcsToInitialize .
+
+- Let argumentsObjNeeded be true .
+
+- If func . [[ThisMode]] is lexical , then
+- NOTE : Arrow functions never have an arguments object.
+
+- Set argumentsObjNeeded to false .
+
+- Else if paramNames contains "arguments" , then
+- Set argumentsObjNeeded to false .
+
+- Else if hasParamExprs is false , then
+- If funcNames contains "arguments" or lexicalNames contains "arguments" , then
+- Set argumentsObjNeeded to false .
+
+- If strict is true or hasParamExprs is false , then
+- NOTE : Only a single Environment Record is needed for the parameters, since calls to eval in strict mode code cannot create new bindings which are visible outside of the eval .
+
+- Let envRecord be the LexicalEnvironment of calleeContext .
+
+- Else,
+- NOTE : A separate Environment Record is needed to ensure that bindings created by direct eval calls in the formal parameter list are outside the environment where parameters are declared.
+
+- Let calleeEnv be the LexicalEnvironment of calleeContext .
+
+- Let envRecord be NewDeclarativeEnvironment ( calleeEnv ).
+
+- Assert : The VariableEnvironment of calleeContext and calleeEnv are the same Environment Record .
+
+- Set the LexicalEnvironment of calleeContext to envRecord .
+
+- For each String paramName of paramNames , do
+- Let alreadyDeclared be ! envRecord . HasBinding ( paramName ).
+
+- NOTE : Early errors ensure that duplicate parameter names can only occur in non-strict functions that do not have parameter default values or rest parameters.
+
+- If alreadyDeclared is false , then
+- Perform ! envRecord . CreateMutableBinding ( paramName , false ).
+
+- If hasDuplicates is true , then
+- Perform ! envRecord . InitializeBinding ( paramName , undefined ).
+
+- If argumentsObjNeeded is true , then
+- If strict is true or simpleParamList is false , then
+- Let argumentsObj be CreateUnmappedArgumentsObject ( argList ).
+
+- Else,
+- NOTE : A mapped argument object is only provided for non-strict functions that don't have a rest parameter, any parameter default value initializers, or any destructured parameters.
+
+- Let argumentsObj be CreateMappedArgumentsObject ( func , formals , argList , envRecord ).
+
+- If strict is true , then
+- Perform ! envRecord . CreateImmutableBinding ( "arguments" , false ).
+
+- NOTE : In strict mode code early errors prevent attempting to assign to this binding, so its mutability is not observable.
+
+- Else,
+- Perform ! envRecord . CreateMutableBinding ( "arguments" , false ).
+
+- Perform ! envRecord . InitializeBinding ( "arguments" , argumentsObj ).
+
+- Let paramBindings be the list-concatenation of paramNames and « "arguments" ».
+
+- Else,
+- Let paramBindings be paramNames .
+
+- Let iteratorRecord be CreateListIteratorRecord ( argList ).
+
+- If hasDuplicates is true , then
+- Let usedEnv be undefined .
+
+- Else,
+- Let usedEnv be envRecord .
+
+- NOTE : The following step cannot return a ReturnCompletion because the only way such a completion can arise in expression position is by use of YieldExpression , which is forbidden in parameter lists by Early Error rules in 15.5.1 and 15.6.1 .
+
+- Perform ? IteratorBindingInitialization of formals with arguments iteratorRecord and usedEnv .
+
+- If hasParamExprs is false , then
+- NOTE : Only a single Environment Record is needed for the parameters and top-level vars.
+
+- Let instantiatedVariableNames be a copy of the List paramBindings .
+
+- For each element name of variableNames , do
+- If instantiatedVariableNames does not contain name , then
+- Append name to instantiatedVariableNames .
+
+- Perform ! envRecord . CreateMutableBinding ( name , false ).
+
+- Perform ! envRecord . InitializeBinding ( name , undefined ).
+
+- Let variableEnv be envRecord .
+
+- Else,
+- NOTE : A separate Environment Record is needed to ensure that closures created by expressions in the formal parameter list do not have visibility of declarations in the function body.
+
+- Let variableEnv be NewDeclarativeEnvironment ( envRecord ).
+
+- Set the VariableEnvironment of calleeContext to variableEnv .
+
+- Let instantiatedVariableNames be a new empty List .
+
+- For each element name of variableNames , do
+- If instantiatedVariableNames does not contain name , then
+- Append name to instantiatedVariableNames .
+
+- Perform ! variableEnv . CreateMutableBinding ( name , false ).
+
+- If paramBindings does not contain name or funcNames contains name , then
+- Let initialValue be undefined .
+
+- Else,
+- Let initialValue be ! envRecord . GetBindingValue ( name , false ).
+
+- Perform ! variableEnv . InitializeBinding ( name , initialValue ).
+
+- NOTE : A var with the same name as a formal parameter initially has the same value as the corresponding initialized parameter.
+
+- If strict is true , then
+- Let lexicalEnv be variableEnv .
+
+- Else,
+- Normative Optional
+If the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , then
+- For each FunctionDeclaration funcDecl that is directly contained in the StatementList of any Block , CaseClause , or DefaultClause x such that code Contains x is true , do
+- Let funcName be the StringValue of the BindingIdentifier of funcDecl .
+
+- If replacing the FunctionDeclaration funcDecl with a VariableStatement that has funcName as a BindingIdentifier would not produce any Early Errors for func and paramNames does not contain funcName , then
+- NOTE : A var binding for funcName is only instantiated here if it is neither a VarDeclaredName, the name of a formal parameter, or another FunctionDeclaration .
+
+- If instantiatedVariableNames does not contain funcName and funcName is not "arguments" , then
+- Perform ! variableEnv . CreateMutableBinding ( funcName , false ).
+
+- Perform ! variableEnv . InitializeBinding ( funcName , undefined ).
+
+- Append funcName to instantiatedVariableNames .
+
+- When the FunctionDeclaration funcDecl is evaluated, perform the following steps in place of the FunctionDeclaration Evaluation algorithm provided in 15.2.6 :
+- Let funcEnv be the running execution context 's VariableEnvironment.
+
+- Let blockEnv be the running execution context 's LexicalEnvironment.
+
+- Let funcObj be ! blockEnv . GetBindingValue ( funcName , false ).
+
+- Perform ! funcEnv . SetMutableBinding ( funcName , funcObj , false ).
+
+- Return unused .
+
+- Let lexicalEnv be NewDeclarativeEnvironment ( variableEnv ).
+
+- NOTE : Non-strict functions use a separate Environment Record for top-level lexical declarations so that a direct eval can determine whether any var scoped declarations introduced by the eval code conflict with pre-existing top-level lexically scoped declarations. This is not needed for strict functions because a strict direct eval always places all declarations into a new Environment Record .
+
+- Set the LexicalEnvironment of calleeContext to lexicalEnv .
+
+- Let lexicalDecls be the LexicallyScopedDeclarations of code .
+
+- For each element lexicalDecl of lexicalDecls , do
+- NOTE : A lexically declared name cannot be the same as a function/generator declaration, formal parameter, or a var name. Lexically declared names are only instantiated here but not initialized.
+
+- For each element name of the BoundNames of lexicalDecl , do
+- If IsConstantDeclaration of lexicalDecl is true , then
+- Perform ! lexicalEnv . CreateImmutableBinding ( name , true ).
+
+- Else,
+- Perform ! lexicalEnv . CreateMutableBinding ( name , false ).
+
+- Let privateEnv be the PrivateEnvironment of calleeContext .
+
+- For each Parse Node funcDecl of funcsToInitialize , do
+- Let funcName be the sole element of the BoundNames of funcDecl .
+
+- Let funcObj be InstantiateFunctionObject of funcDecl with arguments lexicalEnv and privateEnv .
+
+- Perform ! variableEnv . SetMutableBinding ( funcName , funcObj , false ).
+
+- Return unused .
+
+10.3 Built-in Function Objects
+
+A built-in function object is an ordinary object ; it must satisfy the requirements for ordinary objects set out in 10.1 .
+
+In addition to the internal slots required of every ordinary object (see 10.1 ), a built-in function object must also have the following internal slots:
+
+- [[Realm]] , a Realm Record that represents the realm in which the function was created.
+
+- [[InitialName]] , a String that is the initial name of the function. It is used by 20.2.3.5 .
+
+- [[Async]] , a Boolean that indicates whether the function has async function call and construct behaviour in BuiltinCallOrConstruct .
+
+The initial value of a built-in function object 's [[Prototype]] internal slot is %Function.prototype% , unless otherwise specified.
+
+A built-in function object must have a [[Call]] internal method that conforms to the definition in 10.3.1 .
+
+A built-in function object has a [[Construct]] internal method if and only if it is described as a “ constructor ”, or some algorithm in this specification explicitly sets its [[Construct]] internal method. Such a [[Construct]] internal method must conform to the definition in 10.3.2 .
+
+An implementation may provide additional built-in function objects that are not defined in this specification.
+
+10.3.1 [[Call]] ( thisArg , argList )
+
+The [[Call]] internal method of a built-in function object func takes arguments thisArg (an ECMAScript language value ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Return ? BuiltinCallOrConstruct ( func , thisArg , argList , undefined ).
+
+10.3.2 [[Construct]] ( argList , newTarget )
+
+The [[Construct]] internal method of a built-in function object func (when the method is present) takes arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let result be ? BuiltinCallOrConstruct ( func , uninitialized , argList , newTarget ).
+
+- Assert : result is an Object .
+
+- Return result .
+
+10.3.3 BuiltinCallOrConstruct ( func , thisArg , argList , newTarget )
+
+The abstract operation BuiltinCallOrConstruct takes arguments func (a built-in function object ), thisArg (an ECMAScript language value or uninitialized ), argList (a List of ECMAScript language values ), and newTarget (a constructor or undefined ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let callerContext be the running execution context .
+
+- If callerContext is not already suspended, suspend callerContext .
+
+- Let calleeContext be a new execution context .
+
+- Set the Function of calleeContext to func .
+
+- Let calleeRealm be func . [[Realm]] .
+
+- Set the Realm of calleeContext to calleeRealm .
+
+- Set the ScriptOrModule of calleeContext to null .
+
+- Perform any necessary implementation-defined initialization of calleeContext .
+
+- Push calleeContext onto the execution context stack ; calleeContext is now the running execution context .
+
+- If func . [[Async]] is true , then
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let resultsClosure be a new Abstract Closure with no parameters that captures func , thisArg , argList , and newTarget and performs the following steps when called:
+- Let result be the Completion Record that is the result of evaluating func in a manner that conforms to the specification of func . If thisArg is uninitialized , the this value is uninitialized; else thisArg provides the this value. argList provides the named parameters. newTarget provides the NewTarget value.
+
+- NOTE : If func is defined in this document, “the specification of func ” is the behaviour specified for it via algorithm steps or other means.
+
+- Return Completion ( result ).
+
+- Perform AsyncFunctionStart ( promiseCapability , resultsClosure ).
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- Return promiseCapability . [[Promise]] .
+
+- Let result be the Completion Record that is the result of evaluating func in a manner that conforms to the specification of func . If thisArg is uninitialized , the this value is uninitialized; else thisArg provides the this value. argList provides the named parameters. newTarget provides the NewTarget value.
+
+- NOTE : If func is defined in this document, “the specification of func ” is the behaviour specified for it via algorithm steps or other means.
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- Return ? result .
+
+Note
+When calleeContext is removed from the execution context stack it must not be destroyed if it has been suspended and retained by an accessible Generator for later resumption.
+
+10.3.4 CreateBuiltinFunction ( behaviour , length , name , additionalInternalSlotsList [ , realm [ , proto [ , prefix [ , async ] ] ] ] )
+
+The abstract operation CreateBuiltinFunction takes arguments behaviour (an Abstract Closure , a set of algorithm steps, or some other definition of a function's behaviour provided in this specification), length (a non-negative integer or +∞), name (a property key or a Private Name ), and additionalInternalSlotsList (a List of names of internal slots) and optional arguments realm (a Realm Record ), proto (an Object or null ), prefix (a String), and async (a Boolean) and returns a built-in function object . additionalInternalSlotsList contains the names of additional internal slots that must be defined as part of the object. This operation creates a built-in function object . It performs the following steps when called:
+
+- If realm is not present, set realm to the current Realm Record .
+
+- If proto is not present, set proto to realm . [[Intrinsics]] .[[ %Function.prototype% ]].
+
+- If async is not present, set async to false .
+
+- Let internalSlotsList be a List containing the names of all the internal slots that 10.3 requires for the built-in function object that is about to be created.
+
+- Append the elements of additionalInternalSlotsList to internalSlotsList .
+
+- Let func be a new built-in function object that, when called, performs the action described by behaviour using the provided arguments as the values of the corresponding parameters specified by behaviour . The new function object has internal slots whose names are the elements of internalSlotsList , and an [[InitialName]] internal slot.
+
+- Set func . [[Async]] to async .
+
+- Set func . [[Prototype]] to proto .
+
+- Set func . [[Extensible]] to true .
+
+- Set func . [[Realm]] to realm .
+
+- Set func . [[InitialName]] to null .
+
+- Perform SetFunctionLength ( func , length ).
+
+- If prefix is not present, then
+- Perform SetFunctionName ( func , name ).
+
+- Else,
+- Perform SetFunctionName ( func , name , prefix ).
+
+- Return func .
+
+Each built-in function defined in this specification is created by calling the CreateBuiltinFunction abstract operation.
+
+10.4 Built-in Exotic Object Internal Methods and Slots
+
+This specification defines several kinds of built-in exotic objects . These objects generally behave similar to ordinary objects except for a few specific situations. The following exotic objects use the ordinary object internal methods except where it is explicitly specified otherwise below:
+
+10.4.1 Bound Function Exotic Objects
+
+A bound function exotic object is an exotic object that wraps another function object . A bound function exotic object is callable (it has a [[Call]] internal method and may have a [[Construct]] internal method). Calling a bound function exotic object generally results in a call of its wrapped function.
+
+An object is a bound function exotic object if its [[Call]] and (if applicable) [[Construct]] internal methods use the following implementations, and its other essential internal methods use the definitions found in 10.1 . These methods are installed in BoundFunctionCreate .
+
+Bound function exotic objects do not have the internal slots of ECMAScript function objects listed in Table 26 . Instead they have the internal slots listed in Table 27 , in addition to [[Prototype]] and [[Extensible]] .
+
+Table 27: Internal Slots of Bound Function Exotic Objects
+
+Internal Slot
+
+Type
+
+Description
+
+[[BoundTargetFunction]]
+
+a callable Object
+
+The wrapped function object .
+
+[[BoundThis]]
+
+an ECMAScript language value
+
+The value that is always passed as the this value when calling the wrapped function.
+
+[[BoundArguments]]
+
+a List of ECMAScript language values
+
+A list of values whose elements are used as the first arguments to any call to the wrapped function.
+
+10.4.1.1 [[Call]] ( thisArg , argList )
+
+The [[Call]] internal method of a bound function exotic object func takes arguments thisArg (an ECMAScript language value ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let target be func . [[BoundTargetFunction]] .
+
+- Let boundThis be func . [[BoundThis]] .
+
+- Let boundArgs be func . [[BoundArguments]] .
+
+- Let args be the list-concatenation of boundArgs and argList .
+
+- Return ? Call ( target , boundThis , args ).
+
+10.4.1.2 [[Construct]] ( argList , newTarget )
+
+The [[Construct]] internal method of a bound function exotic object func takes arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let target be func . [[BoundTargetFunction]] .
+
+- Assert : IsConstructor ( target ) is true .
+
+- Let boundArgs be func . [[BoundArguments]] .
+
+- Let args be the list-concatenation of boundArgs and argList .
+
+- If SameValue ( func , newTarget ) is true , set newTarget to target .
+
+- Return ? Construct ( target , args , newTarget ).
+
+10.4.1.3 BoundFunctionCreate ( targetFunc , boundThis , boundArgs )
+
+The abstract operation BoundFunctionCreate takes arguments targetFunc (a function object ), boundThis (an ECMAScript language value ), and boundArgs (a List of ECMAScript language values ) and returns either a normal completion containing a function object or a throw completion . It is used to specify the creation of new bound function exotic objects . It performs the following steps when called:
+
+- Let proto be ? targetFunc . [[GetPrototypeOf]] () .
+
+- Let internalSlotsList be the list-concatenation of « [[Prototype]] , [[Extensible]] » and the internal slots listed in Table 27 .
+
+- Let obj be MakeBasicObject ( internalSlotsList ).
+
+- Set obj . [[Prototype]] to proto .
+
+- Set obj . [[Call]] as specified in 10.4.1.1 .
+
+- If IsConstructor ( targetFunc ) is true , then
+- Set obj . [[Construct]] as specified in 10.4.1.2 .
+
+- Set obj . [[BoundTargetFunction]] to targetFunc .
+
+- Set obj . [[BoundThis]] to boundThis .
+
+- Set obj . [[BoundArguments]] to boundArgs .
+
+- Return obj .
+
+10.4.2 Array Exotic Objects
+
+An Array is an exotic object that gives special treatment to array index property keys (see 6.1.7 ). A property whose property name is an array index is also called an element . Every Array has a non-configurable "length" property whose value is always a non-negative integral Number whose mathematical value is strictly less than 2 32 . The value of the "length" property is numerically greater than the name of every own property whose name is an array index ; whenever an own property of an Array is created or changed, other properties are adjusted as necessary to maintain this invariant. Specifically, whenever an own property is added whose name is an array index , the value of the "length" property is changed, if necessary, to be one more than the numeric value of that array index ; and whenever the value of the "length" property is changed, every own property whose name is an array index whose value is not smaller than the new length is deleted. This constraint applies only to own properties of an Array and is unaffected by "length" or array index properties that may be inherited from its prototypes.
+
+An object is an Array exotic object (or simply, an Array) if its [[DefineOwnProperty]] internal method uses the following implementation, and its other essential internal methods use the definitions found in 10.1 . These methods are installed in ArrayCreate .
+
+10.4.2.1 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of an Array exotic object array takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyKey is "length" , return ? ArraySetLength ( array , propertyDesc ).
+
+- If propertyKey is an array index , then
+- Let lengthDesc be OrdinaryGetOwnProperty ( array , "length" ).
+
+- Assert : lengthDesc is not undefined .
+
+- Assert : IsDataDescriptor ( lengthDesc ) is true .
+
+- Assert : lengthDesc . [[Configurable]] is false .
+
+- Let length be lengthDesc . [[Value]] .
+
+- Assert : length is a non-negative integral Number .
+
+- Let index be ! ToUint32 ( propertyKey ).
+
+- If index ≥ length and lengthDesc . [[Writable]] is false , return false .
+
+- Let succeeded be ! OrdinaryDefineOwnProperty ( array , propertyKey , propertyDesc ).
+
+- If succeeded is false , return false .
+
+- If index ≥ length , then
+- Set lengthDesc . [[Value]] to index + 1 𝔽 .
+
+- Set succeeded to ! OrdinaryDefineOwnProperty ( array , "length" , lengthDesc ).
+
+- Assert : succeeded is true .
+
+- Return true .
+
+- Return ? OrdinaryDefineOwnProperty ( array , propertyKey , propertyDesc ).
+
+10.4.2.2 ArrayCreate ( length [ , proto ] )
+
+The abstract operation ArrayCreate takes argument length (a non-negative integer ) and optional argument proto (an Object) and returns either a normal completion containing an Array exotic object or a throw completion . It is used to specify the creation of new Arrays. It performs the following steps when called:
+
+- If length > 2 32 - 1, throw a RangeError exception.
+
+- If proto is not present, set proto to %Array.prototype% .
+
+- Let array be MakeBasicObject (« [[Prototype]] , [[Extensible]] »).
+
+- Set array . [[Prototype]] to proto .
+
+- Set array . [[DefineOwnProperty]] as specified in 10.4.2.1 .
+
+- Perform ! OrdinaryDefineOwnProperty ( array , "length" , PropertyDescriptor { [[Value]] : 𝔽 ( length ), [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return array .
+
+10.4.2.3 ArraySpeciesCreate ( originalArray , length )
+
+The abstract operation ArraySpeciesCreate takes arguments originalArray (an Object) and length (a non-negative integer ) and returns either a normal completion containing an Object or a throw completion . It is used to specify the creation of a new Array or similar object using a constructor function that is derived from originalArray . It does not enforce that the constructor function returns an Array. It performs the following steps when called:
+
+- Let isArray be ? IsArray ( originalArray ).
+
+- If isArray is false , return ? ArrayCreate ( length ).
+
+- Let ctor be ? Get ( originalArray , "constructor" ).
+
+- If IsConstructor ( ctor ) is true , then
+- Let thisRealm be the current Realm Record .
+
+- Let ctorRealm be ? GetFunctionRealm ( ctor ).
+
+- If thisRealm and ctorRealm are not the same Realm Record , then
+- If SameValue ( ctor , ctorRealm . [[Intrinsics]] .[[ %Array% ]]) is true , set ctor to undefined .
+
+- If ctor is an Object , then
+- Set ctor to ? Get ( ctor , %Symbol.species% ).
+
+- If ctor is null , set ctor to undefined .
+
+- If ctor is undefined , return ? ArrayCreate ( length ).
+
+- If IsConstructor ( ctor ) is false , throw a TypeError exception.
+
+- Return ? Construct ( ctor , « 𝔽 ( length ) »).
+
+Note
+If originalArray was created using the standard built-in Array constructor for a realm that is not the realm of the running execution context , then a new Array is created using the realm of the running execution context . This maintains compatibility with Web browsers that have historically had that behaviour for the Array.prototype methods that now are defined using ArraySpeciesCreate.
+
+10.4.2.4 ArraySetLength ( array , propertyDesc )
+
+The abstract operation ArraySetLength takes arguments array (an Array) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyDesc does not have a [[Value]] field, then
+- Return ! OrdinaryDefineOwnProperty ( array , "length" , propertyDesc ).
+
+- Let newLengthDesc be a copy of propertyDesc .
+
+- Let newLength be ? ToUint32 ( propertyDesc . [[Value]] ).
+
+- Let numberLength be ? ToNumber ( propertyDesc . [[Value]] ).
+
+- If SameValueZero ( newLength , numberLength ) is false , throw a RangeError exception.
+
+- Set newLengthDesc . [[Value]] to newLength .
+
+- Let oldLengthDesc be OrdinaryGetOwnProperty ( array , "length" ).
+
+- Assert : oldLengthDesc is not undefined .
+
+- Assert : IsDataDescriptor ( oldLengthDesc ) is true .
+
+- Assert : oldLengthDesc . [[Configurable]] is false .
+
+- Let oldLength be oldLengthDesc . [[Value]] .
+
+- If newLength ≥ oldLength , then
+- Return ! OrdinaryDefineOwnProperty ( array , "length" , newLengthDesc ).
+
+- If oldLengthDesc . [[Writable]] is false , return false .
+
+- If newLengthDesc does not have a [[Writable]] field or newLengthDesc . [[Writable]] is true , then
+- Let newWritable be true .
+
+- Else,
+- NOTE : Setting the [[Writable]] attribute to false is deferred in case any elements cannot be deleted.
+
+- Let newWritable be false .
+
+- Set newLengthDesc . [[Writable]] to true .
+
+- Let succeeded be ! OrdinaryDefineOwnProperty ( array , "length" , newLengthDesc ).
+
+- If succeeded is false , return false .
+
+- For each own property key propertyKey of array such that propertyKey is an array index and ! ToUint32 ( propertyKey ) ≥ newLength , in descending numeric index order, do
+- Let deleteSucceeded be ! array . [[Delete]] ( propertyKey ).
+
+- If deleteSucceeded is false , then
+- Set newLengthDesc . [[Value]] to ! ToUint32 ( propertyKey ) + 1 𝔽 .
+
+- If newWritable is false , set newLengthDesc . [[Writable]] to false .
+
+- Perform ! OrdinaryDefineOwnProperty ( array , "length" , newLengthDesc ).
+
+- Return false .
+
+- If newWritable is false , then
+- Set succeeded to ! OrdinaryDefineOwnProperty ( array , "length" , PropertyDescriptor { [[Writable]] : false }).
+
+- Assert : succeeded is true .
+
+- Return true .
+
+Note
+In steps 3 and 4 , if propertyDesc . [[Value]] is an object then its valueOf method is called twice. This is legacy behaviour that was specified with this effect starting with the 2 nd Edition of this specification.
+
+10.4.3 String Exotic Objects
+
+A String object is an exotic object that encapsulates a String value and exposes virtual integer-indexed data properties corresponding to the individual code unit elements of the String value. String exotic objects always have a data property named "length" whose value is the length of the encapsulated String value. Both the code unit data properties and the "length" property are non-writable and non-configurable.
+
+An object is a String exotic object (or simply, a String object) if its [[GetOwnProperty]] , [[DefineOwnProperty]] , and [[OwnPropertyKeys]] internal methods use the following implementations, and its other essential internal methods use the definitions found in 10.1 . These methods are installed in StringCreate .
+
+String exotic objects have the same internal slots as ordinary objects . They also have a [[StringData]] internal slot.
+
+10.4.3.1 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of a String exotic object string takes argument propertyKey (a property key ) and returns a normal completion containing either a Property Descriptor or undefined . It performs the following steps when called:
+
+- Let propertyDesc be OrdinaryGetOwnProperty ( string , propertyKey ).
+
+- If propertyDesc is not undefined , return propertyDesc .
+
+- Return StringGetOwnProperty ( string , propertyKey ).
+
+10.4.3.2 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of a String exotic object string takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- Let stringDesc be StringGetOwnProperty ( string , propertyKey ).
+
+- If stringDesc is not undefined , then
+- Let extensible be string . [[Extensible]] .
+
+- Return IsCompatiblePropertyDescriptor ( extensible , propertyDesc , stringDesc ).
+
+- Return ! OrdinaryDefineOwnProperty ( string , propertyKey , propertyDesc ).
+
+10.4.3.3 [[OwnPropertyKeys]] ( )
+
+The [[OwnPropertyKeys]] internal method of a String exotic object obj takes no arguments and returns a normal completion containing a List of property keys . It performs the following steps when called:
+
+- Let keys be a new empty List .
+
+- Let string be obj . [[StringData]] .
+
+- Assert : string is a String .
+
+- Let length be the length of string .
+
+- For each integer i such that 0 ≤ i < length , in ascending order, do
+- Append ! ToString ( 𝔽 ( i )) to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is an array index and ! ToIntegerOrInfinity ( propertyKey ) ≥ length , in ascending numeric index order, do
+- Append propertyKey to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a String and propertyKey is not an array index , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a Symbol , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- Return keys .
+
+10.4.3.4 StringCreate ( value , proto )
+
+The abstract operation StringCreate takes arguments value (a String) and proto (an Object) and returns a String exotic object . It is used to specify the creation of new String exotic objects . It performs the following steps when called:
+
+- Let string be MakeBasicObject (« [[Prototype]] , [[Extensible]] , [[StringData]] »).
+
+- Set string . [[Prototype]] to proto .
+
+- Set string . [[StringData]] to value .
+
+- Set string . [[GetOwnProperty]] as specified in 10.4.3.1 .
+
+- Set string . [[DefineOwnProperty]] as specified in 10.4.3.2 .
+
+- Set string . [[OwnPropertyKeys]] as specified in 10.4.3.3 .
+
+- Let length be the length of value .
+
+- Perform ! DefinePropertyOrThrow ( string , "length" , PropertyDescriptor { [[Value]] : 𝔽 ( length ), [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return string .
+
+10.4.3.5 StringGetOwnProperty ( string , propertyKey )
+
+The abstract operation StringGetOwnProperty takes arguments string (an Object that has a [[StringData]] internal slot) and propertyKey (a property key ) and returns a Property Descriptor or undefined . It performs the following steps when called:
+
+- If propertyKey is not a String , return undefined .
+
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not an integral Number , return undefined .
+
+- If numericIndex is -0 𝔽 or numericIndex < -0 𝔽 , return undefined .
+
+- Let stringData be string . [[StringData]] .
+
+- Assert : stringData is a String .
+
+- Let length be the length of stringData .
+
+- If ℝ ( numericIndex ) ≥ length , return undefined .
+
+- Let resultString be the substring of stringData from ℝ ( numericIndex ) to ℝ ( numericIndex ) + 1.
+
+- Return the PropertyDescriptor { [[Value]] : resultString , [[Writable]] : false , [[Enumerable]] : true , [[Configurable]] : false }.
+
+10.4.4 Arguments Exotic Objects
+
+Most ECMAScript functions make an arguments object available to their code. Depending upon the characteristics of the function definition, its arguments object is either an ordinary object or an arguments exotic object . An arguments exotic object is an exotic object whose array index properties map to the formal parameters bindings of an invocation of its associated ECMAScript function.
+
+An object is an arguments exotic object if its internal methods use the following implementations, with the ones not specified here using those found in 10.1 . These methods are installed in CreateMappedArgumentsObject .
+
+Note 1
+While CreateUnmappedArgumentsObject is grouped into this clause, it creates an ordinary object , not an arguments exotic object .
+
+Arguments exotic objects have the same internal slots as ordinary objects . They also have a [[ParameterMap]] internal slot. Ordinary arguments objects also have a [[ParameterMap]] internal slot whose value is always undefined . For ordinary argument objects the [[ParameterMap]] internal slot is only used by Object.prototype.toString ( 20.1.3.6 ) to identify them as such.
+
+Note 2
+The integer-indexed data properties of an arguments exotic object whose numeric name values are less than the number of formal parameters of the corresponding function object initially share their values with the corresponding argument bindings in the function's execution context . This means that changing the property changes the corresponding value of the argument binding and vice-versa. This correspondence is broken if such a property is deleted and then redefined or if the property is changed into an accessor property . If the arguments object is an ordinary object , the values of its properties are simply a copy of the arguments passed to the function and there is no dynamic linkage between the property values and the formal parameter values.
+
+Note 3
+The ParameterMap object and its property values are used as a device for specifying the arguments object correspondence to argument bindings. The ParameterMap object and the objects that are the values of its properties are not directly observable from ECMAScript code. An ECMAScript implementation does not need to actually create or use such objects to implement the specified semantics.
+
+Note 4
+Ordinary arguments objects define a non-configurable accessor property named "callee" which throws a TypeError exception on access. The "callee" property has a more specific meaning for arguments exotic objects , which are created only for some class of non-strict functions . The definition of this property in the ordinary variant exists to ensure that it is not defined in any other manner by conforming ECMAScript implementations.
+
+Note 5
+ECMAScript implementations of arguments exotic objects have historically contained an accessor property named "caller" . Prior to ECMAScript 2017, this specification included the definition of a throwing "caller" property on ordinary arguments objects. Since implementations do not contain this extension any longer, ECMAScript 2017 dropped the requirement for a throwing "caller" accessor.
+
+10.4.4.1 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of an arguments exotic object args takes argument propertyKey (a property key ) and returns a normal completion containing either a Property Descriptor or undefined . It performs the following steps when called:
+
+- Let propertyDesc be OrdinaryGetOwnProperty ( args , propertyKey ).
+
+- If propertyDesc is undefined , return undefined .
+
+- Let map be args . [[ParameterMap]] .
+
+- Let isMapped be ! HasOwnProperty ( map , propertyKey ).
+
+- If isMapped is true , then
+- Set propertyDesc . [[Value]] to ! Get ( map , propertyKey ).
+
+- Return propertyDesc .
+
+10.4.4.2 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of an arguments exotic object args takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- Let map be args . [[ParameterMap]] .
+
+- Let isMapped be ! HasOwnProperty ( map , propertyKey ).
+
+- Let newArgDesc be propertyDesc .
+
+- If isMapped is true and IsDataDescriptor ( propertyDesc ) is true , then
+- If propertyDesc does not have a [[Value]] field, propertyDesc has a [[Writable]] field, and propertyDesc . [[Writable]] is false , then
+- Set newArgDesc to a copy of propertyDesc .
+
+- Set newArgDesc . [[Value]] to ! Get ( map , propertyKey ).
+
+- Let allowed be ! OrdinaryDefineOwnProperty ( args , propertyKey , newArgDesc ).
+
+- If allowed is false , return false .
+
+- If isMapped is true , then
+- If IsAccessorDescriptor ( propertyDesc ) is true , then
+- Perform ! map . [[Delete]] ( propertyKey ).
+
+- Else,
+- If propertyDesc has a [[Value]] field, then
+- Assert : The following Set will succeed, since formal parameters mapped by arguments objects are always writable.
+
+- Perform ! Set ( map , propertyKey , propertyDesc . [[Value]] , false ).
+
+- If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is false , then
+- Perform ! map . [[Delete]] ( propertyKey ).
+
+- Return true .
+
+10.4.4.3 [[Get]] ( propertyKey , receiver )
+
+The [[Get]] internal method of an arguments exotic object args takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let map be args . [[ParameterMap]] .
+
+- Let isMapped be ! HasOwnProperty ( map , propertyKey ).
+
+- If isMapped is false , return ? OrdinaryGet ( args , propertyKey , receiver ).
+
+- Assert : map contains a formal parameter mapping for propertyKey .
+
+- Return ! Get ( map , propertyKey ).
+
+10.4.4.4 [[Set]] ( propertyKey , value , receiver )
+
+The [[Set]] internal method of an arguments exotic object args takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If SameValue ( args , receiver ) is false , then
+- Let isMapped be false .
+
+- Else,
+- Let map be args . [[ParameterMap]] .
+
+- Let isMapped be ! HasOwnProperty ( map , propertyKey ).
+
+- If isMapped is true , then
+- Assert : The following Set will succeed, since formal parameters mapped by arguments objects are always writable.
+
+- Perform ! Set ( map , propertyKey , value , false ).
+
+- Return ? OrdinarySet ( args , propertyKey , value , receiver ).
+
+10.4.4.5 [[Delete]] ( propertyKey )
+
+The [[Delete]] internal method of an arguments exotic object args takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let map be args . [[ParameterMap]] .
+
+- Let isMapped be ! HasOwnProperty ( map , propertyKey ).
+
+- Let result be ? OrdinaryDelete ( args , propertyKey ).
+
+- If result is true and isMapped is true , then
+- Perform ! map . [[Delete]] ( propertyKey ).
+
+- Return result .
+
+10.4.4.6 CreateUnmappedArgumentsObject ( argList )
+
+The abstract operation CreateUnmappedArgumentsObject takes argument argList (a List of ECMAScript language values ) and returns an ordinary object . It performs the following steps when called:
+
+- Let length be the number of elements in argList .
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% , « [[ParameterMap]] »).
+
+- Set obj . [[ParameterMap]] to undefined .
+
+- Perform ! DefinePropertyOrThrow ( obj , "length" , PropertyDescriptor { [[Value]] : 𝔽 ( length ), [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let value be argList [ index ].
+
+- Perform ! CreateDataPropertyOrThrow ( obj , ! ToString ( 𝔽 ( index )), value ).
+
+- Set index to index + 1.
+
+- Perform ! DefinePropertyOrThrow ( obj , %Symbol.iterator% , PropertyDescriptor { [[Value]] : %Array.prototype.values%, [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Perform ! DefinePropertyOrThrow ( obj , "callee" , PropertyDescriptor { [[Getter]] : %ThrowTypeError% , [[Setter]] : %ThrowTypeError% , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return obj .
+
+10.4.4.7 CreateMappedArgumentsObject ( func , formals , argList , envRecord )
+
+The abstract operation CreateMappedArgumentsObject takes arguments func (an ECMAScript function object ), formals (a Parse Node ), argList (a List of ECMAScript language values ), and envRecord (an Environment Record ) and returns an arguments exotic object . It performs the following steps when called:
+
+- Assert : formals does not contain a rest parameter, any binding patterns, or any initializers. It may contain duplicate identifiers.
+
+- Let length be the number of elements in argList .
+
+- Let obj be MakeBasicObject (« [[Prototype]] , [[Extensible]] , [[ParameterMap]] »).
+
+- Set obj . [[GetOwnProperty]] as specified in 10.4.4.1 .
+
+- Set obj . [[DefineOwnProperty]] as specified in 10.4.4.2 .
+
+- Set obj . [[Get]] as specified in 10.4.4.3 .
+
+- Set obj . [[Set]] as specified in 10.4.4.4 .
+
+- Set obj . [[Delete]] as specified in 10.4.4.5 .
+
+- Set obj . [[Prototype]] to %Object.prototype% .
+
+- Let map be OrdinaryObjectCreate ( null ).
+
+- Set obj . [[ParameterMap]] to map .
+
+- Let paramNames be the BoundNames of formals .
+
+- Let paramCount be the number of elements in paramNames .
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let value be argList [ index ].
+
+- Perform ! CreateDataPropertyOrThrow ( obj , ! ToString ( 𝔽 ( index )), value ).
+
+- Set index to index + 1.
+
+- Perform ! DefinePropertyOrThrow ( obj , "length" , PropertyDescriptor { [[Value]] : 𝔽 ( length ), [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Let mappedNames be a new empty List .
+
+- Set index to paramCount - 1.
+
+- Repeat, while index ≥ 0,
+- Let name be paramNames [ index ].
+
+- If mappedNames does not contain name , then
+- Append name to mappedNames .
+
+- If index < length , then
+- Let getter be MakeArgGetter ( name , envRecord ).
+
+- Let setter be MakeArgSetter ( name , envRecord ).
+
+- Perform ! map . [[DefineOwnProperty]] (! ToString ( 𝔽 ( index )), PropertyDescriptor { [[Setter]] : setter , [[Getter]] : getter , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Set index to index - 1.
+
+- Perform ! DefinePropertyOrThrow ( obj , %Symbol.iterator% , PropertyDescriptor { [[Value]] : %Array.prototype.values%, [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Perform ! DefinePropertyOrThrow ( obj , "callee" , PropertyDescriptor { [[Value]] : func , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }).
+
+- Return obj .
+
+10.4.4.7.1 MakeArgGetter ( name , envRecord )
+
+The abstract operation MakeArgGetter takes arguments name (a String) and envRecord (an Environment Record ) and returns a function object . It creates a built-in function object that when executed returns the value bound for name in envRecord . It performs the following steps when called:
+
+- Let getterClosure be a new Abstract Closure with no parameters that captures name and envRecord and performs the following steps when called:
+- Return NormalCompletion (! envRecord . GetBindingValue ( name , false )).
+
+- Let getter be CreateBuiltinFunction ( getterClosure , 0, "" , « »).
+
+- NOTE : getter is never directly accessible to ECMAScript code.
+
+- Return getter .
+
+10.4.4.7.2 MakeArgSetter ( name , envRecord )
+
+The abstract operation MakeArgSetter takes arguments name (a String) and envRecord (an Environment Record ) and returns a function object . It creates a built-in function object that when executed sets the value bound for name in envRecord . It performs the following steps when called:
+
+- Let setterClosure be a new Abstract Closure with parameters ( value ) that captures name and envRecord and performs the following steps when called:
+- Return NormalCompletion (! envRecord . SetMutableBinding ( name , value , false )).
+
+- Let setter be CreateBuiltinFunction ( setterClosure , 1, "" , « »).
+
+- NOTE : setter is never directly accessible to ECMAScript code.
+
+- Return setter .
+
+10.4.5 TypedArray Exotic Objects
+
+A TypedArray is an exotic object that performs special handling of property keys that are canonical numeric strings , using the subset that are in-bounds integer indices to index elements of uniform type and enforcing the invariant that the remainder are absent without incurring prototype chain traversal.
+
+Note
+Because ToString ( n ) for any Number n is a canonical numeric string , an implementation may treat Numbers as property keys for TypedArrays without actually performing the string conversion.
+
+TypedArrays have the same internal slots as ordinary objects and additionally [[ViewedArrayBuffer]] , [[TypedArrayName]] , [[ContentType]] , [[ByteLength]] , [[ByteOffset]] , and [[ArrayLength]] internal slots.
+
+An object is a TypedArray if its [[PreventExtensions]] , [[GetOwnProperty]] , [[HasProperty]] , [[DefineOwnProperty]] , [[Get]] , [[Set]] , [[Delete]] , and [[OwnPropertyKeys]] , internal methods use the definitions in this section, and its other essential internal methods use the definitions found in 10.1 . These methods are installed by TypedArrayCreate .
+
+10.4.5.1 [[PreventExtensions]] ( )
+
+The [[PreventExtensions]] internal method of a TypedArray obj takes no arguments and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- NOTE : The extensibility-related invariants specified in 6.1.7.3 do not allow this method to return true when obj can gain (or lose and then regain) properties, which might occur for properties with integer index names when its underlying buffer is resized.
+
+- If IsTypedArrayFixedLength ( obj ) is false , return false .
+
+- Return OrdinaryPreventExtensions ( obj ).
+
+10.4.5.2 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of a TypedArray obj takes argument propertyKey (a property key ) and returns a normal completion containing either a Property Descriptor or undefined . It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , then
+- Let value be TypedArrayGetElement ( obj , numericIndex ).
+
+- If value is undefined , return undefined .
+
+- Return the PropertyDescriptor { [[Value]] : value , [[Writable]] : true , [[Enumerable]] : true , [[Configurable]] : true }.
+
+- Return OrdinaryGetOwnProperty ( obj , propertyKey ).
+
+10.4.5.3 [[HasProperty]] ( propertyKey )
+
+The [[HasProperty]] internal method of a TypedArray obj takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , return IsValidIntegerIndex ( obj , numericIndex ).
+
+- Return ? OrdinaryHasProperty ( obj , propertyKey ).
+
+10.4.5.4 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of a TypedArray obj takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , then
+- If IsValidIntegerIndex ( obj , numericIndex ) is false , return false .
+
+- If propertyDesc has a [[Configurable]] field and propertyDesc . [[Configurable]] is false , return false .
+
+- If propertyDesc has an [[Enumerable]] field and propertyDesc . [[Enumerable]] is false , return false .
+
+- If IsAccessorDescriptor ( propertyDesc ) is true , return false .
+
+- If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is false , return false .
+
+- If propertyDesc has a [[Value]] field, perform ? TypedArraySetElement ( obj , numericIndex , propertyDesc . [[Value]] ).
+
+- Return true .
+
+- Return ! OrdinaryDefineOwnProperty ( obj , propertyKey , propertyDesc ).
+
+10.4.5.5 [[Get]] ( propertyKey , receiver )
+
+The [[Get]] internal method of a TypedArray obj takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , then
+- Return TypedArrayGetElement ( obj , numericIndex ).
+
+- Return ? OrdinaryGet ( obj , propertyKey , receiver ).
+
+10.4.5.6 [[Set]] ( propertyKey , value , receiver )
+
+The [[Set]] internal method of a TypedArray obj takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , then
+- If SameValue ( obj , receiver ) is true , then
+- Perform ? TypedArraySetElement ( obj , numericIndex , value ).
+
+- Return true .
+
+- If IsValidIntegerIndex ( obj , numericIndex ) is false , return true .
+
+- Return ? OrdinarySet ( obj , propertyKey , value , receiver ).
+
+10.4.5.7 [[Delete]] ( propertyKey )
+
+The [[Delete]] internal method of a TypedArray obj takes argument propertyKey (a property key ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- If propertyKey is a String , then
+- Let numericIndex be CanonicalNumericIndexString ( propertyKey ).
+
+- If numericIndex is not undefined , then
+- If IsValidIntegerIndex ( obj , numericIndex ) is false , return true .
+
+- Return false .
+
+- Return ! OrdinaryDelete ( obj , propertyKey ).
+
+10.4.5.8 [[OwnPropertyKeys]] ( )
+
+The [[OwnPropertyKeys]] internal method of a TypedArray obj takes no arguments and returns a normal completion containing a List of property keys . It performs the following steps when called:
+
+- Let taRecord be MakeTypedArrayWithBufferWitnessRecord ( obj , seq-cst ).
+
+- Let keys be a new empty List .
+
+- If IsTypedArrayOutOfBounds ( taRecord ) is false , then
+- Let length be TypedArrayLength ( taRecord ).
+
+- For each integer i such that 0 ≤ i < length , in ascending order, do
+- Append ! ToString ( 𝔽 ( i )) to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a String and propertyKey is not an integer index , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- For each own property key propertyKey of obj such that propertyKey is a Symbol , in ascending chronological order of property creation, do
+- Append propertyKey to keys .
+
+- Return keys .
+
+10.4.5.9 TypedArray With Buffer Witness Records
+
+An TypedArray With Buffer Witness Record is a Record used to encapsulate a TypedArray along with a cached byte length of the viewed buffer. It is used to help ensure there is a single ReadSharedMemory event of the byte length data block when the viewed buffer is a growable SharedArrayBuffer .
+
+TypedArray With Buffer Witness Records have the fields listed in Table 28 .
+
+Table 28: TypedArray With Buffer Witness Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Object]]
+
+a TypedArray
+
+The TypedArray whose buffer's byte length is loaded.
+
+[[CachedBufferByteLength]]
+
+a non-negative integer or detached
+
+The byte length of the object's [[ViewedArrayBuffer]] when the Record was created.
+
+10.4.5.10 MakeTypedArrayWithBufferWitnessRecord ( obj , order )
+
+The abstract operation MakeTypedArrayWithBufferWitnessRecord takes arguments obj (a TypedArray ) and order ( seq-cst or unordered ) and returns a TypedArray With Buffer Witness Record . It performs the following steps when called:
+
+- Let buffer be obj . [[ViewedArrayBuffer]] .
+
+- If IsDetachedBuffer ( buffer ) is true , then
+- Let byteLength be detached .
+
+- Else,
+- Let byteLength be ArrayBufferByteLength ( buffer , order ).
+
+- Return the TypedArray With Buffer Witness Record { [[Object]] : obj , [[CachedBufferByteLength]] : byteLength }.
+
+10.4.5.11 TypedArrayCreate ( proto )
+
+The abstract operation TypedArrayCreate takes argument proto (an Object) and returns a TypedArray . It is used to specify the creation of new TypedArrays . It performs the following steps when called:
+
+- Let internalSlotsList be « [[Prototype]] , [[Extensible]] , [[ViewedArrayBuffer]] , [[TypedArrayName]] , [[ContentType]] , [[ByteLength]] , [[ByteOffset]] , [[ArrayLength]] ».
+
+- Let ta be MakeBasicObject ( internalSlotsList ).
+
+- Set ta . [[PreventExtensions]] as specified in 10.4.5.1 .
+
+- Set ta . [[GetOwnProperty]] as specified in 10.4.5.2 .
+
+- Set ta . [[HasProperty]] as specified in 10.4.5.3 .
+
+- Set ta . [[DefineOwnProperty]] as specified in 10.4.5.4 .
+
+- Set ta . [[Get]] as specified in 10.4.5.5 .
+
+- Set ta . [[Set]] as specified in 10.4.5.6 .
+
+- Set ta . [[Delete]] as specified in 10.4.5.7 .
+
+- Set ta . [[OwnPropertyKeys]] as specified in 10.4.5.8 .
+
+- Set ta . [[Prototype]] to proto .
+
+- Return ta .
+
+10.4.5.12 TypedArrayByteLength ( taRecord )
+
+The abstract operation TypedArrayByteLength takes argument taRecord (a TypedArray With Buffer Witness Record ) and returns a non-negative integer . It performs the following steps when called:
+
+- Assert : IsTypedArrayOutOfBounds ( taRecord ) is false .
+
+- Let obj be taRecord . [[Object]] .
+
+- If obj . [[ByteLength]] is not auto , return obj . [[ByteLength]] .
+
+- Let length be TypedArrayLength ( taRecord ).
+
+- Let elementSize be TypedArrayElementSize ( obj ).
+
+- NOTE : The returned byte length is always an integer multiple of elementSize , even when the underlying buffer has been resized to a non- integer multiple.
+
+- Return length × elementSize .
+
+10.4.5.13 TypedArrayLength ( taRecord )
+
+The abstract operation TypedArrayLength takes argument taRecord (a TypedArray With Buffer Witness Record ) and returns a non-negative integer . It performs the following steps when called:
+
+- Assert : IsTypedArrayOutOfBounds ( taRecord ) is false .
+
+- Let obj be taRecord . [[Object]] .
+
+- If obj . [[ArrayLength]] is not auto , return obj . [[ArrayLength]] .
+
+- Assert : IsFixedLengthArrayBuffer ( obj . [[ViewedArrayBuffer]] ) is false .
+
+- Let byteOffset be obj . [[ByteOffset]] .
+
+- Let elementSize be TypedArrayElementSize ( obj ).
+
+- Let byteLength be taRecord . [[CachedBufferByteLength]] .
+
+- Assert : byteLength is not detached .
+
+- Return floor (( byteLength - byteOffset ) / elementSize ).
+
+10.4.5.14 IsTypedArrayOutOfBounds ( taRecord )
+
+The abstract operation IsTypedArrayOutOfBounds takes argument taRecord (a TypedArray With Buffer Witness Record ) and returns a Boolean. It checks if any of the object's numeric properties reference a value at an index not contained within the underlying buffer's bounds. It performs the following steps when called:
+
+- Let obj be taRecord . [[Object]] .
+
+- Let bufferByteLength be taRecord . [[CachedBufferByteLength]] .
+
+- If IsDetachedBuffer ( obj . [[ViewedArrayBuffer]] ) is true , then
+- Assert : bufferByteLength is detached .
+
+- Return true .
+
+- Assert : bufferByteLength is a non-negative integer .
+
+- Let byteOffsetStart be obj . [[ByteOffset]] .
+
+- If obj . [[ArrayLength]] is auto , then
+- Let byteOffsetEnd be bufferByteLength .
+
+- Else,
+- Let elementSize be TypedArrayElementSize ( obj ).
+
+- Let arrayByteLength be obj . [[ArrayLength]] × elementSize .
+
+- Let byteOffsetEnd be byteOffsetStart + arrayByteLength .
+
+- NOTE : A 0-length TypedArray whose [[ByteOffset]] is bufferByteLength is not considered out-of-bounds.
+
+- If byteOffsetStart > bufferByteLength or byteOffsetEnd > bufferByteLength , return true .
+
+- Return false .
+
+10.4.5.15 IsTypedArrayFixedLength ( obj )
+
+The abstract operation IsTypedArrayFixedLength takes argument obj (a TypedArray ) and returns a Boolean. It performs the following steps when called:
+
+- If obj . [[ArrayLength]] is auto , return false .
+
+- Let buffer be obj . [[ViewedArrayBuffer]] .
+
+- If IsFixedLengthArrayBuffer ( buffer ) is false and IsSharedArrayBuffer ( buffer ) is false , return false .
+
+- Return true .
+
+10.4.5.16 IsValidIntegerIndex ( obj , index )
+
+The abstract operation IsValidIntegerIndex takes arguments obj (a TypedArray ) and index (a Number) and returns a Boolean. It performs the following steps when called:
+
+- If IsDetachedBuffer ( obj . [[ViewedArrayBuffer]] ) is true , return false .
+
+- If index is not an integral Number , return false .
+
+- If index is -0 𝔽 or index < -0 𝔽 , return false .
+
+- Let taRecord be MakeTypedArrayWithBufferWitnessRecord ( obj , unordered ).
+
+- NOTE : Bounds checking is not a synchronizing operation when obj 's backing buffer is a growable SharedArrayBuffer .
+
+- If IsTypedArrayOutOfBounds ( taRecord ) is true , return false .
+
+- Let length be TypedArrayLength ( taRecord ).
+
+- If ℝ ( index ) ≥ length , return false .
+
+- Return true .
+
+10.4.5.17 TypedArrayGetElement ( obj , index )
+
+The abstract operation TypedArrayGetElement takes arguments obj (a TypedArray ) and index (a Number) and returns a Number, a BigInt, or undefined . It performs the following steps when called:
+
+- If IsValidIntegerIndex ( obj , index ) is false , return undefined .
+
+- Let offset be obj . [[ByteOffset]] .
+
+- Let elementSize be TypedArrayElementSize ( obj ).
+
+- Let byteIndexInBuffer be ( ℝ ( index ) × elementSize ) + offset .
+
+- Let elementType be TypedArrayElementType ( obj ).
+
+- Return GetValueFromBuffer ( obj . [[ViewedArrayBuffer]] , byteIndexInBuffer , elementType , true , unordered ).
+
+10.4.5.18 TypedArraySetElement ( obj , index , value )
+
+The abstract operation TypedArraySetElement takes arguments obj (a TypedArray ), index (a Number), and value (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If obj . [[ContentType]] is bigint , let number be ? ToBigInt ( value ).
+
+- Else, let number be ? ToNumber ( value ).
+
+- If IsValidIntegerIndex ( obj , index ) is true , then
+- Let offset be obj . [[ByteOffset]] .
+
+- Let elementSize be TypedArrayElementSize ( obj ).
+
+- Let byteIndexInBuffer be ( ℝ ( index ) × elementSize ) + offset .
+
+- Let elementType be TypedArrayElementType ( obj ).
+
+- Perform SetValueInBuffer ( obj . [[ViewedArrayBuffer]] , byteIndexInBuffer , elementType , number , true , unordered ).
+
+- Return unused .
+
+Note
+This operation always appears to succeed, but it has no effect when attempting to write past the end of a TypedArray or to a TypedArray which is backed by a detached ArrayBuffer.
+
+10.4.5.19 IsArrayBufferViewOutOfBounds ( obj )
+
+The abstract operation IsArrayBufferViewOutOfBounds takes argument obj (a TypedArray or a DataView) and returns a Boolean. It checks if either any of a TypedArray 's numeric properties or a DataView object's methods can reference a value at an index not contained within the underlying data block's bounds. This abstract operation exists as a convenience for upstream specifications. It performs the following steps when called:
+
+- If obj has a [[DataView]] internal slot, then
+- Let viewRecord be MakeDataViewWithBufferWitnessRecord ( obj , seq-cst ).
+
+- Return IsViewOutOfBounds ( viewRecord ).
+
+- Let taRecord be MakeTypedArrayWithBufferWitnessRecord ( obj , seq-cst ).
+
+- Return IsTypedArrayOutOfBounds ( taRecord ).
+
+10.4.6 Module Namespace Exotic Objects
+
+A module namespace exotic object is an exotic object that exposes the bindings exported from an ECMAScript Module (See 16.2.3 ). There is a one-to-one correspondence between the String-keyed own properties of a module namespace exotic object and the binding names exported by the Module . The exported bindings include any bindings that are indirectly exported using export * export items. Each String-valued own property key is the StringValue of the corresponding exported binding name. These are the only String-keyed properties of a module namespace exotic object . Each such property has the attributes { [[Writable]] : true , [[Enumerable]] : true , [[Configurable]] : false }. Module namespace exotic objects are not extensible.
+
+An object is a module namespace exotic object if its [[GetPrototypeOf]] , [[SetPrototypeOf]] , [[IsExtensible]] , [[PreventExtensions]] , [[GetOwnProperty]] , [[DefineOwnProperty]] , [[HasProperty]] , [[Get]] , [[Set]] , [[Delete]] , and [[OwnPropertyKeys]] internal methods use the definitions in this section, and its other essential internal methods use the definitions found in 10.1 . These methods are installed by ModuleNamespaceCreate .
+
+Module namespace exotic objects have the internal slots defined in Table 29 .
+
+Table 29: Internal Slots of Module Namespace Exotic Objects
+
+Internal Slot
+
+Type
+
+Description
+
+[[Module]]
+
+a Module Record
+
+The Module Record whose exports this namespace exposes.
+
+[[Exports]]
+
+a List of Strings
+
+A List whose elements are the String values of the exported names exposed as own properties of this object. The list is sorted according to lexicographic code unit order .
+
+10.4.6.1 [[GetPrototypeOf]] ( )
+
+The [[GetPrototypeOf]] internal method of a module namespace exotic object takes no arguments and returns a normal completion containing null . It performs the following steps when called:
+
+- Return null .
+
+10.4.6.2 [[SetPrototypeOf]] ( proto )
+
+The [[SetPrototypeOf]] internal method of a module namespace exotic object obj takes argument proto (an Object or null ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- Return ! SetImmutablePrototype ( obj , proto ).
+
+10.4.6.3 [[IsExtensible]] ( )
+
+The [[IsExtensible]] internal method of a module namespace exotic object takes no arguments and returns a normal completion containing false . It performs the following steps when called:
+
+- Return false .
+
+10.4.6.4 [[PreventExtensions]] ( )
+
+The [[PreventExtensions]] internal method of a module namespace exotic object takes no arguments and returns a normal completion containing true . It performs the following steps when called:
+
+- Return true .
+
+10.4.6.5 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of a module namespace exotic object obj takes argument propertyKey (a property key ) and returns either a normal completion containing either a Property Descriptor or undefined , or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a Symbol , return OrdinaryGetOwnProperty ( obj , propertyKey ).
+
+- Let exports be obj . [[Exports]] .
+
+- If exports does not contain propertyKey , return undefined .
+
+- Let value be ? obj . [[Get]] ( propertyKey , obj ).
+
+- Return PropertyDescriptor { [[Value]] : value , [[Writable]] : true , [[Enumerable]] : true , [[Configurable]] : false }.
+
+10.4.6.6 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of a module namespace exotic object obj takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a Symbol , return ! OrdinaryDefineOwnProperty ( obj , propertyKey , propertyDesc ).
+
+- Let current be ? obj . [[GetOwnProperty]] ( propertyKey ).
+
+- If current is undefined , return false .
+
+- If propertyDesc has a [[Configurable]] field and propertyDesc . [[Configurable]] is true , return false .
+
+- If propertyDesc has an [[Enumerable]] field and propertyDesc . [[Enumerable]] is false , return false .
+
+- If IsAccessorDescriptor ( propertyDesc ) is true , return false .
+
+- If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is false , return false .
+
+- If propertyDesc has a [[Value]] field, return SameValue ( propertyDesc . [[Value]] , current . [[Value]] ).
+
+- Return true .
+
+10.4.6.7 [[HasProperty]] ( propertyKey )
+
+The [[HasProperty]] internal method of a module namespace exotic object obj takes argument propertyKey (a property key ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- If propertyKey is a Symbol , return ! OrdinaryHasProperty ( obj , propertyKey ).
+
+- Let exports be obj . [[Exports]] .
+
+- If exports contains propertyKey , return true .
+
+- Return false .
+
+10.4.6.8 [[Get]] ( propertyKey , receiver )
+
+The [[Get]] internal method of a module namespace exotic object obj takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- If propertyKey is a Symbol , then
+- Return ! OrdinaryGet ( obj , propertyKey , receiver ).
+
+- Let exports be obj . [[Exports]] .
+
+- If exports does not contain propertyKey , return undefined .
+
+- Let module be obj . [[Module]] .
+
+- Let binding be module . ResolveExport ( propertyKey ).
+
+- Assert : binding is a ResolvedBinding Record .
+
+- Let targetModule be binding . [[Module]] .
+
+- Assert : targetModule is not undefined .
+
+- If binding . [[BindingName]] is namespace , then
+- Return GetModuleNamespace ( targetModule ).
+
+- Let targetEnv be targetModule . [[Environment]] .
+
+- If targetEnv is empty , throw a ReferenceError exception.
+
+- Return ? targetEnv . GetBindingValue ( binding . [[BindingName]] , true ).
+
+Note
+ResolveExport is side-effect free. Each time this operation is called with a specific exportName , resolveSet pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object .
+
+10.4.6.9 [[Set]] ( propertyKey , value , receiver )
+
+The [[Set]] internal method of a module namespace exotic object takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns a normal completion containing false . It performs the following steps when called:
+
+- Return false .
+
+10.4.6.10 [[Delete]] ( propertyKey )
+
+The [[Delete]] internal method of a module namespace exotic object obj takes argument propertyKey (a property key ) and returns a normal completion containing a Boolean. It performs the following steps when called:
+
+- If propertyKey is a Symbol , then
+- Return ! OrdinaryDelete ( obj , propertyKey ).
+
+- Let exports be obj . [[Exports]] .
+
+- If exports contains propertyKey , return false .
+
+- Return true .
+
+10.4.6.11 [[OwnPropertyKeys]] ( )
+
+The [[OwnPropertyKeys]] internal method of a module namespace exotic object obj takes no arguments and returns a normal completion containing a List of property keys . It performs the following steps when called:
+
+- Let exports be obj . [[Exports]] .
+
+- Let symbolKeys be OrdinaryOwnPropertyKeys ( obj ).
+
+- Return the list-concatenation of exports and symbolKeys .
+
+10.4.6.12 ModuleNamespaceCreate ( module , exports )
+
+The abstract operation ModuleNamespaceCreate takes arguments module (a Module Record ) and exports (a List of Strings) and returns a module namespace exotic object . It is used to specify the creation of new module namespace exotic objects . It performs the following steps when called:
+
+- Assert : module . [[Namespace]] is empty .
+
+- Let internalSlotsList be the internal slots listed in Table 29 .
+
+- Let namespace be MakeBasicObject ( internalSlotsList ).
+
+- Set namespace 's essential internal methods to the definitions specified in 10.4.6 .
+
+- Set namespace . [[Module]] to module .
+
+- Let sortedExports be a List whose elements are the elements of exports , sorted according to lexicographic code unit order .
+
+- Set namespace . [[Exports]] to sortedExports .
+
+- Create own properties of namespace corresponding to the definitions in 28.3 .
+
+- Set module . [[Namespace]] to namespace .
+
+- Return namespace .
+
+10.4.7 Immutable Prototype Exotic Objects
+
+An immutable prototype exotic object is an exotic object that has a [[Prototype]] internal slot that will not change once it is initialized.
+
+An object is an immutable prototype exotic object if its [[SetPrototypeOf]] internal method uses the following implementation. (Its other essential internal methods may use any implementation, depending on the specific immutable prototype exotic object in question.)
+
+Note
+Unlike other exotic objects , there is not a dedicated creation abstract operation provided for immutable prototype exotic objects . This is because they are only used by %Object.prototype% and by host environments , and in host environments , the relevant objects are potentially exotic in other ways and thus need their own dedicated creation operation.
+
+10.4.7.1 [[SetPrototypeOf]] ( proto )
+
+The [[SetPrototypeOf]] internal method of an immutable prototype exotic object obj takes argument proto (an Object or null ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ? SetImmutablePrototype ( obj , proto ).
+
+10.4.7.2 SetImmutablePrototype ( obj , proto )
+
+The abstract operation SetImmutablePrototype takes arguments obj (an Object) and proto (an Object or null ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Let current be ? obj . [[GetPrototypeOf]] () .
+
+- If SameValue ( proto , current ) is true , return true .
+
+- Return false .
+
+10.5 Proxy Object Internal Methods and Internal Slots
+
+A Proxy object is an exotic object whose essential internal methods are partially implemented using ECMAScript code. Every Proxy object has an internal slot called [[ProxyHandler]] . The value of [[ProxyHandler]] is an object, called the proxy's handler object , or null . Methods (see Table 30 ) of a handler object may be used to augment the implementation for one or more of the Proxy object's internal methods. Every Proxy object also has an internal slot called [[ProxyTarget]] whose value is either an object or null . This object is called the proxy's target object .
+
+An object is a Proxy exotic object if its essential internal methods (including [[Call]] and [[Construct]] , if applicable) use the definitions in this section. These internal methods are installed in ProxyCreate .
+
+Table 30: Proxy Handler Methods
+
+Internal Method
+
+Handler Method
+
+[[GetPrototypeOf]]
+
+getPrototypeOf
+
+[[SetPrototypeOf]]
+
+setPrototypeOf
+
+[[IsExtensible]]
+
+isExtensible
+
+[[PreventExtensions]]
+
+preventExtensions
+
+[[GetOwnProperty]]
+
+getOwnPropertyDescriptor
+
+[[DefineOwnProperty]]
+
+defineProperty
+
+[[HasProperty]]
+
+has
+
+[[Get]]
+
+get
+
+[[Set]]
+
+set
+
+[[Delete]]
+
+deleteProperty
+
+[[OwnPropertyKeys]]
+
+ownKeys
+
+[[Call]]
+
+apply
+
+[[Construct]]
+
+construct
+
+When a handler method is called to provide the implementation of a Proxy object internal method, the handler method is passed the proxy's target object as a parameter. A proxy's handler object does not necessarily have a method corresponding to every essential internal method. Invoking an internal method on the proxy results in the invocation of the corresponding internal method on the proxy's target object if the handler object does not have a method corresponding to the internal trap.
+
+The [[ProxyHandler]] and [[ProxyTarget]] internal slots of a Proxy object are always initialized when the object is created and typically may not be modified. Some Proxy objects are created in a manner that permits them to be subsequently revoked . When a proxy is revoked, its [[ProxyHandler]] and [[ProxyTarget]] internal slots are set to null causing subsequent invocations of internal methods on that Proxy object to throw a TypeError exception.
+
+Because Proxy objects permit the implementation of internal methods to be provided by arbitrary ECMAScript code, it is possible to define a Proxy object whose handler methods violates the invariants defined in 6.1.7.3 . Some of the internal method invariants defined in 6.1.7.3 are essential integrity invariants. These invariants are explicitly enforced by the Proxy object internal methods specified in this section. An ECMAScript implementation must be robust in the presence of all possible invariant violations.
+
+In the following algorithm descriptions, assume obj is an ECMAScript Proxy object, propertyKey is a property key value, value is any ECMAScript language value and propertyDesc is a Property Descriptor record.
+
+10.5.1 [[GetPrototypeOf]] ( )
+
+The [[GetPrototypeOf]] internal method of a Proxy exotic object obj takes no arguments and returns either a normal completion containing either an Object or null , or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "getPrototypeOf" ).
+
+- If trap is undefined , then
+- Return ? target . [[GetPrototypeOf]] () .
+
+- Let handlerProto be ? Call ( trap , handler , « target »).
+
+- If handlerProto is not an Object and handlerProto is not null , throw a TypeError exception.
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is true , return handlerProto .
+
+- Let targetProto be ? target . [[GetPrototypeOf]] () .
+
+- If SameValue ( handlerProto , targetProto ) is false , throw a TypeError exception.
+
+- Return handlerProto .
+
+Note
+[[GetPrototypeOf]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[GetPrototypeOf]] must be either an Object or null .
+
+-
+If the target object is not extensible, [[GetPrototypeOf]] applied to the Proxy object must return the same value as [[GetPrototypeOf]] applied to the Proxy object's target object.
+
+10.5.2 [[SetPrototypeOf]] ( proto )
+
+The [[SetPrototypeOf]] internal method of a Proxy exotic object obj takes argument proto (an Object or null ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "setPrototypeOf" ).
+
+- If trap is undefined , then
+- Return ? target . [[SetPrototypeOf]] ( proto ) .
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target , proto »)).
+
+- If boolTrapResult is false , return false .
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is true , return true .
+
+- Let targetProto be ? target . [[GetPrototypeOf]] () .
+
+- If SameValue ( proto , targetProto ) is false , throw a TypeError exception.
+
+- Return true .
+
+Note
+[[SetPrototypeOf]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[SetPrototypeOf]] is a Boolean value.
+
+-
+If the target object is not extensible, the argument value must be the same as the result of [[GetPrototypeOf]] applied to target object.
+
+10.5.3 [[IsExtensible]] ( )
+
+The [[IsExtensible]] internal method of a Proxy exotic object obj takes no arguments and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "isExtensible" ).
+
+- If trap is undefined , then
+- Return ? IsExtensible ( target ).
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target »)).
+
+- Let targetResult be ? IsExtensible ( target ).
+
+- If boolTrapResult is not targetResult , throw a TypeError exception.
+
+- Return boolTrapResult .
+
+Note
+[[IsExtensible]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[IsExtensible]] is a Boolean value.
+
+-
+[[IsExtensible]] applied to the Proxy object must return the same value as [[IsExtensible]] applied to the Proxy object's target object with the same argument.
+
+10.5.4 [[PreventExtensions]] ( )
+
+The [[PreventExtensions]] internal method of a Proxy exotic object obj takes no arguments and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "preventExtensions" ).
+
+- If trap is undefined , then
+- Return ? target . [[PreventExtensions]] () .
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target »)).
+
+- If boolTrapResult is true , then
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is true , throw a TypeError exception.
+
+- Return boolTrapResult .
+
+Note
+[[PreventExtensions]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[PreventExtensions]] is a Boolean value.
+
+-
+[[PreventExtensions]] applied to the Proxy object only returns true if [[IsExtensible]] applied to the Proxy object's target object is false .
+
+10.5.5 [[GetOwnProperty]] ( propertyKey )
+
+The [[GetOwnProperty]] internal method of a Proxy exotic object obj takes argument propertyKey (a property key ) and returns either a normal completion containing either a Property Descriptor or undefined , or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "getOwnPropertyDescriptor" ).
+
+- If trap is undefined , then
+- Return ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- Let trapResultObj be ? Call ( trap , handler , « target , propertyKey »).
+
+- If trapResultObj is not an Object and trapResultObj is not undefined , throw a TypeError exception.
+
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- If trapResultObj is undefined , then
+- If targetDesc is undefined , return undefined .
+
+- If targetDesc . [[Configurable]] is false , throw a TypeError exception.
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is false , throw a TypeError exception.
+
+- Return undefined .
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- Let resultDesc be ? ToPropertyDescriptor ( trapResultObj ).
+
+- Perform CompletePropertyDescriptor ( resultDesc ).
+
+- Let valid be IsCompatiblePropertyDescriptor ( extensibleTarget , resultDesc , targetDesc ).
+
+- If valid is false , throw a TypeError exception.
+
+- If resultDesc . [[Configurable]] is false , then
+- If targetDesc is undefined or targetDesc . [[Configurable]] is true , then
+- Throw a TypeError exception.
+
+- If resultDesc has a [[Writable]] field and resultDesc . [[Writable]] is false , then
+- Assert : targetDesc has a [[Writable]] field.
+
+- If targetDesc . [[Writable]] is true , throw a TypeError exception.
+
+- Return resultDesc .
+
+Note
+[[GetOwnProperty]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[GetOwnProperty]] must be either a Property Descriptor or undefined .
+
+-
+A property cannot be reported as non-existent, if it exists as a non-configurable own property of the target object.
+
+-
+A property cannot be reported as non-existent, if it exists as an own property of a non-extensible target object.
+
+-
+A property cannot be reported as existent, if it does not exist as an own property of the target object and the target object is not extensible.
+
+-
+A property cannot be reported as non-configurable, unless it exists as a non-configurable own property of the target object.
+
+-
+A property cannot be reported as both non-configurable and non-writable, unless it exists as a non-configurable, non-writable own property of the target object.
+
+10.5.6 [[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+The [[DefineOwnProperty]] internal method of a Proxy exotic object obj takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "defineProperty" ).
+
+- If trap is undefined , then
+- Return ? target . [[DefineOwnProperty]] ( propertyKey , propertyDesc ) .
+
+- Let propertyDescObj be FromPropertyDescriptor ( propertyDesc ).
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target , propertyKey , propertyDescObj »)).
+
+- If boolTrapResult is false , return false .
+
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If propertyDesc has a [[Configurable]] field and propertyDesc . [[Configurable]] is false , then
+- Let settingConfigFalse be true .
+
+- Else,
+- Let settingConfigFalse be false .
+
+- If targetDesc is undefined , then
+- If extensibleTarget is false , throw a TypeError exception.
+
+- If settingConfigFalse is true , throw a TypeError exception.
+
+- Else,
+- If IsCompatiblePropertyDescriptor ( extensibleTarget , propertyDesc , targetDesc ) is false , throw a TypeError exception.
+
+- If settingConfigFalse is true and targetDesc . [[Configurable]] is true , throw a TypeError exception.
+
+- If IsDataDescriptor ( targetDesc ) is true , targetDesc . [[Configurable]] is false , and targetDesc . [[Writable]] is true , then
+- If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is false , throw a TypeError exception.
+
+- Return true .
+
+Note
+[[DefineOwnProperty]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[DefineOwnProperty]] is a Boolean value.
+
+-
+A property cannot be added, if the target object is not extensible.
+
+-
+A property cannot be non-configurable, unless there exists a corresponding non-configurable own property of the target object.
+
+-
+A non-configurable property cannot be non-writable, unless there exists a corresponding non-configurable, non-writable own property of the target object.
+
+-
+If a property has a corresponding target object property then applying the Property Descriptor of the property to the target object using [[DefineOwnProperty]] will not throw an exception.
+
+10.5.7 [[HasProperty]] ( propertyKey )
+
+The [[HasProperty]] internal method of a Proxy exotic object obj takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "has" ).
+
+- If trap is undefined , then
+- Return ? target . [[HasProperty]] ( propertyKey ) .
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target , propertyKey »)).
+
+- If boolTrapResult is false , then
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- If targetDesc is not undefined , then
+- If targetDesc . [[Configurable]] is false , throw a TypeError exception.
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is false , throw a TypeError exception.
+
+- Return boolTrapResult .
+
+Note
+[[HasProperty]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[HasProperty]] is a Boolean value.
+
+-
+A property cannot be reported as non-existent, if it exists as a non-configurable own property of the target object.
+
+-
+A property cannot be reported as non-existent, if it exists as an own property of the target object and the target object is not extensible.
+
+10.5.8 [[Get]] ( propertyKey , receiver )
+
+The [[Get]] internal method of a Proxy exotic object obj takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "get" ).
+
+- If trap is undefined , then
+- Return ? target . [[Get]] ( propertyKey , receiver ) .
+
+- Let trapResult be ? Call ( trap , handler , « target , propertyKey , receiver »).
+
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- If targetDesc is not undefined and targetDesc . [[Configurable]] is false , then
+- If IsDataDescriptor ( targetDesc ) is true and targetDesc . [[Writable]] is false , then
+- If SameValue ( trapResult , targetDesc . [[Value]] ) is false , throw a TypeError exception.
+
+- If IsAccessorDescriptor ( targetDesc ) is true and targetDesc . [[Getter]] is undefined , then
+- If trapResult is not undefined , throw a TypeError exception.
+
+- Return trapResult .
+
+Note
+[[Get]] for Proxy objects enforces the following invariants:
+
+-
+The value reported for a property must be the same as the value of the corresponding target object property if the target object property is a non-writable, non-configurable own data property .
+
+-
+The value reported for a property must be undefined if the corresponding target object property is a non-configurable own accessor property that has undefined as its [[Getter]] attribute.
+
+10.5.9 [[Set]] ( propertyKey , value , receiver )
+
+The [[Set]] internal method of a Proxy exotic object obj takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "set" ).
+
+- If trap is undefined , then
+- Return ? target . [[Set]] ( propertyKey , value , receiver ) .
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target , propertyKey , value , receiver »)).
+
+- If boolTrapResult is false , return false .
+
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- If targetDesc is not undefined and targetDesc . [[Configurable]] is false , then
+- If IsDataDescriptor ( targetDesc ) is true and targetDesc . [[Writable]] is false , then
+- If SameValue ( value , targetDesc . [[Value]] ) is false , throw a TypeError exception.
+
+- If IsAccessorDescriptor ( targetDesc ) is true , then
+- If targetDesc . [[Setter]] is undefined , throw a TypeError exception.
+
+- Return true .
+
+Note
+[[Set]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[Set]] is a Boolean value.
+
+-
+Cannot change the value of a property to be different from the value of the corresponding target object property if the corresponding target object property is a non-writable, non-configurable own data property .
+
+-
+Cannot set the value of a property if the corresponding target object property is a non-configurable own accessor property that has undefined as its [[Setter]] attribute.
+
+10.5.10 [[Delete]] ( propertyKey )
+
+The [[Delete]] internal method of a Proxy exotic object obj takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "deleteProperty" ).
+
+- If trap is undefined , then
+- Return ? target . [[Delete]] ( propertyKey ) .
+
+- Let boolTrapResult be ToBoolean (? Call ( trap , handler , « target , propertyKey »)).
+
+- If boolTrapResult is false , return false .
+
+- Let targetDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- If targetDesc is undefined , return true .
+
+- If targetDesc . [[Configurable]] is false , throw a TypeError exception.
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- If extensibleTarget is false , throw a TypeError exception.
+
+- Return true .
+
+Note
+[[Delete]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[Delete]] is a Boolean value.
+
+-
+A property cannot be reported as deleted, if it exists as a non-configurable own property of the target object.
+
+-
+A property cannot be reported as deleted, if it exists as an own property of the target object and the target object is non-extensible.
+
+10.5.11 [[OwnPropertyKeys]] ( )
+
+The [[OwnPropertyKeys]] internal method of a Proxy exotic object obj takes no arguments and returns either a normal completion containing a List of property keys or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "ownKeys" ).
+
+- If trap is undefined , then
+- Return ? target . [[OwnPropertyKeys]] () .
+
+- Let trapResultArray be ? Call ( trap , handler , « target »).
+
+- Let trapResult be ? CreateListFromArrayLike ( trapResultArray , property-key ).
+
+- If trapResult contains any duplicate entries, throw a TypeError exception.
+
+- Let extensibleTarget be ? IsExtensible ( target ).
+
+- Let targetKeys be ? target . [[OwnPropertyKeys]] () .
+
+- Assert : targetKeys is a List of property keys .
+
+- Assert : targetKeys contains no duplicate entries.
+
+- Let targetConfigurableKeys be a new empty List .
+
+- Let targetNonconfigurableKeys be a new empty List .
+
+- For each element key of targetKeys , do
+- Let propertyDesc be ? target . [[GetOwnProperty]] ( key ) .
+
+- If propertyDesc is not undefined and propertyDesc . [[Configurable]] is false , then
+- Append key to targetNonconfigurableKeys .
+
+- Else,
+- Append key to targetConfigurableKeys .
+
+- If extensibleTarget is true and targetNonconfigurableKeys is empty, then
+- Return trapResult .
+
+- Let uncheckedResultKeys be a List whose elements are the elements of trapResult .
+
+- For each element key of targetNonconfigurableKeys , do
+- If uncheckedResultKeys does not contain key , throw a TypeError exception.
+
+- Remove key from uncheckedResultKeys .
+
+- If extensibleTarget is true , return trapResult .
+
+- For each element key of targetConfigurableKeys , do
+- If uncheckedResultKeys does not contain key , throw a TypeError exception.
+
+- Remove key from uncheckedResultKeys .
+
+- If uncheckedResultKeys is not empty, throw a TypeError exception.
+
+- Return trapResult .
+
+Note
+[[OwnPropertyKeys]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[OwnPropertyKeys]] is a List .
+
+-
+The returned List contains no duplicate entries.
+
+-
+Each element of the returned List is a property key .
+
+-
+The result List must contain the keys of all non-configurable own properties of the target object.
+
+-
+If the target object is not extensible, then the result List must contain all the keys of the own properties of the target object and no other values.
+
+10.5.12 [[Call]] ( thisArg , argList )
+
+The [[Call]] internal method of a Proxy exotic object obj takes arguments thisArg (an ECMAScript language value ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "apply" ).
+
+- If trap is undefined , then
+- Return ? Call ( target , thisArg , argList ).
+
+- Let argArray be CreateArrayFromList ( argList ).
+
+- Return ? Call ( trap , handler , « target , thisArg , argArray »).
+
+Note
+A Proxy exotic object only has a [[Call]] internal method if the initial value of its [[ProxyTarget]] internal slot is an object that has a [[Call]] internal method.
+
+10.5.13 [[Construct]] ( argList , newTarget )
+
+The [[Construct]] internal method of a Proxy exotic object obj takes arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Perform ? ValidateNonRevokedProxy ( obj ).
+
+- Let target be obj . [[ProxyTarget]] .
+
+- Assert : IsConstructor ( target ) is true .
+
+- Let handler be obj . [[ProxyHandler]] .
+
+- Assert : handler is an Object .
+
+- Let trap be ? GetMethod ( handler , "construct" ).
+
+- If trap is undefined , then
+- Return ? Construct ( target , argList , newTarget ).
+
+- Let argArray be CreateArrayFromList ( argList ).
+
+- Let newObj be ? Call ( trap , handler , « target , argArray , newTarget »).
+
+- If newObj is not an Object , throw a TypeError exception.
+
+- Return newObj .
+
+Note 1
+A Proxy exotic object only has a [[Construct]] internal method if the initial value of its [[ProxyTarget]] internal slot is an object that has a [[Construct]] internal method.
+
+Note 2
+[[Construct]] for Proxy objects enforces the following invariants:
+
+-
+The result of [[Construct]] must be an Object.
+
+10.5.14 ValidateNonRevokedProxy ( proxy )
+
+The abstract operation ValidateNonRevokedProxy takes argument proxy (a Proxy exotic object ) and returns either a normal completion containing unused or a throw completion . It throws a TypeError exception if proxy has been revoked. It performs the following steps when called:
+
+- If proxy . [[ProxyTarget]] is null , throw a TypeError exception.
+
+- Assert : proxy . [[ProxyHandler]] is not null .
+
+- Return unused .
+
+10.5.15 ProxyCreate ( target , handler )
+
+The abstract operation ProxyCreate takes arguments target (an ECMAScript language value ) and handler (an ECMAScript language value ) and returns either a normal completion containing a Proxy exotic object or a throw completion . It is used to specify the creation of new Proxy objects. It performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- If handler is not an Object , throw a TypeError exception.
+
+- Let proxy be MakeBasicObject (« [[ProxyHandler]] , [[ProxyTarget]] »).
+
+- Set proxy 's essential internal methods, except for [[Call]] and [[Construct]] , to the definitions specified in 10.5 .
+
+- If IsCallable ( target ) is true , then
+- Set proxy . [[Call]] as specified in 10.5.12 .
+
+- If IsConstructor ( target ) is true , then
+- Set proxy . [[Construct]] as specified in 10.5.13 .
+
+- Set proxy . [[ProxyTarget]] to target .
+
+- Set proxy . [[ProxyHandler]] to handler .
+
+- Return proxy .

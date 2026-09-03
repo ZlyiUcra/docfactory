@@ -1,0 +1,311 @@
+# 10 Collator Objects
+# джерело: https://tc39.es/ecma402/#collator-objects
+# отримано: 2026-09-01
+
+10 Collator Objects
+
+10.1 The Intl.Collator Constructor
+
+The Intl.Collator constructor :
+
+- is %Intl.Collator% .
+
+- is the initial value of the "Collator" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+10.1.1 Intl.Collator ( [ locales [ , options ] ] )
+
+When the Intl.Collator function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , let newTarget be the active function object , else let newTarget be NewTarget.
+
+- Let internalSlotsList be « [[InitializedCollator]] , [[Locale]] , [[Usage]] , [[Collation]] , [[Numeric]] , [[CaseFirst]] , [[Sensitivity]] , [[IgnorePunctuation]] , [[BoundCompare]] ».
+
+- Let collator be ? OrdinaryCreateFromConstructor ( newTarget , "%Intl.Collator.prototype%" , internalSlotsList ).
+
+- NOTE: The source of locale data for ResolveOptions depends upon the "usage" property of options , but the following two steps must observably precede that lookup (and must not observably repeat inside ResolveOptions ).
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Set options to ? CoerceOptionsToObject ( options ).
+
+- Let usage be ? GetOption ( options , "usage" , string , « "sort" , "search" », "sort" ).
+
+- Set collator . [[Usage]] to usage .
+
+- If usage is "sort" , then
+- Let localeData be %Intl.Collator% . [[SortLocaleData]] .
+
+- Else,
+- Let localeData be %Intl.Collator% . [[SearchLocaleData]] .
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.Collator% , localeData , CreateArrayFromList ( requestedLocales ), options ).
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set collator . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- If resolvedLocale . [[co]] is null , let collation be "default" . Otherwise, let collation be resolvedLocale . [[co]] .
+
+- Set collator . [[Collation]] to collation .
+
+- Set collator . [[Numeric]] to SameValue ( resolvedLocale . [[kn]] , "true" ).
+
+- Set collator . [[CaseFirst]] to resolvedLocale . [[kf]] .
+
+- Let resolvedLocaleData be resolvedLocale . [[LocaleData]] .
+
+- If usage is "sort" , let defaultSensitivity be "variant" . Otherwise, let defaultSensitivity be resolvedLocaleData . [[sensitivity]] .
+
+- Set collator . [[Sensitivity]] to ? GetOption ( options , "sensitivity" , string , « "base" , "accent" , "case" , "variant" », defaultSensitivity ).
+
+- Let defaultIgnorePunctuation be resolvedLocaleData . [[ignorePunctuation]] .
+
+- Set collator . [[IgnorePunctuation]] to ? GetOption ( options , "ignorePunctuation" , boolean , empty , defaultIgnorePunctuation ).
+
+- Return collator .
+
+Note
+The collation associated with the "search" value for the "usage" option should only be used to find matching strings, since this collation is not guaranteed to be in any particular order. This behaviour is described in Unicode Technical Standard #35 Part 1 Core, Unicode Collation Identifier and Unicode Technical Standard #10 Unicode Collation Algorithm, Searching and Matching .
+
+10.2 Properties of the Intl.Collator Constructor
+
+The Intl.Collator constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+10.2.1 Intl.Collator.prototype
+
+The value of Intl.Collator.prototype is %Intl.Collator.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+10.2.2 Intl.Collator.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.Collator% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+10.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 . The value of the [[RelevantExtensionKeys]] internal slot is a List that must include the element "co" , may include any or all of the elements "kf" and "kn" , and must not include any other elements.
+
+Note
+Unicode Technical Standard #35 Part 1 Core, Section 3.6.1 Key and Type Definitions describes ten locale extension keys that are relevant to collation: "co" for collator usage and specializations, "ka" for alternate handling, "kb" for backward second level weight, "kc" for case level, "kf" for case first, "kh" for hiragana quaternary, "kk" for normalization, "kn" for numeric, "kr" for reordering, "ks" for collation strength, and "vt" for variable top. Collator, however, requires that the usage is specified through the "usage" property of the options object, alternate handling through the "ignorePunctuation" property of the options object, and case level and the strength through the "sensitivity" property of the options object. The "co" key in the language tag is supported only for collator specializations, and the keys "kb" , "kh" , "kk" , "kr" , and "vt" are not allowed in this version of the Internationalization API. Support for the remaining keys is implementation dependent.
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « { [[Key]] : "co" , [[Property]] : "collation" }, { [[Key]] : "kn" , [[Property]] : "numeric" , [[Type]] : boolean }, { [[Key]] : "kf" , [[Property]] : "caseFirst" , [[Values]] : « "upper" , "lower" , "false" » } ».
+
+The values of the [[SortLocaleData]] and [[SearchLocaleData]] internal slots are implementation-defined within the constraints described in 9.1 and the following additional constraints, for all locale values locale :
+
+- The first element of [[SortLocaleData]] .[[< locale >]]. [[co]] and [[SearchLocaleData]] .[[< locale >]]. [[co]] must be null .
+
+- The values "standard" and "search" must not be used as elements in any [[SortLocaleData]] .[[< locale >]]. [[co]] and [[SearchLocaleData]] .[[< locale >]]. [[co]] List .
+
+- [[SearchLocaleData]] .[[< locale >]] must have a [[sensitivity]] field with one of the String values "base" , "accent" , "case" , or "variant" .
+
+- [[SearchLocaleData]] .[[< locale >]] and [[SortLocaleData]] .[[< locale >]] must have an [[ignorePunctuation]] field with a Boolean value.
+
+10.3 Properties of the Intl.Collator Prototype Object
+
+The Intl.Collator prototype object :
+
+- is %Intl.Collator.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.Collator instance and does not have an [[InitializedCollator]] internal slot or any of the other internal slots of Intl.Collator instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+10.3.1 Intl.Collator.prototype.constructor
+
+The initial value of Intl.Collator.prototype.constructor is %Intl.Collator% .
+
+10.3.2 Intl.Collator.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let collator be the this value.
+
+- Perform ? RequireInternalSlot ( collator , [[InitializedCollator]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 3 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of collator 's internal slot whose name is the Internal Slot value of the current row.
+
+- If the current row has an Extension Key value, then
+- Let extensionKey be the Extension Key value of the current row.
+
+- If %Intl.Collator% . [[RelevantExtensionKeys]] does not contain extensionKey , then
+- Set value to undefined .
+
+- If value is not undefined , then
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 3: Resolved Options of Collator Instances
+
+Internal Slot
+Property
+Extension Key
+
+[[Locale]]
+"locale"
+
+[[Usage]]
+"usage"
+
+[[Sensitivity]]
+"sensitivity"
+
+[[IgnorePunctuation]]
+"ignorePunctuation"
+
+[[Collation]]
+"collation"
+
+[[Numeric]]
+"numeric"
+"kn"
+
+[[CaseFirst]]
+"caseFirst"
+"kf"
+
+10.3.3 get Intl.Collator.prototype.compare
+
+This named accessor property returns a function that compares two strings according to the sort order of this Collator object.
+
+Intl.Collator.prototype.compare is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let collator be the this value.
+
+- Perform ? RequireInternalSlot ( collator , [[InitializedCollator]] ).
+
+- If collator . [[BoundCompare]] is undefined , then
+- Let func be a new built-in function object as defined in 10.3.3.1 .
+
+- Set func . [[Collator]] to collator .
+
+- Set collator . [[BoundCompare]] to func .
+
+- Return collator . [[BoundCompare]] .
+
+Note
+The returned function is bound to collator so that it can be passed directly to Array.prototype.sort or other functions.
+
+10.3.3.1 Collator Compare Functions
+
+A Collator compare function is an anonymous built-in function that has a [[Collator]] internal slot.
+
+When a Collator compare function func is called with arguments x and y , the following steps are taken:
+
+- Let collator be func . [[Collator]] .
+
+- Assert : collator is an Object and collator has an [[InitializedCollator]] internal slot.
+
+- If x is not provided, let x be undefined .
+
+- If y is not provided, let y be undefined .
+
+- Let xString be ? ToString ( x ).
+
+- Let yString be ? ToString ( y ).
+
+- Return CompareStrings ( collator , xString , yString ).
+
+The "length" property of a Collator compare function is 2 𝔽 .
+
+10.3.3.2 CompareStrings ( collator , x , y )
+
+The implementation-defined abstract operation CompareStrings takes arguments collator (an Intl.Collator), x (a String), and y (a String) and returns a Number, but not NaN .
+The returned Number represents the result of an implementation-defined locale-sensitive String comparison of x with y .
+The result is intended to correspond with a sort order of String values according to the effective locale and collation options of collator , and will be negative when x is ordered before y , positive when x is ordered after y , and zero in all other cases (representing no relative ordering between x and y ).
+String values must be interpreted as UTF-16 code unit sequences as described in ECMA-262 , 6.1.4 , and a surrogate pair (a code unit in the range 0xD800 to 0xDBFF followed by a code unit in the range 0xDC00 to 0xDFFF) within a string must be interpreted as the corresponding code point.
+
+Behaviour as described below depends upon locale-sensitive identification of the sequence of collation elements for a string, in particular "base letters", and different base letters always compare as unequal (causing the strings containing them to also compare as unequal). Results of comparing variations of the same base letter with different case, diacritic marks, or potentially other aspects further depends upon collator . [[Sensitivity]] as follows:
+
+Table 4: Effects of Collator Sensitivity
+
+[[Sensitivity]]
+Description
+"a" vs. "á"
+"a" vs. "A"
+
+"base"
+Characters with the same base letter do not compare as unequal, regardless of differences in case and/or diacritic marks.
+equal
+equal
+
+"accent"
+Characters with the same base letter compare as unequal only if they differ in accents and/or other diacritic marks, regardless of differences in case.
+not equal
+equal
+
+"case"
+Characters with the same base letter compare as unequal only if they differ in case, regardless of differences in accents and/or other diacritic marks.
+equal
+not equal
+
+"variant"
+Characters with the same base letter compare as unequal if they differ in case, diacritic marks, and/or potentially other differences.
+not equal
+not equal
+
+Note 1
+The mapping from input code points to base letters can include arbitrary contractions, expansions, and collisions, including those that apply special treatment to certain characters with diacritic marks. For example, in Swedish, "ö" is a base letter that differs from "o", and "v" and "w" are considered to be the same base letter. In Slovak, "ch" is a single base letter, and in English, "æ" is a sequence of base letters starting with "a" and ending with "e".
+
+If collator . [[IgnorePunctuation]] is true , then punctuation is ignored (e.g., strings that differ only in punctuation compare as equal).
+
+For the interpretation of options settable through locale extension keys, see Unicode Technical Standard #35 Part 1 Core, Section 3.6.1 Key and Type Definitions .
+
+The actual return values are implementation-defined to permit encoding additional information in them, but this operation for any given collator , when considered as a function of x and y , is required to be a consistent comparator defining a total ordering on the set of all Strings. This operation is also required to recognize and honour canonical equivalence according to the Unicode Standard, including returning +0 𝔽 when comparing distinguishable Strings that are canonically equivalent.
+
+Note 2
+It is recommended that the CompareStrings abstract operation be implemented following Unicode Technical Standard #10: Unicode Collation Algorithm , using tailorings for the effective locale and collation options of collator . It is recommended that implementations use the tailorings provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+Note 3
+Applications should not assume that the behaviour of the CompareStrings abstract operation for Collator instances with the same resolved options will remain the same for different versions of the same implementation.
+
+10.3.4 Intl.Collator.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.Collator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+10.4 Properties of Intl.Collator Instances
+
+Intl.Collator instances are ordinary objects that inherit properties from %Intl.Collator.prototype% .
+
+Intl.Collator instances have an [[InitializedCollator]] internal slot.
+
+Intl.Collator instances also have several internal slots that are computed by The Intl.Collator Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for collation.
+
+- [[Usage]] is one of the String values "sort" or "search" , identifying the collator usage.
+
+- [[Sensitivity]] is one of the String values "base" , "accent" , "case" , or "variant" , identifying the collator's sensitivity.
+
+- [[IgnorePunctuation]] is a Boolean value, specifying whether punctuation should be ignored in comparisons.
+
+- [[Collation]] is a String value representing the Unicode Collation Identifier used for collation, except that the values "standard" and "search" are not allowed, while the value "default" is allowed.
+
+Intl.Collator instances also have the following internal slots if the key corresponding to the name of the internal slot in Table 3 is included in the [[RelevantExtensionKeys]] internal slot of Intl.Collator:
+
+- [[Numeric]] is a Boolean value, specifying whether numeric sorting is used.
+
+- [[CaseFirst]] is one of the String values "upper" , "lower" , or "false" .
+
+Finally, Intl.Collator instances have a [[BoundCompare]] internal slot that caches the function returned by the compare accessor ( 10.3.3 ).

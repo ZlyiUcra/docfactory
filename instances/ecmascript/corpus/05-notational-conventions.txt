@@ -1,0 +1,720 @@
+# 5 Notational Conventions
+# джерело: https://tc39.es/ecma262/multipage/notational-conventions.html#sec-notational-conventions
+# отримано: 2026-09-01
+
+5 Notational Conventions
+
+5.1 Syntactic and Lexical Grammars
+
+5.1.1 Context-Free Grammars
+
+A context-free grammar consists of a number of productions . Each production has an abstract symbol called a nonterminal as its left-hand side , and a sequence of zero or more nonterminal and terminal symbols as its right-hand side . For each grammar, the terminal symbols are drawn from a specified alphabet.
+
+A chain production is a production that has exactly one nonterminal symbol on its right-hand side along with zero or more terminal symbols.
+
+Starting from a sentence consisting of a single distinguished nonterminal, called the goal symbol , a given context-free grammar specifies a language , namely, the (perhaps infinite) set of possible sequences of terminal symbols that can result from repeatedly replacing any nonterminal in the sequence with a right-hand side of a production for which the nonterminal is the left-hand side.
+
+5.1.2 The Lexical and RegExp Grammars
+
+A lexical grammar for ECMAScript is given in clause 12 . This grammar has as its terminal symbols Unicode code points that conform to the rules for SourceCharacter defined in 11.1 . It defines a set of productions, starting from the goal symbol InputElementDiv , InputElementTemplateTail , InputElementRegExp , InputElementRegExpOrTemplateTail , or InputElementHashbangOrRegExp , that describe how sequences of such code points are translated into a sequence of input elements.
+
+Input elements other than white space and comments form the terminal symbols for the syntactic grammar for ECMAScript and are called ECMAScript tokens . These tokens are the reserved words , identifiers, literals, and punctuators of the ECMAScript language. Moreover, line terminators, although not considered to be tokens, also become part of the stream of input elements and guide the process of automatic semicolon insertion ( 12.10 ). Simple white space and single-line comments are discarded and do not appear in the stream of input elements for the syntactic grammar. A MultiLineComment (that is, a comment of the form /* … */ regardless of whether it spans more than one line) is likewise simply discarded if it contains no line terminator; but if a MultiLineComment contains one or more line terminators, then it is replaced by a single line terminator, which becomes part of the stream of input elements for the syntactic grammar.
+
+A RegExp grammar for ECMAScript is given in 22.2.1 . This grammar also has as its terminal symbols the code points as defined by SourceCharacter . It defines a set of productions, starting from the goal symbol Pattern , that describe how sequences of code points are translated into regular expression patterns.
+
+Productions of the lexical and RegExp grammars are distinguished by having two colons “ :: ” as separating punctuation. The lexical and RegExp grammars share some productions.
+
+5.1.3 The Numeric String Grammar
+
+A numeric string grammar appears in 7.1.4.1 . It has as its terminal symbols SourceCharacter , and is used for translating Strings into numeric values starting from the goal symbol StringNumericLiteral (which is similar to but distinct from the lexical grammar for numeric literals ).
+
+Productions of the numeric string grammar are distinguished by having three colons “ ::: ” as punctuation, and are never used for parsing source text.
+
+5.1.4 The Syntactic Grammar
+
+The syntactic grammar for ECMAScript is given in clauses 13 through 16 . This grammar has ECMAScript tokens defined by the lexical grammar as its terminal symbols ( 5.1.2 ). It defines a set of productions, starting from two alternative goal symbols Script and Module , that describe how sequences of tokens form syntactically correct independent components of ECMAScript programs.
+
+When a stream of code points is to be parsed as an ECMAScript Script or Module , it is first converted to a stream of input elements by repeated application of the lexical grammar; this stream of input elements is then parsed by a single application of the syntactic grammar. The input stream is syntactically in error if the tokens in the stream of input elements cannot be parsed as a single instance of the goal nonterminal ( Script or Module ), with no tokens left over.
+
+When a parse is successful, it constructs a parse tree , a rooted tree structure in which each node is a Parse Node . Each Parse Node is an instance of a symbol in the grammar; it represents a span of the source text that can be derived from that symbol. The root node of the parse tree, representing the whole of the source text, is an instance of the parse's goal symbol . When a Parse Node is an instance of a nonterminal, it is also an instance of some production that has that nonterminal as its left-hand side. Moreover, it has zero or more children , one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol.
+
+New Parse Nodes are instantiated for each invocation of the parser and never reused between parses even of identical source text. Parse Nodes are considered the same Parse Node if and only if they represent the same span of source text, are instances of the same grammar symbol, and resulted from the same parser invocation.
+
+Note 1
+Parsing the same String multiple times will lead to different Parse Nodes. For example, consider:
+
+let str = "1 + 1;" ;
+eval (str);
+eval (str);
+Each call to eval converts the value of str into ECMAScript source text and performs an independent parse that creates its own separate tree of Parse Nodes. The trees are distinct even though each parse operates upon a source text that was derived from the same String value.
+
+Note 2 Parse Nodes are specification artefacts, and implementations are not required to use an analogous data structure.
+
+Productions of the syntactic grammar are distinguished by having just one colon “ : ” as punctuation.
+
+The syntactic grammar as presented in clauses 13 through 16 is not a complete account of which token sequences are accepted as a correct ECMAScript Script or Module . Certain additional token sequences are also accepted, namely, those that would be described by the grammar if only semicolons were added to the sequence in certain places (such as before line terminator characters). Furthermore, certain token sequences that are described by the grammar are not considered acceptable if a line terminator character appears in certain “awkward” places.
+
+In certain cases, in order to avoid ambiguities, the syntactic grammar uses generalized productions that permit token sequences that do not form a valid ECMAScript Script or Module . For example, this technique is used for object literals and object destructuring patterns. In such cases a more restrictive supplemental grammar is provided that further restricts the acceptable token sequences. Typically, an early error rule will then state that, in certain contexts, “ p must cover an n ”, where p is a Parse Node (an instance of the generalized production) and n is a nonterminal from the supplemental grammar. This means:
+
+- No early error rules are applied to p or any of its descendants.
+
+- The sequence of tokens originally matched by p is parsed again using n as the goal symbol . If n takes grammatical parameters, then they are set to the same values used when p was originally parsed.
+
+- If the sequence of tokens can be parsed as a single instance of n , with no tokens left over, then:
+
+- We refer to that instance of n (a Parse Node, unique for a given p ) as “the n that is covered by p ”.
+
+- Early error rules are applied to the n that is covered by p and to its descendants, as modified by further cases of “ must cover ”.
+
+- Otherwise (if the parse fails), it is an early Syntax Error.
+
+5.1.5 Grammar Notation
+
+5.1.5.1 Terminal Symbols
+
+In the ECMAScript grammars, some terminal symbols are shown in fixed-width font. These are to appear in a source text exactly as written. All terminal symbol code points specified in this way are to be understood as the appropriate Unicode code points from the Basic Latin block, as opposed to any similar-looking code points from other Unicode ranges. A code point in a terminal symbol cannot be expressed by a \ UnicodeEscapeSequence .
+
+In grammars whose terminal symbols are individual Unicode code points (i.e., the lexical, RegExp, and numeric string grammars), a contiguous run of multiple fixed-width code points appearing in a production is a simple shorthand for the same sequence of code points, written as standalone terminal symbols.
+
+For example, the production:
+
+HexIntegerLiteral ::
+0x
+HexDigits
+
+is a shorthand for:
+
+HexIntegerLiteral ::
+0
+x
+HexDigits
+
+In contrast, in the syntactic grammar, a contiguous run of fixed-width code points is a single terminal symbol.
+
+Terminal symbols come in two other forms:
+
+- In the lexical and RegExp grammars, Unicode code points without a conventional printed representation are instead shown in the form “<ABBREV>” where “ABBREV” is a mnemonic for the code point or set of code points. These forms are defined in Unicode Format-Control Characters , White Space , and Line Terminators .
+
+- In the syntactic grammar, certain terminal symbols (e.g. IdentifierName and RegularExpressionLiteral ) are shown in italics, as they refer to the nonterminals of the same name in the lexical grammar.
+
+5.1.5.2 Nonterminal Symbols and Productions
+
+Nonterminal symbols are shown in italic type. The definition of a nonterminal (also called a “production”) is introduced by the name of the nonterminal being defined followed by one or more colons. (The number of colons indicates to which grammar the production belongs.) One or more alternative right-hand sides for the nonterminal then follow on succeeding lines. For example, the syntactic definition:
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+states that the nonterminal WhileStatement represents the token while , followed by a left parenthesis token, followed by an Expression , followed by a right parenthesis token, followed by a Statement . The occurrences of Expression and Statement are themselves nonterminals. As another example, the syntactic definition:
+
+ArgumentList :
+AssignmentExpression
+
+ArgumentList
+,
+AssignmentExpression
+
+states that an ArgumentList may represent either a single AssignmentExpression or an ArgumentList , followed by a comma, followed by an AssignmentExpression . This definition of ArgumentList is recursive, that is, it is defined in terms of itself. The result is that an ArgumentList may contain any positive number of arguments, separated by commas, where each argument expression is an AssignmentExpression . Such recursive definitions of nonterminals are common.
+
+5.1.5.3 Optional Symbols
+
+The subscripted suffix “ opt ”, which may appear after a terminal or nonterminal, indicates an optional symbol. The alternative containing the optional symbol actually specifies two right-hand sides, one that omits the optional element and one that includes it. This means that:
+
+VariableDeclaration :
+BindingIdentifier
+Initializer opt
+
+is a convenient abbreviation for:
+
+VariableDeclaration :
+BindingIdentifier
+
+BindingIdentifier
+Initializer
+
+and that:
+
+ForStatement :
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+is a convenient abbreviation for:
+
+ForStatement :
+for
+(
+LexicalDeclaration
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression
+;
+Expression opt
+)
+Statement
+
+which in turn is an abbreviation for:
+
+ForStatement :
+for
+(
+LexicalDeclaration
+;
+)
+Statement
+
+for
+(
+LexicalDeclaration
+;
+Expression
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression
+;
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression
+;
+Expression
+)
+Statement
+
+so, in this example, the nonterminal ForStatement actually has four alternative right-hand sides.
+
+5.1.5.4 Grammatical Parameters
+
+A production may be parameterized by a subscripted annotation of the form “ [parameters] ”, which may appear as a suffix to the nonterminal symbol defined by the production. “ parameters ” may be either a single name or a comma separated list of names. A parameterized production is shorthand for a set of productions defining all combinations of the parameter names, preceded by an underscore, appended to the parameterized nonterminal symbol. This means that:
+
+StatementList [Return] :
+ReturnStatement
+
+ExpressionStatement
+
+is a convenient abbreviation for:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement
+
+StatementList_Return :
+ReturnStatement
+
+ExpressionStatement
+
+and that:
+
+StatementList [Return, In] :
+ReturnStatement
+
+ExpressionStatement
+
+is an abbreviation for:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement
+
+StatementList_Return :
+ReturnStatement
+
+ExpressionStatement
+
+StatementList_In :
+ReturnStatement
+
+ExpressionStatement
+
+StatementList_Return_In :
+ReturnStatement
+
+ExpressionStatement
+
+Multiple parameters produce a combinatoric number of productions, not all of which are necessarily referenced in a complete grammar.
+
+References to nonterminals on the right-hand side of a production can also be parameterized. For example:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement [+In]
+
+is equivalent to saying:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement_In
+
+and:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement [~In]
+
+is equivalent to:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement
+
+A nonterminal reference may have both a parameter list and an “ opt ” suffix. For example:
+
+VariableDeclaration :
+BindingIdentifier
+Initializer [+In] opt
+
+is an abbreviation for:
+
+VariableDeclaration :
+BindingIdentifier
+
+BindingIdentifier
+Initializer_In
+
+Prefixing a parameter name with “ ? ” on a right-hand side nonterminal reference makes that parameter value dependent upon the occurrence of the parameter name on the reference to the current production's left-hand side symbol. For example:
+
+VariableDeclaration [In] :
+BindingIdentifier
+Initializer [?In]
+
+is an abbreviation for:
+
+VariableDeclaration :
+BindingIdentifier
+Initializer
+
+VariableDeclaration_In :
+BindingIdentifier
+Initializer_In
+
+If a right-hand side alternative is prefixed with “[+parameter]” that alternative is only available if the named parameter was used in referencing the production's nonterminal symbol. If a right-hand side alternative is prefixed with “[~parameter]” that alternative is only available if the named parameter was not used in referencing the production's nonterminal symbol. This means that:
+
+StatementList [Return] : [+Return]
+ReturnStatement
+
+ExpressionStatement
+
+is an abbreviation for:
+
+StatementList :
+ExpressionStatement
+
+StatementList_Return :
+ReturnStatement
+
+ExpressionStatement
+
+and that:
+
+StatementList [Return] : [~Return]
+ReturnStatement
+
+ExpressionStatement
+
+is an abbreviation for:
+
+StatementList :
+ReturnStatement
+
+ExpressionStatement
+
+StatementList_Return :
+ExpressionStatement
+
+5.1.5.5 one of
+
+When the words “ one of ” follow the colon(s) in a grammar definition, they signify that each of the terminal symbols on the following line or lines is an alternative definition. For example, the lexical grammar for ECMAScript contains the production:
+
+NonZeroDigit :: one of 1 2 3 4 5 6 7 8 9
+
+which is merely a convenient abbreviation for:
+
+NonZeroDigit ::
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+5.1.5.6 [empty]
+
+If the phrase “[empty]” appears as the right-hand side of a production, it indicates that the production's right-hand side contains no terminals or nonterminals.
+
+5.1.5.7 Lookahead Restrictions
+
+If the phrase “[lookahead = seq ]” appears in the right-hand side of a production, it indicates that the production may only be used if the token sequence seq is a prefix of the immediately following input token sequence. Similarly, “[lookahead ∈ set ]”, where set is a finite non-empty set of token sequences, indicates that the production may only be used if some element of set is a prefix of the immediately following token sequence. For convenience, the set can also be written as a nonterminal, in which case it represents the set of all token sequences to which that nonterminal could expand. It is considered an editorial error if the nonterminal could expand to infinitely many distinct token sequences.
+
+These conditions may be negated. “[lookahead ≠ seq ]” indicates that the containing production may only be used if seq is not a prefix of the immediately following input token sequence, and “[lookahead ∉ set ]” indicates that the production may only be used if no element of set is a prefix of the immediately following token sequence.
+
+As an example, given the definitions:
+
+DecimalDigit :: one of 0 1 2 3 4 5 6 7 8 9
+
+DecimalDigits ::
+DecimalDigit
+
+DecimalDigits
+DecimalDigit
+
+the definition:
+
+LookaheadExample ::
+n
+[lookahead ∉ { 1 , 3 , 5 , 7 , 9 }]
+DecimalDigits
+
+DecimalDigit
+[lookahead ∉ DecimalDigit ]
+
+matches either the letter n followed by one or more decimal digits the first of which is even, or a decimal digit not followed by another decimal digit.
+
+Note that when these phrases are used in the syntactic grammar, it may not be possible to unambiguously identify the immediately following token sequence because determining later tokens requires knowing which lexical goal symbol to use at later positions. As such, when these are used in the syntactic grammar, it is considered an editorial error for a token sequence seq to appear in a lookahead restriction (including as part of a set of sequences) if the choices of lexical goal symbols to use could change whether or not seq would be a prefix of the resulting token sequence.
+
+5.1.5.8 [no LineTerminator here]
+
+If the phrase “[no LineTerminator here]” appears in the right-hand side of a production of the syntactic grammar, it indicates that the production is a restricted production : it may not be used if a LineTerminator occurs in the input stream at the indicated position. For example, the production:
+
+ThrowStatement :
+throw
+[no LineTerminator here]
+Expression
+;
+
+indicates that the production may not be used if a LineTerminator occurs in the script between the throw token and the Expression .
+
+Unless the presence of a LineTerminator is forbidden by a restricted production, any number of occurrences of LineTerminator may appear between any two consecutive tokens in the stream of input elements without affecting the syntactic acceptability of the script.
+
+5.1.5.9 but not
+
+The right-hand side of a production may specify that certain expansions are not permitted by using the phrase “ but not ” and then indicating the expansions to be excluded. For example, the production:
+
+Identifier ::
+IdentifierName but not ReservedWord
+
+means that the nonterminal Identifier may be replaced by any sequence of code points that could replace IdentifierName provided that the same sequence of code points could not replace ReservedWord .
+
+5.1.5.10 Descriptive Phrases
+
+Finally, a few nonterminal symbols are described by a descriptive phrase in sans-serif type in cases where it would be impractical to list all the alternatives:
+
+SourceCharacter ::
+any Unicode code point
+
+5.2 Algorithm Conventions
+
+The specification often uses a numbered list to specify steps in an algorithm. These algorithms are used to precisely specify the required semantics of ECMAScript language constructs. The algorithms are not intended to imply the use of any specific implementation technique. In practice, there may be more efficient algorithms available to implement a given feature.
+
+Algorithms may be explicitly parameterized with an ordered, comma-separated sequence of alias names which may be used within the algorithm steps to reference the argument passed in that position. Optional parameters are denoted with surrounding brackets ([ , name ]) and are no different from required parameters within algorithm steps. A rest parameter may appear at the end of a parameter list, denoted with leading ellipsis (, ... name ). The rest parameter captures all of the arguments provided following the required and optional parameters into a List . If there are no such additional arguments, that List is empty.
+
+Algorithm steps may be subdivided into sequential substeps. Substeps are indented and may themselves be further divided into indented substeps. Outline numbering conventions are used to identify substeps with the first level of substeps labelled with lowercase alphabetic characters and the second level of substeps labelled with lowercase roman numerals. If more than three levels are required these rules repeat with the fourth level using numeric labels. For example:
+
+- Top-level step
+- Substep.
+
+- Substep.
+- Subsubstep.
+- Subsubsubstep
+- Subsubsubsubstep
+- Subsubsubsubsubstep
+
+A step or substep may be written as an “if” predicate that conditions its substeps. In this case, the substeps are only applied if the predicate is true. If a step or substep begins with the word “else”, it is a predicate that is the negation of the preceding “if” predicate step at the same level.
+
+A step may begin with “For each” or “Repeat” to specify the iterative application of its substeps.
+
+A step that begins with “ Assert :” asserts an invariant condition of its algorithm. Such assertions are used to make explicit algorithmic invariants that would otherwise be implicit. Similarly, a step that begins with “ NOTE :” provides pertinent context for nearby steps. Assertion steps and note steps are strictly informative; they add no additional semantic requirements and hence need not be checked by an implementation.
+
+Algorithm steps may declare named aliases for any value using the form “Let x be someValue ”. These aliases are reference-like in that both x and someValue refer to the same underlying data and modifications to either are visible to both. Algorithm steps that want to avoid this reference-like behaviour should explicitly make a copy of the right-hand side: “Let x be a copy of someValue ” creates a shallow copy of someValue .
+
+Once declared, an alias may be referenced in any subsequent steps and must not be referenced from steps prior to the alias's declaration. Aliases may be modified using the form “Set x to someOtherValue ”.
+
+5.2.1 Evaluation Order
+
+When complex expressions appear in algorithm steps, these are to be understood as being evaluated in a left-to-right, inside-to-outside order. For example, the step
+
+- Return A(B(), C. [[D]] ) + E(F()).
+
+is equivalent to
+
+- Let tmp1 be B().
+
+- Let tmp2 be C. [[D]] .
+
+- Let tmp3 be A( tmp1 , tmp2 ).
+
+- Let tmp4 be F().
+
+- Let tmp5 be E( tmp4 ).
+
+- Let tmp6 be tmp3 + tmp5 .
+
+- Return tmp6 .
+
+where the various tmpN aliases are ephemeral and visible only in these steps.
+
+5.2.2 Abstract Operations
+
+In order to facilitate their use in multiple parts of this specification, some algorithms, called abstract operations , are named and written in parameterized functional form so that they may be referenced by name from within other algorithms. Abstract operations are typically referenced using a functional application style such as OperationName( arg1 , arg2 ). Some abstract operations are treated as polymorphically dispatched methods of class-like specification abstractions. Such method-like abstract operations are typically referenced using a method application style such as someValue .OperationName( arg1 , arg2 ).
+
+5.2.3 Syntax-Directed Operations
+
+A syntax-directed operation is a named operation whose definition consists of algorithms, each of which is associated with one or more productions from one of the ECMAScript grammars. A production that has multiple alternative definitions will typically have a distinct algorithm for each alternative. When an algorithm is associated with a grammar production, it may reference the terminal and nonterminal symbols of the production alternative as if they were parameters of the algorithm. When used in this manner, nonterminal symbols refer to the actual alternative definition that is matched when parsing the source text. The source text matched by a grammar production or Parse Node derived from it is the portion of the source text that starts at the beginning of the first terminal that participated in the match and ends at the end of the last terminal that participated in the match.
+
+When an algorithm is associated with a production alternative, the alternative is typically shown without any “[ ]” grammar annotations. Such annotations should only affect the syntactic recognition of the alternative and have no effect on the associated semantics for the alternative.
+
+Syntax-directed operations are invoked with a parse node and, optionally, other parameters by using the conventions on steps 1 , 3 , and 4 in the following algorithm:
+
+- Let status be SyntaxDirectedOperation of SomeNonTerminal .
+
+- Let someParseNode be the parse of some source text.
+
+- Perform SyntaxDirectedOperation of someParseNode .
+
+- Perform SyntaxDirectedOperation of someParseNode with argument "value" .
+
+Unless explicitly specified otherwise, all chain productions have an implicit definition for every operation that might be applied to that production's left-hand side nonterminal. The implicit definition simply reapplies the same operation with the same parameters, if any, to the chain production 's sole right-hand side nonterminal and then returns the result. For example, assume that some algorithm has a step of the form: “Return Evaluation of Block ” and that there is a production:
+
+Block :
+{
+StatementList
+}
+
+but the Evaluation operation does not associate an algorithm with that production. In that case, the Evaluation operation implicitly includes an association of the form:
+
+Runtime Semantics: Evaluation
+
+Block :
+{
+StatementList
+}
+
+- Return Evaluation of StatementList .
+
+5.2.4 Runtime Semantics
+
+Algorithms which specify semantics that must be called at runtime are called runtime semantics . Runtime semantics are defined by abstract operations or syntax-directed operations .
+
+5.2.4.1 Completion ( completionRecord )
+
+The abstract operation Completion takes argument completionRecord (a Completion Record ) and returns a Completion Record . It is used to emphasize that a Completion Record is being returned. It performs the following steps when called:
+
+- Assert : completionRecord is a Completion Record .
+
+- Return completionRecord .
+
+5.2.4.2 Throw
+
+In algorithm steps, the word “throw” is shorthand for returning the result of calling ThrowCompletion . For example,
+
+- If result . [[Error]] is not none , throw result . [[Error]] .
+
+is equivalent to
+
+- If result . [[Error]] is not none , return ThrowCompletion ( result . [[Error]] ).
+
+Algorithm steps that say to throw an exception of a particular type construct an exception of that type to be thrown. For example,
+
+- Throw a TypeError exception.
+
+is equivalent to
+
+- Return ThrowCompletion (a newly created TypeError object).
+
+5.2.4.3 Shorthands for Unwrapping Completion Records
+
+Prefix “?” and “!” are used as shorthands which unwrap Completion Records . “?” is used to propagate an abrupt completion to the caller, or otherwise to unwrap a normal completion . “!” is used to assert that a Completion Record is normal and unwrap it. Formally, the step
+
+- Let result be ? record .
+
+is equivalent to
+
+- Assert : record is a Completion Record .
+
+- If record is an abrupt completion , return record .
+
+- Let result be record . [[Value]] .
+
+Likewise, the step
+
+- Let result be ! record .
+
+is equivalent to
+
+- Assert : record is a normal completion .
+
+- Let result be record . [[Value]] .
+
+When “?” or “!” is used in any other context, first apply the rewrite given in Evaluation Order until this rule can be applied, then apply this rule. For example, the step
+
+- Perform AO(? Other()).
+
+can be rewritten to
+
+- Let tmp1 be Other().
+
+- Let tmp2 be ? tmp1 .
+
+- Perform AO( tmp2 ).
+
+which in turn expands to
+
+- Let tmp1 be Other().
+
+- Assert : tmp1 is a Completion Record .
+
+- If tmp1 is an abrupt completion , return tmp1 .
+
+- Let tmp2 be tmp1 . [[Value]] .
+
+- Perform AO( tmp2 ).
+
+5.2.4.4 Implicit Normal Completion
+
+In algorithms within abstract operations which are declared to return a Completion Record , and within all built-in functions, the returned value is first passed to NormalCompletion , and the result is used instead. This rule does not apply within the Completion algorithm or when the value being returned is clearly marked as a Completion Record in that step; these cases are:
+
+- when the result of applying Completion , NormalCompletion , ThrowCompletion , or ReturnCompletion is directly returned
+
+- when the result of constructing a Completion Record is directly returned
+
+It is an editorial error if a Completion Record is returned from such an abstract operation through any other means. For example, within these abstract operations ,
+
+- Return true .
+
+means the same things as any of
+
+- Return NormalCompletion ( true ).
+
+or
+
+- Let completion be NormalCompletion ( true ).
+
+- Return Completion ( completion ).
+
+or
+
+- Return Completion Record { [[Type]] : normal , [[Value]] : true , [[Target]] : empty }.
+
+Note that, through the ? shorthand expansion , the following example is allowed, as within the expanded steps, the result of applying Completion is returned directly in the abrupt case and the implicit NormalCompletion application occurs after unwrapping in the normal case.
+
+- Return ? completion .
+
+The following example would be an editorial error because a Completion Record is being returned without being annotated in that step.
+
+- Let completion be NormalCompletion ( true ).
+
+- Return completion .
+
+5.2.5 Static Semantics
+
+Context-free grammars are not sufficiently powerful to express all the rules that define whether a stream of input elements form a valid ECMAScript Script or Module that may be evaluated. In some situations additional rules are needed that may be expressed using either ECMAScript algorithm conventions or prose requirements. Such rules are always associated with a production of a grammar and are called the static semantics of the production.
+
+Static Semantic Rules have names and typically are defined using an algorithm. Named Static Semantic Rules are associated with grammar productions and a production that has multiple alternative definitions will typically have for each alternative a distinct algorithm for each applicable named static semantic rule.
+
+A special kind of static semantic rule is an Early Error Rule . Early error rules define early error conditions (see clause 17 ) that are associated with specific grammar productions. Evaluation of most early error rules are not explicitly invoked within the algorithms of this specification. A conforming implementation must, prior to the first evaluation of a Script or Module , validate all of the early error rules of the productions used to parse that Script or Module . If any of the early error rules are violated the Script or Module is invalid and cannot be evaluated.
+
+5.2.6 Mathematical Operations
+
+This specification makes reference to these kinds of numeric values:
+
+- Mathematical values : Arbitrary real numbers, used as the default numeric type.
+
+- Extended mathematical values : Mathematical values together with +∞ and -∞.
+
+- Numbers : IEEE 754-2019 binary64 (double-precision floating point) values.
+
+- BigInts : ECMAScript language values representing arbitrary integers in a one-to-one correspondence.
+
+In the language of this specification, numerical values are distinguished among different numeric kinds using subscript suffixes. The subscript 𝔽 refers to Numbers, and the subscript ℤ refers to BigInts. Numeric values without a subscript suffix refer to mathematical values . This specification denotes most numeric values in base 10; it also uses numeric values of the form 0x followed by digits 0-9 or A-F as base-16 values.
+
+In general, when this specification refers to a numerical value, such as in the phrase, “the length of y ” or “the integer represented by the four hexadecimal digits ...”, without explicitly specifying a numeric kind, the phrase refers to a mathematical value . Phrases which refer to a Number or a BigInt value are explicitly annotated as such; for example, “the Number value for the number of code points in …” or “the BigInt value for …”.
+
+When the term integer is used in this specification, it refers to a mathematical value which is in the set of integers , unless otherwise stated. When the term integral Number is used in this specification, it refers to a finite Number value whose mathematical value is in the set of integers .
+
+Numeric operators such as +, ×, =, and ≥ refer to those operations as determined by the type of the operands. When applied to mathematical values , the operators refer to the usual mathematical operations. When applied to extended mathematical values , the operators refer to the usual mathematical operations over the extended real numbers; indeterminate forms are not defined and their use in this specification should be considered an editorial error. When applied to Numbers, the operators refer to the relevant operations within IEEE 754-2019 . When applied to BigInts, the operators refer to the usual mathematical operations applied to the mathematical value of the BigInt. Numeric operators applied to mixed-type operands (such as a Number and a mathematical value ) are not defined and should be considered an editorial error in this specification.
+
+Conversions between mathematical values and Numbers or BigInts are always explicit in this document. A conversion from a mathematical value or extended mathematical value x to a Number is denoted as “the Number value for x ” or 𝔽( x ) , and is defined in 6.1.6.1 . A conversion from an integer x to a BigInt is denoted as “the BigInt value for x ” or ℤ( x ) . A conversion from a Number or BigInt x to a mathematical value is denoted as “the mathematical value of x ”, or ℝ( x ) . The mathematical value of +0 𝔽 and -0 𝔽 is the mathematical value 0. The mathematical value of non- finite values is not defined. The extended mathematical value of x is the mathematical value of x for finite values, and is +∞ and -∞ for +∞ 𝔽 and -∞ 𝔽 respectively; it is not defined for NaN .
+
+The mathematical function abs( x ) produces the absolute value of x , which is - x if x < 0 and otherwise is x itself.
+
+The mathematical function ln( x ) produces the natural logarithm of x . The mathematical function log10( x ) produces the base 10 logarithm of x . The mathematical function log2( x ) produces the base 2 logarithm of x .
+
+The mathematical function min( x1 , x2 , … , xN ) produces the mathematically smallest of x1 through xN . The mathematical function max( x1 , x2 , ..., xN ) produces the mathematically largest of x1 through xN . The domain and range of these mathematical functions are the extended mathematical values .
+
+The notation “ x modulo y ” ( y must be finite and non-zero) computes a value k of the same sign as y (or zero) such that abs ( k ) < abs ( y ) and x - k = q × y for some integer q .
+
+The phrase “the result of clamping x between lower and upper ” (where x is an extended mathematical value and lower and upper are mathematical values such that lower ≤ upper ) produces lower if x < lower , produces upper if x > upper , and otherwise produces x .
+
+The mathematical function floor( x ) produces the largest integer (closest to +∞) that is not larger than x .
+
+Note
+floor ( x ) = x - ( x modulo 1) .
+
+The mathematical function truncate( x ) removes the fractional part of x by rounding towards zero, producing - floor (- x ) if x < 0 and otherwise producing floor ( x ) .
+
+Mathematical functions min , max , abs , floor , and truncate are not defined for Numbers and BigInts, and any usage of those methods that have non- mathematical value arguments would be an editorial error in this specification.
+
+An interval from lower bound a to upper bound b is a possibly-infinite, possibly-empty set of numeric values of the same numeric type. Each bound will be described as either inclusive or exclusive, but not both. There are four kinds of intervals, as follows:
+
+- An interval from a (inclusive) to b (inclusive), also called an inclusive interval from a to b , includes all values x of the same numeric type such that a ≤ x ≤ b , and no others.
+
+- An interval from a (inclusive) to b (exclusive) includes all values x of the same numeric type such that a ≤ x < b , and no others.
+
+- An interval from a (exclusive) to b (inclusive) includes all values x of the same numeric type such that a < x ≤ b , and no others.
+
+- An interval from a (exclusive) to b (exclusive) includes all values x of the same numeric type such that a < x < b , and no others.
+
+For example, the interval from 1 (inclusive) to 2 (exclusive) consists of all mathematical values between 1 and 2, including 1 and not including 2. For the purpose of defining intervals, -0 𝔽 < +0 𝔽 , so, for example, an inclusive interval with a lower bound of +0 𝔽 includes +0 𝔽 but not -0 𝔽 . NaN is never included in an interval .
+
+5.2.7 Value Notation
+
+In this specification, ECMAScript language values are displayed in bold . Examples include null , true , or "hello" . These are distinguished from ECMAScript source text such as Function.prototype.apply or let n = 42; .
+
+5.2.8 Identity
+
+In this specification, both specification values and ECMAScript language values are compared for equality. When comparing for equality, values fall into one of two categories. Values without identity are equal to other values without identity if all of their innate characteristics are the same — characteristics such as the magnitude of an integer or the length of a sequence. Values without identity may be manifest without prior reference by fully describing their characteristics. In contrast, each value with identity is unique and therefore only equal to itself. Values with identity are like values without identity but with an additional unguessable, unchangeable, universally-unique characteristic called identity . References to existing values with identity cannot be manifest simply by describing them, as the identity itself is indescribable; instead, references to these values must be explicitly passed from one place to another. Some values with identity are mutable and therefore can have their characteristics (except their identity) changed in-place, causing all holders of the value to observe the new characteristics. A value without identity is never equal to a value with identity.
+
+From the perspective of this specification, the word “is” is used to compare two values for equality, as in “If bool is true , then ...”, and the word “contains” is used to search for a value inside lists using equality comparisons, as in “If list contains a Record r such that r . [[Foo]] is true , then ...”. The specification identity of values determines the result of these comparisons and is axiomatic in this specification.
+
+From the perspective of the ECMAScript language, language values are compared for equality using the SameValue abstract operation and the abstract operations it transitively calls. The algorithms of these comparison abstract operations determine language identity of ECMAScript language values .
+
+For specification values, examples of values without specification identity include, but are not limited to: mathematical values and extended mathematical values ; ECMAScript source text , surrogate pairs , Directive Prologues , etc; UTF-16 code units; Unicode code points; enums ; abstract operations , including syntax-directed operations , host hooks , etc; and ordered pairs. Examples of specification values with specification identity include, but are not limited to: any kind of Records , including Property Descriptors , PrivateElements , etc; Parse Nodes ; Lists ; Sets and Relations ; Abstract Closures ; Data Blocks ; Private Names ; execution contexts and execution context stacks ; agent signifiers ; and WaiterList Records .
+
+Specification identity agrees with language identity for all ECMAScript language values except Symbol values produced by Symbol.for . The ECMAScript language values without specification identity and without language identity are undefined , null , Booleans , Strings , Numbers , and BigInts . The ECMAScript language values with specification identity and language identity are Symbols not produced by Symbol.for and Objects . Symbol values produced by Symbol.for have specification identity, but not language identity.

@@ -1,0 +1,5606 @@
+# 22 Text Processing
+# джерело: https://tc39.es/ecma262/multipage/text-processing.html#sec-text-processing
+# отримано: 2026-09-01
+
+22 Text Processing
+
+22.1 String Objects
+
+22.1.1 The String Constructor
+
+The String constructor :
+
+- is %String% .
+
+- is the initial value of the "String" property of the global object .
+
+- creates and initializes a new String object when called as a constructor .
+
+- performs a type conversion when called as a function rather than as a constructor .
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified String behaviour must include a super call to the String constructor to create and initialize the subclass instance with a [[StringData]] internal slot.
+
+22.1.1.1 String ( value )
+
+This function performs the following steps when called:
+
+- If value is not present, then
+- Let string be the empty String.
+
+- Else,
+- If NewTarget is undefined and value is a Symbol , return SymbolDescriptiveString ( value ).
+
+- Let string be ? ToString ( value ).
+
+- If NewTarget is undefined , return string .
+
+- Return StringCreate ( string , ? GetPrototypeFromConstructor (NewTarget, "%String.prototype%" )).
+
+22.1.2 Properties of the String Constructor
+
+The String constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+22.1.2.1 String.fromCharCode ( ... codeUnits )
+
+This function may be called with any number of arguments which form the rest parameter codeUnits .
+
+It performs the following steps when called:
+
+- Let result be the empty String.
+
+- For each element next of codeUnits , do
+- Let nextCU be the code unit whose numeric value is ℝ (? ToUint16 ( next )).
+
+- Set result to the string-concatenation of result and nextCU .
+
+- Return result .
+
+The "length" property of this function is 1 𝔽 .
+
+22.1.2.2 String.fromCodePoint ( ... codePoints )
+
+This function may be called with any number of arguments which form the rest parameter codePoints .
+
+It performs the following steps when called:
+
+- Let result be the empty String.
+
+- For each element next of codePoints , do
+- Let nextCP be ? ToNumber ( next ).
+
+- If nextCP is not an integral Number , throw a RangeError exception.
+
+- If ℝ ( nextCP ) < 0 or ℝ ( nextCP ) > 0x10FFFF, throw a RangeError exception.
+
+- Set result to the string-concatenation of result and UTF16EncodeCodePoint ( ℝ ( nextCP )).
+
+- Assert : If codePoints is empty, then result is the empty String.
+
+- Return result .
+
+The "length" property of this function is 1 𝔽 .
+
+22.1.2.3 String.prototype
+
+The initial value of String.prototype is the String prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+22.1.2.4 String.raw ( template , ... substitutions )
+
+This function may be called with a variable number of arguments. The first argument is template and the remainder of the arguments form the List substitutions .
+
+It performs the following steps when called:
+
+- Let substitutionCount be the number of elements in substitutions .
+
+- Let cooked be ? ToObject ( template ).
+
+- Let literals be ? ToObject (? Get ( cooked , "raw" )).
+
+- Let literalCount be ? LengthOfArrayLike ( literals ).
+
+- If literalCount ≤ 0, return the empty String.
+
+- Let result be the empty String.
+
+- Let nextIndex be 0.
+
+- Repeat,
+- Let nextLiteralValue be ? Get ( literals , ! ToString ( 𝔽 ( nextIndex ))).
+
+- Let nextLiteral be ? ToString ( nextLiteralValue ).
+
+- Set result to the string-concatenation of result and nextLiteral .
+
+- If nextIndex + 1 = literalCount , return result .
+
+- If nextIndex < substitutionCount , then
+- Let nextSubValue be substitutions [ nextIndex ].
+
+- Let nextSub be ? ToString ( nextSubValue ).
+
+- Set result to the string-concatenation of result and nextSub .
+
+- Set nextIndex to nextIndex + 1.
+
+Note
+This function is intended for use as a tag function of a Tagged Template ( 13.3.11 ). When called as such, the first argument will be a well formed template object and the rest parameter will contain the substitution values.
+
+22.1.3 Properties of the String Prototype Object
+
+The String prototype object :
+
+- is %String.prototype% .
+
+- is a String exotic object and has the internal methods specified for such objects.
+
+- has a [[StringData]] internal slot whose value is the empty String.
+
+- has a "length" property whose initial value is +0 𝔽 and whose attributes are { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+Unless explicitly stated otherwise, the methods of the String prototype object defined below are not generic and the this value passed to them must be either a String value or an object that has a [[StringData]] internal slot that has been initialized to a String value.
+
+22.1.3.1 String.prototype.at ( index )
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let length be the length of string .
+
+- Let k be ? ToAbsoluteIndex ( index , length ).
+
+- If k < 0 or k ≥ length , return undefined .
+
+- Return the substring of string from k to k + 1.
+
+22.1.3.2 String.prototype.charAt ( position )
+
+Note 1
+This method returns a single element String containing the code unit at index position within the String value resulting from converting this object to a String. If there is no element at that index, the result is the empty String. The result is a String value, not a String object.
+
+If pos is an integral Number , then the result of x.charAt(pos) is equivalent to the result of x.substring(pos, pos + 1) .
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Set position to ? ToIntegerOrInfinity ( position ).
+
+- Let size be the length of string .
+
+- If position < 0 or position ≥ size , return the empty String.
+
+- Return the substring of string from position to position + 1.
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.3 String.prototype.charCodeAt ( position )
+
+Note 1
+This method returns a Number (a non-negative integral Number less than 2 16 ) that is the numeric value of the code unit at index position within the String resulting from converting this object to a String. If there is no element at that index, the result is NaN .
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Set position to ? ToIntegerOrInfinity ( position ).
+
+- Let size be the length of string .
+
+- If position < 0 or position ≥ size , return NaN .
+
+- Return the Number value for the numeric value of the code unit at index position within the String string .
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.4 String.prototype.codePointAt ( position )
+
+Note 1
+This method returns a non-negative integral Number less than or equal to 0x10FFFF 𝔽 that is the numeric value of the UTF-16 encoded code point ( 6.1.4 ) starting at the string element at index position within the String resulting from converting this object to a String. If there is no element at that index, the result is undefined . If a valid UTF-16 surrogate pair does not begin at position , the result is the code unit at position .
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Set position to ? ToIntegerOrInfinity ( position ).
+
+- Let size be the length of string .
+
+- If position < 0 or position ≥ size , return undefined .
+
+- Let codePoint be CodePointAt ( string , position ).
+
+- Return 𝔽 ( codePoint . [[CodePoint]] ).
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.5 String.prototype.concat ( ... args )
+
+Note 1
+When this method is called it returns the String value consisting of the code units of the this value (converted to a String) followed by the code units of each of the arguments converted to a String. The result is a String value, not a String object.
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let result be string .
+
+- For each element next of args , do
+- Let nextString be ? ToString ( next ).
+
+- Set result to the string-concatenation of result and nextString .
+
+- Return result .
+
+The "length" property of this method is 1 𝔽 .
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.6 String.prototype.constructor
+
+The initial value of String.prototype.constructor is %String% .
+
+22.1.3.7 String.prototype.endsWith ( searchString [ , endPosition ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let isRegexp be ? IsRegExp ( searchString ).
+
+- If isRegexp is true , throw a TypeError exception.
+
+- Set searchString to ? ToString ( searchString ).
+
+- Let length be the length of string .
+
+- If endPosition is undefined , let end be length ; else let end be the result of clamping ? ToIntegerOrInfinity ( endPosition ) between 0 and length .
+
+- Let searchLength be the length of searchString .
+
+- If searchLength = 0, return true .
+
+- Let start be end - searchLength .
+
+- If start < 0, return false .
+
+- Let substring be the substring of string from start to end .
+
+- If substring is searchString , return true .
+
+- Return false .
+
+Note 1
+Throwing an exception if the first argument is a RegExp is specified in order to allow future editions to define extensions that allow such argument values.
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.8 String.prototype.includes ( searchString [ , position ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let isRegexp be ? IsRegExp ( searchString ).
+
+- If isRegexp is true , throw a TypeError exception.
+
+- Set searchString to ? ToString ( searchString ).
+
+- Let length be the length of string .
+
+- Let start be the result of clamping ? ToIntegerOrInfinity ( position ) between 0 and length .
+
+- Assert : If position is undefined , then start is 0.
+
+- Let index be StringIndexOf ( string , searchString , start ).
+
+- If index is not-found , return false .
+
+- Return true .
+
+Note 1
+If searchString appears as a substring of the result of converting this object to a String, at one or more indices that are greater than or equal to position , this function returns true ; otherwise, it returns false . If position is undefined , 0 is assumed, so as to search all of the String.
+
+Note 2
+Throwing an exception if the first argument is a RegExp is specified in order to allow future editions to define extensions that allow such argument values.
+
+Note 3
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.9 String.prototype.indexOf ( searchString [ , position ] )
+
+Note 1
+If searchString appears as a substring of the result of converting this object to a String, at one or more indices that are greater than or equal to position , then the smallest such index is returned; otherwise, -1 𝔽 is returned. If position is undefined , +0 𝔽 is assumed, so as to search all of the String.
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Set searchString to ? ToString ( searchString ).
+
+- Let length be the length of string .
+
+- Let start be the result of clamping ? ToIntegerOrInfinity ( position ) between 0 and length .
+
+- Assert : If position is undefined , then start is 0.
+
+- Let result be StringIndexOf ( string , searchString , start ).
+
+- If result is not-found , return -1 𝔽 .
+
+- Return 𝔽 ( result ).
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.10 String.prototype.isWellFormed ( )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Return IsStringWellFormedUnicode ( string ).
+
+22.1.3.11 String.prototype.lastIndexOf ( searchString [ , position ] )
+
+Note 1
+If searchString appears as a substring of the result of converting this object to a String at one or more indices that are smaller than or equal to position , then the greatest such index is returned; otherwise, -1 𝔽 is returned. If position is undefined , the length of the String value is assumed, so as to search all of the String.
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Set searchString to ? ToString ( searchString ).
+
+- Let numberPosition be ? ToNumber ( position ).
+
+- Let length be the length of string .
+
+- Let searchLength be the length of searchString .
+
+- Let maxStart be length - searchLength .
+
+- If maxStart < 0, return -1 𝔽 .
+
+- If numberPosition is NaN , let start be maxStart ; else let start be the result of clamping ! ToIntegerOrInfinity ( numberPosition ) between 0 and maxStart .
+
+- Assert : If position is undefined , then start is maxStart .
+
+- Let result be StringLastIndexOf ( string , searchString , start ).
+
+- If result is not-found , return -1 𝔽 .
+
+- Return 𝔽 ( result ).
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.12 String.prototype.localeCompare ( that [ , reserved1 [ , reserved2 ] ] )
+
+An ECMAScript implementation that includes the ECMA-402 Internationalization API must implement this method as specified in ECMA-402. Otherwise, the following specification of this method is used:
+
+This method returns a Number other than NaN representing the result of an implementation-defined locale-sensitive String comparison of the this value (converted to a String string ) with that (converted to a String thatValue ). The result is intended to correspond with a sort order of String values according to conventions of the host environment 's current locale, and will be negative when string is ordered before thatValue , positive when string is ordered after thatValue , and zero in all other cases (representing no relative ordering between string and thatValue ).
+
+Before performing the comparisons, this method performs the following steps to prepare the Strings:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let thatValue be ? ToString ( that ).
+
+The meaning of the optional second and third parameters to this method are defined in ECMA-402; implementations that do not include ECMA-402 support must not assign any other interpretation to those parameter positions.
+
+The actual return values are implementation-defined to permit encoding additional information in them, but this method, when considered as a method of two arguments, is required to be a consistent comparator defining a total ordering on the set of all Strings. This method is also required to recognize and honour canonical equivalence according to the Unicode Standard, including returning +0 𝔽 when comparing distinguishable Strings that are canonically equivalent.
+
+Note 1
+This method itself is not directly suitable as an argument to Array.prototype.sort because the latter requires a function of two arguments.
+
+Note 2
+This method may rely on whatever language- and/or locale-sensitive comparison functionality is available to the ECMAScript environment from the host environment , and is intended to compare according to the conventions of the host environment 's current locale. However, regardless of comparison capabilities, this method must recognize and honour canonical equivalence according to the Unicode Standard—for example, the following comparisons must all return +0 𝔽 :
+
+// Å ANGSTROM SIGN vs.
+// Å LATIN CAPITAL LETTER A + COMBINING RING ABOVE
+"\u212B" . localeCompare ( "A\u030A" )
+
+// Ω OHM SIGN vs.
+// Ω GREEK CAPITAL LETTER OMEGA
+"\u2126" . localeCompare ( "\u03A9" )
+
+// ṩ LATIN SMALL LETTER S WITH DOT BELOW AND DOT ABOVE vs.
+// ṩ LATIN SMALL LETTER S + COMBINING DOT ABOVE + COMBINING DOT BELOW
+"\u1E69" . localeCompare ( "s\u0307\u0323" )
+
+// ḍ̇ LATIN SMALL LETTER D WITH DOT ABOVE + COMBINING DOT BELOW vs.
+// ḍ̇ LATIN SMALL LETTER D WITH DOT BELOW + COMBINING DOT ABOVE
+"\u1E0B\u0323" . localeCompare ( "\u1E0D\u0307" )
+
+// 가 HANGUL CHOSEONG KIYEOK + HANGUL JUNGSEONG A vs.
+// 가 HANGUL SYLLABLE GA
+"\u1100\u1161" . localeCompare ( "\uAC00" )
+For a definition and discussion of canonical equivalence see the Unicode Standard, chapters 2 and 3, as well as Unicode Standard Annex #15, Unicode Normalization Forms and Unicode Technical Note #5, Canonical Equivalence in Applications . Also see Unicode Technical Standard #10, Unicode Collation Algorithm .
+
+It is recommended that this method should not honour Unicode compatibility equivalents or compatibility decompositions as defined in the Unicode Standard, chapter 3, section 3.7.
+
+Note 3
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.13 String.prototype.match ( regexpOrPattern )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If regexpOrPattern is an Object , then
+- Let matcher be ? GetMethod ( regexpOrPattern , %Symbol.match% ).
+
+- If matcher is not undefined , then
+- Return ? Call ( matcher , regexpOrPattern , « thisValue »).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let regexp be ? RegExpCreate ( regexpOrPattern , undefined ).
+
+- Return ? Invoke ( regexp , %Symbol.match% , « string »).
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.14 String.prototype.matchAll ( regexpOrPattern )
+
+This method performs a regular expression match of the String representing the this value against regexpOrPattern and returns an iterator that yields match results. Each match result is an Array containing the matched portion of the String as the first element, followed by the portions matched by any capturing groups. If the regular expression never matches, the returned iterator does not yield any match results.
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If regexpOrPattern is an Object , then
+- Let isRegexp be ? IsRegExp ( regexpOrPattern ).
+
+- If isRegexp is true , then
+- Let flags be ? Get ( regexpOrPattern , "flags" ).
+
+- Perform ? RequireObjectCoercible ( flags ).
+
+- If ? ToString ( flags ) does not contain "g" , throw a TypeError exception.
+
+- Let matcher be ? GetMethod ( regexpOrPattern , %Symbol.matchAll% ).
+
+- If matcher is not undefined , then
+- Return ? Call ( matcher , regexpOrPattern , « thisValue »).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let regexp be ? RegExpCreate ( regexpOrPattern , "g" ).
+
+- Return ? Invoke ( regexp , %Symbol.matchAll% , « string »).
+
+Note 1 This method is intentionally generic, it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+Note 2 Similarly to String.prototype.split , String.prototype.matchAll is designed to typically act without mutating its inputs.
+
+22.1.3.15 String.prototype.normalize ( [ form ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- If form is undefined , set form to "NFC" .
+
+- Else, set form to ? ToString ( form ).
+
+- If form is not one of "NFC" , "NFD" , "NFKC" , or "NFKD" , throw a RangeError exception.
+
+- Let normal be the String value that is the result of normalizing string into the normalization form named by form as specified in the latest Unicode Standard, Normalization Forms .
+
+- Return normal .
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.16 String.prototype.padEnd ( maxLength [ , fillString ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Return ? StringPaddingBuiltinsImpl ( thisValue , maxLength , fillString , end ).
+
+22.1.3.17 String.prototype.padStart ( maxLength [ , fillString ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Return ? StringPaddingBuiltinsImpl ( thisValue , maxLength , fillString , start ).
+
+22.1.3.17.1 StringPaddingBuiltinsImpl ( thisValue , maxLength , fillString , placement )
+
+The abstract operation StringPaddingBuiltinsImpl takes arguments thisValue (an ECMAScript language value ), maxLength (an ECMAScript language value ), fillString (an ECMAScript language value ), and placement ( start or end ) and returns either a normal completion containing a String or a throw completion . It performs the following steps when called:
+
+- Let string be ? ToString ( thisValue ).
+
+- Let intMaxLength be ℝ (? ToLength ( maxLength )).
+
+- Let stringLength be the length of string .
+
+- If intMaxLength ≤ stringLength , return string .
+
+- If fillString is undefined , set fillString to the String value consisting solely of the code unit 0x0020 (SPACE).
+
+- Else, set fillString to ? ToString ( fillString ).
+
+- Return StringPad ( string , intMaxLength , fillString , placement ).
+
+22.1.3.17.2 StringPad ( string , maxLength , fillString , placement )
+
+The abstract operation StringPad takes arguments string (a String), maxLength (a non-negative integer ), fillString (a String), and placement ( start or end ) and returns a String. It performs the following steps when called:
+
+- Let stringLength be the length of string .
+
+- If maxLength ≤ stringLength , return string .
+
+- If fillString is the empty String, return string .
+
+- Let fillLength be maxLength - stringLength .
+
+- Let truncatedStringFiller be the String value consisting of repeated concatenations of fillString truncated to length fillLength .
+
+- If placement is start , return the string-concatenation of truncatedStringFiller and string .
+
+- Return the string-concatenation of string and truncatedStringFiller .
+
+Note 1
+The argument maxLength will be clamped such that it can be no smaller than the length of string .
+
+Note 2
+The argument fillString defaults to " " (the String value consisting of the code unit 0x0020 SPACE).
+
+22.1.3.17.3 ToZeroPaddedDecimalString ( n , minLength )
+
+The abstract operation ToZeroPaddedDecimalString takes arguments n (a non-negative integer ) and minLength (a non-negative integer ) and returns a String. It performs the following steps when called:
+
+- Let string be the String representation of n , formatted as a decimal number.
+
+- Return StringPad ( string , minLength , "0" , start ).
+
+22.1.3.18 String.prototype.repeat ( count )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let n be ? ToIntegerOrInfinity ( count ).
+
+- If n < 0 or n = +∞, throw a RangeError exception.
+
+- If n = 0, return the empty String.
+
+- Return the String value that is made from n copies of string appended together.
+
+Note 1
+This method creates the String value consisting of the code units of the this value (converted to String) repeated count times.
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.19 String.prototype.replace ( searchValue , replaceValue )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If searchValue is an Object , then
+- Let replacer be ? GetMethod ( searchValue , %Symbol.replace% ).
+
+- If replacer is not undefined , then
+- Return ? Call ( replacer , searchValue , « thisValue , replaceValue »).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let searchString be ? ToString ( searchValue ).
+
+- Let functionalReplace be IsCallable ( replaceValue ).
+
+- If functionalReplace is false , then
+- Set replaceValue to ? ToString ( replaceValue ).
+
+- Let searchLength be the length of searchString .
+
+- Let position be StringIndexOf ( string , searchString , 0).
+
+- If position is not-found , return string .
+
+- Let preceding be the substring of string from 0 to position .
+
+- Let following be the substring of string from position + searchLength .
+
+- If functionalReplace is true , then
+- Let replacement be ? ToString (? Call ( replaceValue , undefined , « searchString , 𝔽 ( position ), string »)).
+
+- Else,
+- Assert : replaceValue is a String .
+
+- Let captures be a new empty List .
+
+- Let replacement be ! GetSubstitution ( searchString , string , position , captures , undefined , replaceValue ).
+
+- Return the string-concatenation of preceding , replacement , and following .
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.19.1 GetSubstitution ( matched , string , position , captures , namedCaptures , replacementTemplate )
+
+The abstract operation GetSubstitution takes arguments matched (a String), string (a String), position (a non-negative integer ), captures (a List of either Strings or undefined ), namedCaptures (an Object or undefined ), and replacementTemplate (a String) and returns either a normal completion containing a String or a throw completion . For the purposes of this abstract operation, a decimal digit is a code unit in the inclusive interval from 0x0030 (DIGIT ZERO) to 0x0039 (DIGIT NINE). It performs the following steps when called:
+
+- Let stringLength be the length of string .
+
+- Assert : position ≤ stringLength .
+
+- Let result be the empty String.
+
+- Let templateRemainder be replacementTemplate .
+
+- Repeat, while templateRemainder is not the empty String,
+- NOTE : The following steps isolate ref (a prefix of templateRemainder ), determine refReplacement (its replacement), and then append that replacement to result .
+
+- If templateRemainder starts with "$$" , then
+- Let ref be "$$" .
+
+- Let refReplacement be "$" .
+
+- Else if templateRemainder starts with "$`" , then
+- Let ref be "$`" .
+
+- Let refReplacement be the substring of string from 0 to position .
+
+- Else if templateRemainder starts with "$&" , then
+- Let ref be "$&" .
+
+- Let refReplacement be matched .
+
+- Else if templateRemainder starts with "$'" (0x0024 (DOLLAR SIGN) followed by 0x0027 (APOSTROPHE)), then
+- Let ref be "$'" .
+
+- Let matchLength be the length of matched .
+
+- Let tailPosition be position + matchLength .
+
+- Let refReplacement be the substring of string from min ( tailPosition , stringLength ).
+
+- NOTE : tailPosition can exceed stringLength only if this abstract operation was invoked by a call to the intrinsic %Symbol.replace% method of %RegExp.prototype% on an object whose "exec" property is not the intrinsic %RegExp.prototype.exec%.
+
+- Else if templateRemainder starts with "$" followed by 1 or more decimal digits, then
+- If templateRemainder starts with "$" followed by 2 or more decimal digits, let digitCount be 2; else let digitCount be 1.
+
+- Let digits be the substring of templateRemainder from 1 to 1 + digitCount .
+
+- Let index be ℝ ( StringToNumber ( digits )).
+
+- Assert : 0 ≤ index ≤ 99.
+
+- Let captureLength be the number of elements in captures .
+
+- If index > captureLength and digitCount = 2, then
+- NOTE : When a two-digit replacement pattern specifies an index exceeding the count of capturing groups, it is treated as a one-digit replacement pattern followed by a literal digit.
+
+- Set digitCount to 1.
+
+- Set digits to the substring of digits from 0 to 1.
+
+- Set index to ℝ ( StringToNumber ( digits )).
+
+- Let ref be the substring of templateRemainder from 0 to 1 + digitCount .
+
+- If 1 ≤ index ≤ captureLength , then
+- Let capture be captures [ index - 1].
+
+- If capture is undefined , then
+- Let refReplacement be the empty String.
+
+- Else,
+- Let refReplacement be capture .
+
+- Else,
+- Let refReplacement be ref .
+
+- Else if templateRemainder starts with "$<" , then
+- Let gtPosition be StringIndexOf ( templateRemainder , ">" , 0).
+
+- If gtPosition is not-found or namedCaptures is undefined , then
+- Let ref be "$<" .
+
+- Let refReplacement be ref .
+
+- Else,
+- Let ref be the substring of templateRemainder from 0 to gtPosition + 1.
+
+- Let groupName be the substring of templateRemainder from 2 to gtPosition .
+
+- Assert : namedCaptures is an Object .
+
+- Let capture be ? Get ( namedCaptures , groupName ).
+
+- If capture is undefined , then
+- Let refReplacement be the empty String.
+
+- Else,
+- Let refReplacement be ? ToString ( capture ).
+
+- Else,
+- Let ref be the substring of templateRemainder from 0 to 1.
+
+- Let refReplacement be ref .
+
+- Let refLength be the length of ref .
+
+- Set templateRemainder to the substring of templateRemainder from refLength .
+
+- Set result to the string-concatenation of result and refReplacement .
+
+- Return result .
+
+22.1.3.20 String.prototype.replaceAll ( searchValue , replaceValue )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If searchValue is an Object , then
+- Let isRegexp be ? IsRegExp ( searchValue ).
+
+- If isRegexp is true , then
+- Let flags be ? Get ( searchValue , "flags" ).
+
+- Perform ? RequireObjectCoercible ( flags ).
+
+- If ? ToString ( flags ) does not contain "g" , throw a TypeError exception.
+
+- Let replacer be ? GetMethod ( searchValue , %Symbol.replace% ).
+
+- If replacer is not undefined , then
+- Return ? Call ( replacer , searchValue , « thisValue , replaceValue »).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let searchString be ? ToString ( searchValue ).
+
+- Let functionalReplace be IsCallable ( replaceValue ).
+
+- If functionalReplace is false , then
+- Set replaceValue to ? ToString ( replaceValue ).
+
+- Let searchLength be the length of searchString .
+
+- Let advanceBy be max (1, searchLength ).
+
+- Let matchPositions be a new empty List .
+
+- Let position be StringIndexOf ( string , searchString , 0).
+
+- Repeat, while position is not not-found ,
+- Append position to matchPositions .
+
+- Set position to StringIndexOf ( string , searchString , position + advanceBy ).
+
+- Let endOfLastMatch be 0.
+
+- Let result be the empty String.
+
+- For each element matchPosition of matchPositions , do
+- Let preserved be the substring of string from endOfLastMatch to matchPosition .
+
+- If functionalReplace is true , then
+- Let replacement be ? ToString (? Call ( replaceValue , undefined , « searchString , 𝔽 ( matchPosition ), string »)).
+
+- Else,
+- Assert : replaceValue is a String .
+
+- Let captures be a new empty List .
+
+- Let replacement be ! GetSubstitution ( searchString , string , matchPosition , captures , undefined , replaceValue ).
+
+- Set result to the string-concatenation of result , preserved , and replacement .
+
+- Set endOfLastMatch to matchPosition + searchLength .
+
+- If endOfLastMatch < the length of string , then
+- Set result to the string-concatenation of result and the substring of string from endOfLastMatch .
+
+- Return result .
+
+22.1.3.21 String.prototype.search ( regexpOrPattern )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If regexpOrPattern is an Object , then
+- Let searcher be ? GetMethod ( regexpOrPattern , %Symbol.search% ).
+
+- If searcher is not undefined , then
+- Return ? Call ( searcher , regexpOrPattern , « thisValue »).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let regexp be ? RegExpCreate ( regexpOrPattern , undefined ).
+
+- Return ? Invoke ( regexp , %Symbol.search% , « string »).
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.22 String.prototype.slice ( start , end )
+
+This method returns a substring of the result of converting this object to a String, starting from index start and running to, but not including, index end (or through the end of the String if end is undefined ). If start is negative, it is treated as sourceLength + start where sourceLength is the length of the String. If end is negative, it is treated as sourceLength + end where sourceLength is the length of the String. The result is a String value, not a String object.
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let length be the length of string .
+
+- Let from be ? ToClampedIndex ( start , length ).
+
+- If end is undefined , let to be length ; else let to be ? ToClampedIndex ( end , length ).
+
+- If from ≥ to , return the empty String.
+
+- Return the substring of string from from to to .
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.23 String.prototype.split ( separator , limit )
+
+This method returns an Array into which substrings of the result of converting this object to a String have been stored. The substrings are determined by searching from left to right for occurrences of separator ; these occurrences are not part of any String in the returned array, but serve to divide up the String value. The value of separator may be a String of any length or it may be an object, such as a RegExp, that has a %Symbol.split% method.
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If separator is an Object , then
+- Let splitter be ? GetMethod ( separator , %Symbol.split% ).
+
+- If splitter is not undefined , then
+- Return ? Call ( splitter , separator , « thisValue , limit »).
+
+- Let string be ? ToString ( thisValue ).
+
+- If limit is undefined , let lim be 2 32 - 1; else let lim be ℝ (? ToUint32 ( limit )).
+
+- Let separatorString be ? ToString ( separator ).
+
+- If lim = 0, then
+- Return CreateArrayFromList (« »).
+
+- If separator is undefined , then
+- Return CreateArrayFromList (« string »).
+
+- Let separatorLength be the length of separatorString .
+
+- If separatorLength = 0, then
+- Let stringLength be the length of string .
+
+- Let outLength be the result of clamping lim between 0 and stringLength .
+
+- Let head be the substring of string from 0 to outLength .
+
+- Let codeUnits be a List consisting of the sequence of code units that are the elements of head .
+
+- Return CreateArrayFromList ( codeUnits ).
+
+- If string is the empty String, return CreateArrayFromList (« string »).
+
+- Let substrings be a new empty List .
+
+- Let searchStart be 0.
+
+- Let matchIndex be StringIndexOf ( string , separatorString , 0).
+
+- Repeat, while matchIndex is not not-found ,
+- Let substring be the substring of string from searchStart to matchIndex .
+
+- Append substring to substrings .
+
+- If the number of elements in substrings is lim , return CreateArrayFromList ( substrings ).
+
+- Set searchStart to matchIndex + separatorLength .
+
+- Set matchIndex to StringIndexOf ( string , separatorString , searchStart ).
+
+- Let substring be the substring of string from searchStart .
+
+- Append substring to substrings .
+
+- Return CreateArrayFromList ( substrings ).
+
+Note 1
+The value of separator may be an empty String. In this case, separator does not match the empty substring at the beginning or end of the input String, nor does it match the empty substring at the end of the previous separator match. If separator is the empty String, the String is split up into individual code unit elements; the length of the result array equals the length of the String, and each substring contains one code unit.
+
+If the this value is (or converts to) the empty String, the result depends on whether separator can match the empty String. If it can, the result array contains no elements. Otherwise, the result array contains one element, which is the empty String.
+
+If separator is undefined , then the result array contains just one String, which is the this value (converted to a String). If limit is not undefined , then the output array is truncated so that it contains no more than limit elements.
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.24 String.prototype.startsWith ( searchString [ , position ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let isRegexp be ? IsRegExp ( searchString ).
+
+- If isRegexp is true , throw a TypeError exception.
+
+- Set searchString to ? ToString ( searchString ).
+
+- Let length be the length of string .
+
+- Let start be the result of clamping ? ToIntegerOrInfinity ( position ) between 0 and length .
+
+- Assert : If position is undefined , then start is 0.
+
+- Let searchLength be the length of searchString .
+
+- If searchLength = 0, return true .
+
+- Let end be start + searchLength .
+
+- If end > length , return false .
+
+- Let substring be the substring of string from start to end .
+
+- If substring is searchString , return true .
+
+- Return false .
+
+Note 1
+Throwing an exception if the first argument is a RegExp is specified in order to allow future editions to define extensions that allow such argument values.
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.25 String.prototype.substring ( start , end )
+
+This method returns a substring of the result of converting this object to a String, starting from index start and running to, but not including, index end of the String (or through the end of the String if end is undefined ). The result is a String value, not a String object.
+
+If either argument is NaN or negative, it is replaced with zero; if either argument is strictly greater than the length of the String, it is replaced with the length of the String.
+
+If start is strictly greater than end , they are swapped.
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let length be the length of string .
+
+- Let finalStart be the result of clamping ? ToIntegerOrInfinity ( start ) between 0 and length .
+
+- Assert : If start is undefined , then finalStart is 0.
+
+- If end is undefined , let finalEnd be length ; else let finalEnd be the result of clamping ? ToIntegerOrInfinity ( end ) between 0 and length .
+
+- Let from be min ( finalStart , finalEnd ).
+
+- Let to be max ( finalStart , finalEnd ).
+
+- Return the substring of string from from to to .
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.26 String.prototype.toLocaleLowerCase ( [ reserved1 [ , reserved2 ] ] )
+
+An ECMAScript implementation that includes the ECMA-402 Internationalization API must implement this method as specified in ECMA-402. Otherwise, the following specification of this method is used:
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It works exactly the same as toLowerCase except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment 's current locale. There will only be a difference in the few cases (such as Turkish) where the rules for that language conflict with the regular Unicode case mappings.
+
+The meaning of the optional parameters to this method are defined in ECMA-402; implementations that do not include ECMA-402 support must not use those parameter positions for anything else.
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.27 String.prototype.toLocaleUpperCase ( [ reserved1 [ , reserved2 ] ] )
+
+An ECMAScript implementation that includes the ECMA-402 Internationalization API must implement this method as specified in ECMA-402. Otherwise, the following specification of this method is used:
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It works exactly the same as toUpperCase except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment 's current locale. There will only be a difference in the few cases (such as Turkish) where the rules for that language conflict with the regular Unicode case mappings.
+
+The meaning of the optional parameters to this method are defined in ECMA-402; implementations that do not include ECMA-402 support must not use those parameter positions for anything else.
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.28 String.prototype.toLowerCase ( )
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let sText be StringToCodePoints ( string ).
+
+- Let lowerText be toLowercase( sText ), according to the Unicode Default Case Conversion algorithm.
+
+- Let lowercaseString be CodePointsToString ( lowerText ).
+
+- Return lowercaseString .
+
+The result must be derived according to the locale-insensitive case mappings in the Unicode Character Database (this explicitly includes not only the file UnicodeData.txt , but also all locale-insensitive mappings in the file SpecialCasing.txt that accompanies it).
+
+Note 1
+The case mapping of some code points may produce multiple code points. In this case the result String may not be the same length as the source String. Because both toUpperCase and toLowerCase have context-sensitive behaviour, the methods are not symmetrical. In other words, s.toUpperCase().toLowerCase() is not necessarily equal to s.toLowerCase() .
+
+Note 2
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.29 String.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- Return ? ThisStringValue ( this value).
+
+Note
+For a String object, this method happens to return the same thing as the valueOf method.
+
+22.1.3.30 String.prototype.toUpperCase ( )
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It behaves in exactly the same way as String.prototype.toLowerCase , except that the String is mapped using the toUppercase algorithm of the Unicode Default Case Conversion.
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.31 String.prototype.toWellFormed ( )
+
+This method returns a String representation of this object with all leading surrogates and trailing surrogates that are not part of a surrogate pair replaced with U+FFFD (REPLACEMENT CHARACTER).
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let stringLength be the length of string .
+
+- Let k be 0.
+
+- Let result be the empty String.
+
+- Repeat, while k < stringLength ,
+- Let codePoint be CodePointAt ( string , k ).
+
+- If codePoint . [[IsUnpairedSurrogate]] is true , then
+- Set result to the string-concatenation of result and 0xFFFD (REPLACEMENT CHARACTER).
+
+- Else,
+- Set result to the string-concatenation of result and UTF16EncodeCodePoint ( codePoint . [[CodePoint]] ).
+
+- Set k to k + codePoint . [[CodeUnitCount]] .
+
+- Return result .
+
+22.1.3.32 String.prototype.trim ( )
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Return ? TrimString ( thisValue , start+end ).
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.32.1 TrimString ( arg , where )
+
+The abstract operation TrimString takes arguments arg (an ECMAScript language value ) and where ( start , end , or start+end ) and returns either a normal completion containing a String or a throw completion . It interprets arg as a sequence of UTF-16 encoded code points, as described in 6.1.4 . It performs the following steps when called:
+
+- Perform ? RequireObjectCoercible ( arg ).
+
+- Let string be ? ToString ( arg ).
+
+- If where is start , then
+- Let trimmedString be the String value that is a copy of string with leading white space removed.
+
+- Else if where is end , then
+- Let trimmedString be the String value that is a copy of string with trailing white space removed.
+
+- Else,
+- Assert : where is start+end .
+
+- Let trimmedString be the String value that is a copy of string with both leading and trailing white space removed.
+
+- Return trimmedString .
+
+The definition of white space is the union of WhiteSpace and LineTerminator . When determining whether a Unicode code point is in Unicode general category “Space_Separator” (“Zs”), code unit sequences are interpreted as UTF-16 encoded code point sequences as specified in 6.1.4 .
+
+22.1.3.33 String.prototype.trimEnd ( )
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It performs the following steps when called:
+
+- Let string be the this value.
+
+- Return ? TrimString ( string , end ).
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.34 String.prototype.trimStart ( )
+
+This method interprets a String value as a sequence of UTF-16 encoded code points, as described in 6.1.4 .
+
+It performs the following steps when called:
+
+- Let string be the this value.
+
+- Return ? TrimString ( string , start ).
+
+Note
+This method is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+22.1.3.35 String.prototype.valueOf ( )
+
+This method performs the following steps when called:
+
+- Return ? ThisStringValue ( this value).
+
+22.1.3.35.1 ThisStringValue ( arg )
+
+The abstract operation ThisStringValue takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a String or a throw completion . It performs the following steps when called:
+
+- If arg is a String , return arg .
+
+- If arg is an Object and arg has a [[StringData]] internal slot, then
+- Let string be arg . [[StringData]] .
+
+- Assert : string is a String .
+
+- Return string .
+
+- Throw a TypeError exception.
+
+22.1.3.36 String.prototype [ %Symbol.iterator% ] ( )
+
+This method returns an iterator object that iterates over the code points of a String value, returning each code point as a String value.
+
+It performs the following steps when called:
+
+- Let string be the this value.
+
+- Perform ? RequireObjectCoercible ( string ).
+
+- Set string to ? ToString ( string ).
+
+- Let closure be a new Abstract Closure with no parameters that captures string and performs the following steps when called:
+- Let length be the length of string .
+
+- Let position be 0.
+
+- Repeat, while position < length ,
+- Let codePoint be CodePointAt ( string , position ).
+
+- Let nextIndex be position + codePoint . [[CodeUnitCount]] .
+
+- Let resultString be the substring of string from position to nextIndex .
+
+- Set position to nextIndex .
+
+- Perform ? GeneratorYield ( CreateIteratorResultObject ( resultString , false )).
+
+- Return NormalCompletion ( unused ).
+
+- Return CreateIteratorFromClosure ( closure , "%StringIteratorPrototype%" , %StringIteratorPrototype% ).
+
+The value of the "name" property of this method is "[Symbol.iterator]" .
+
+22.1.4 Properties of String Instances
+
+String instances are String exotic objects and have the internal methods specified for such objects. String instances inherit properties from the String prototype object . String instances also have a [[StringData]] internal slot. The [[StringData]] internal slot is the String value represented by this String object.
+
+String instances have a "length" property, and a set of enumerable properties with integer-indexed names.
+
+22.1.4.1 length
+
+The number of elements in the String value represented by this String object.
+
+Once a String object is initialized, this property is unchanging. It has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+22.1.5 String Iterator Objects
+
+A String Iterator is an object that represents a specific iteration over some specific String instance object. There is not a named constructor for String Iterator objects. Instead, String Iterator objects are created by calling certain methods of String instance objects.
+
+22.1.5.1 The %StringIteratorPrototype% Object
+
+The %StringIteratorPrototype% object:
+
+- has properties that are inherited by all String Iterator objects .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- has the following properties:
+
+22.1.5.1.1 %StringIteratorPrototype%.next ( )
+
+- Return ? GeneratorResume ( this value, empty , "%StringIteratorPrototype%" ).
+
+22.1.5.1.2 %StringIteratorPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "String Iterator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+22.2 RegExp (Regular Expression) Objects
+
+A RegExp object contains a regular expression and the associated flags.
+
+Note
+The form and functionality of regular expressions is modelled after the regular expression facility in the Perl 5 programming language.
+
+22.2.1 Patterns
+
+The RegExp constructor applies the following grammar to the input pattern String. An error occurs if the grammar cannot interpret the String as an expansion of Pattern .
+
+Syntax
+
+Pattern [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Disjunction [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+Alternative [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Alternative [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+|
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Alternative [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+[empty]
+
+Alternative [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+Term [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Term [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+Assertion [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Atom [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+
+Atom [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+Quantifier
+
+Assertion [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+^
+
+$
+
+\b
+
+\B
+
+(?=
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+(?!
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+(?<=
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+(?<!
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+Quantifier ::
+QuantifierPrefix
+
+QuantifierPrefix
+?
+
+QuantifierPrefix ::
+*
+
++
+
+?
+
+{
+DecimalDigits [~Sep]
+}
+
+{
+DecimalDigits [~Sep]
+,}
+
+{
+DecimalDigits [~Sep]
+,
+DecimalDigits [~Sep]
+}
+
+Atom [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] ::
+PatternCharacter
+
+.
+
+\
+AtomEscape [?UnicodeMode, ?NamedCaptureGroups]
+
+CharacterClass [?UnicodeMode, ?UnicodeSetsMode]
+
+(
+GroupSpecifier [?UnicodeMode] opt
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+(?
+RegularExpressionModifiers
+:
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+(?
+RegularExpressionModifiers
+-
+RegularExpressionModifiers
+:
+Disjunction [?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+)
+
+RegularExpressionModifiers ::
+[empty]
+
+RegularExpressionModifiers
+RegularExpressionModifier
+
+RegularExpressionModifier :: one of i m s
+
+SyntaxCharacter :: one of ^ $ \ . * + ? ( ) [ ] { } |
+
+PatternCharacter ::
+SourceCharacter but not SyntaxCharacter
+
+AtomEscape [UnicodeMode, NamedCaptureGroups] ::
+DecimalEscape
+
+CharacterClassEscape [?UnicodeMode]
+
+CharacterEscape [?UnicodeMode]
+
+[+NamedCaptureGroups]
+k
+GroupName [?UnicodeMode]
+
+CharacterEscape [UnicodeMode] ::
+ControlEscape
+
+c
+AsciiLetter
+
+0
+[lookahead ∉ DecimalDigit ]
+
+HexEscapeSequence
+
+RegExpUnicodeEscapeSequence [?UnicodeMode]
+
+IdentityEscape [?UnicodeMode]
+
+ControlEscape :: one of f n r t v
+
+GroupSpecifier [UnicodeMode] ::
+?
+GroupName [?UnicodeMode]
+
+GroupName [UnicodeMode] ::
+<
+RegExpIdentifierName [?UnicodeMode]
+>
+
+RegExpIdentifierName [UnicodeMode] ::
+RegExpIdentifierStart [?UnicodeMode]
+
+RegExpIdentifierName [?UnicodeMode]
+RegExpIdentifierPart [?UnicodeMode]
+
+RegExpIdentifierStart [UnicodeMode] ::
+IdentifierStartChar
+
+\
+RegExpUnicodeEscapeSequence [+UnicodeMode]
+
+[~UnicodeMode]
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+RegExpIdentifierPart [UnicodeMode] ::
+IdentifierPartChar
+
+\
+RegExpUnicodeEscapeSequence [+UnicodeMode]
+
+[~UnicodeMode]
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+RegExpUnicodeEscapeSequence [UnicodeMode] :: [+UnicodeMode]
+u
+HexLeadSurrogate
+\u
+HexTrailSurrogate
+
+[+UnicodeMode]
+u
+HexLeadSurrogate
+
+[+UnicodeMode]
+u
+HexTrailSurrogate
+
+[+UnicodeMode]
+u
+HexNonSurrogate
+
+[~UnicodeMode]
+u
+Hex4Digits
+
+[+UnicodeMode]
+u{
+CodePoint
+}
+
+UnicodeLeadSurrogate ::
+any Unicode code point in the inclusive interval from U+D800 to U+DBFF
+
+UnicodeTrailSurrogate ::
+any Unicode code point in the inclusive interval from U+DC00 to U+DFFF
+
+Each \u HexTrailSurrogate for which the choice of associated u HexLeadSurrogate is ambiguous shall be associated with the nearest possible u HexLeadSurrogate that would otherwise have no corresponding \u HexTrailSurrogate .
+
+HexLeadSurrogate ::
+Hex4Digits
+but only if the MV of Hex4Digits is in the inclusive interval from 0xD800 to 0xDBFF
+
+HexTrailSurrogate ::
+Hex4Digits
+but only if the MV of Hex4Digits is in the inclusive interval from 0xDC00 to 0xDFFF
+
+HexNonSurrogate ::
+Hex4Digits
+but only if the MV of Hex4Digits is not in the inclusive interval from 0xD800 to 0xDFFF
+
+IdentityEscape [UnicodeMode] :: [+UnicodeMode]
+SyntaxCharacter
+
+[+UnicodeMode]
+/
+
+[~UnicodeMode]
+SourceCharacter but not UnicodeIDContinue
+
+DecimalEscape ::
+NonZeroDigit
+DecimalDigits [~Sep] opt
+[lookahead ∉ DecimalDigit ]
+
+CharacterClassEscape [UnicodeMode] ::
+d
+
+D
+
+s
+
+S
+
+w
+
+W
+
+[+UnicodeMode]
+p{
+UnicodePropertyValueExpression
+}
+
+[+UnicodeMode]
+P{
+UnicodePropertyValueExpression
+}
+
+UnicodePropertyValueExpression ::
+UnicodePropertyName
+=
+UnicodePropertyValue
+
+LoneUnicodePropertyNameOrValue
+
+UnicodePropertyName ::
+UnicodePropertyNameCharacters
+
+UnicodePropertyNameCharacters ::
+UnicodePropertyNameCharacter
+UnicodePropertyNameCharacters opt
+
+UnicodePropertyValue ::
+UnicodePropertyValueCharacters
+
+LoneUnicodePropertyNameOrValue ::
+UnicodePropertyValueCharacters
+
+UnicodePropertyValueCharacters ::
+UnicodePropertyValueCharacter
+UnicodePropertyValueCharacters opt
+
+UnicodePropertyValueCharacter ::
+UnicodePropertyNameCharacter
+
+DecimalDigit
+
+UnicodePropertyNameCharacter ::
+AsciiLetter
+
+_
+
+CharacterClass [UnicodeMode, UnicodeSetsMode] ::
+[
+[lookahead ≠ ^ ]
+ClassContents [?UnicodeMode, ?UnicodeSetsMode]
+]
+
+[^
+ClassContents [?UnicodeMode, ?UnicodeSetsMode]
+]
+
+ClassContents [UnicodeMode, UnicodeSetsMode] ::
+[empty]
+
+[~UnicodeSetsMode]
+NonemptyClassRanges [?UnicodeMode]
+
+[+UnicodeSetsMode]
+ClassSetExpression
+
+NonemptyClassRanges [UnicodeMode] ::
+ClassAtom [?UnicodeMode]
+
+ClassAtom [?UnicodeMode]
+NonemptyClassRangesNoDash [?UnicodeMode]
+
+ClassAtom [?UnicodeMode]
+-
+ClassAtom [?UnicodeMode]
+ClassContents [?UnicodeMode, ~UnicodeSetsMode]
+
+NonemptyClassRangesNoDash [UnicodeMode] ::
+ClassAtom [?UnicodeMode]
+
+ClassAtomNoDash [?UnicodeMode]
+NonemptyClassRangesNoDash [?UnicodeMode]
+
+ClassAtomNoDash [?UnicodeMode]
+-
+ClassAtom [?UnicodeMode]
+ClassContents [?UnicodeMode, ~UnicodeSetsMode]
+
+ClassAtom [UnicodeMode] ::
+-
+
+ClassAtomNoDash [?UnicodeMode]
+
+ClassAtomNoDash [UnicodeMode] ::
+SourceCharacter but not one of \ or ] or -
+
+\
+ClassEscape [?UnicodeMode]
+
+ClassEscape [UnicodeMode] ::
+b
+
+[+UnicodeMode]
+-
+
+CharacterClassEscape [?UnicodeMode]
+
+CharacterEscape [?UnicodeMode]
+
+ClassSetExpression ::
+ClassUnion
+
+ClassIntersection
+
+ClassSubtraction
+
+ClassUnion ::
+ClassSetRange
+ClassUnion opt
+
+ClassSetOperand
+ClassUnion opt
+
+ClassIntersection ::
+ClassSetOperand
+&&
+[lookahead ≠ & ]
+ClassSetOperand
+
+ClassIntersection
+&&
+[lookahead ≠ & ]
+ClassSetOperand
+
+ClassSubtraction ::
+ClassSetOperand
+--
+ClassSetOperand
+
+ClassSubtraction
+--
+ClassSetOperand
+
+ClassSetRange ::
+ClassSetCharacter
+-
+ClassSetCharacter
+
+ClassSetOperand ::
+NestedClass
+
+ClassStringDisjunction
+
+ClassSetCharacter
+
+NestedClass ::
+[
+[lookahead ≠ ^ ]
+ClassContents [+UnicodeMode, +UnicodeSetsMode]
+]
+
+[^
+ClassContents [+UnicodeMode, +UnicodeSetsMode]
+]
+
+\
+CharacterClassEscape [+UnicodeMode]
+
+Note 1
+The first two lines here are equivalent to CharacterClass.
+
+ClassStringDisjunction ::
+\q{
+ClassStringDisjunctionContents
+}
+
+ClassStringDisjunctionContents ::
+ClassString
+
+ClassString
+|
+ClassStringDisjunctionContents
+
+ClassString ::
+[empty]
+
+NonEmptyClassString
+
+NonEmptyClassString ::
+ClassSetCharacter
+NonEmptyClassString opt
+
+ClassSetCharacter ::
+[lookahead ∉ ClassSetReservedDoublePunctuator ]
+SourceCharacter but not ClassSetSyntaxCharacter
+
+\
+CharacterEscape [+UnicodeMode]
+
+\
+ClassSetReservedPunctuator
+
+\b
+
+ClassSetReservedDoublePunctuator :: one of && !! ## $$ %% ** ++ ,, .. :: ;; << == >> ?? @@ ^^ `` ~~
+
+ClassSetSyntaxCharacter :: one of ( ) [ ] { } / - \ |
+
+ClassSetReservedPunctuator :: one of & - ! # % , : ; < = > @ ` ~
+
+Note 2
+A number of productions in this section are given alternative definitions in section B.1.2 .
+
+22.2.1.1 Static Semantics: Early Errors
+
+Note
+This section is amended in B.1.2.1 .
+
+Pattern :: Disjunction
+
+-
+It is a Syntax Error if CountLeftCapturingParensWithin ( Pattern ) ≥ 2 32 - 1.
+
+-
+It is a Syntax Error if Pattern contains two distinct GroupSpecifier s x and y such that the CapturingGroupName of x is the CapturingGroupName of y and such that MightBothParticipate ( x , y ) is true .
+
+QuantifierPrefix ::
+{
+DecimalDigits
+,
+DecimalDigits
+}
+
+-
+It is a Syntax Error if the MV of the first DecimalDigits is strictly greater than the MV of the second DecimalDigits .
+
+Atom ::
+(?
+RegularExpressionModifiers
+:
+Disjunction
+)
+
+-
+It is a Syntax Error if the source text matched by RegularExpressionModifiers contains the same code point more than once.
+
+Atom ::
+(?
+RegularExpressionModifiers
+-
+RegularExpressionModifiers
+:
+Disjunction
+)
+
+-
+It is a Syntax Error if the source text matched by the first RegularExpressionModifiers and the source text matched by the second RegularExpressionModifiers are both empty.
+
+-
+It is a Syntax Error if the source text matched by the first RegularExpressionModifiers contains the same code point more than once.
+
+-
+It is a Syntax Error if the source text matched by the second RegularExpressionModifiers contains the same code point more than once.
+
+-
+It is a Syntax Error if any code point in the source text matched by the first RegularExpressionModifiers is also contained in the source text matched by the second RegularExpressionModifiers .
+
+AtomEscape ::
+k
+GroupName
+
+-
+It is a Syntax Error if GroupSpecifiersThatMatch ( GroupName ) is empty.
+
+AtomEscape :: DecimalEscape
+
+-
+It is a Syntax Error if the CapturingGroupNumber of DecimalEscape is strictly greater than CountLeftCapturingParensWithin (the Pattern containing AtomEscape ).
+
+NonemptyClassRanges ::
+ClassAtom
+-
+ClassAtom
+ClassContents
+
+-
+It is a Syntax Error if IsCharacterClass of the first ClassAtom is true or IsCharacterClass of the second ClassAtom is true .
+
+-
+It is a Syntax Error if IsCharacterClass of the first ClassAtom is false , IsCharacterClass of the second ClassAtom is false , and the CharacterValue of the first ClassAtom is strictly greater than the CharacterValue of the second ClassAtom .
+
+NonemptyClassRangesNoDash ::
+ClassAtomNoDash
+-
+ClassAtom
+ClassContents
+
+-
+It is a Syntax Error if IsCharacterClass of ClassAtomNoDash is true or IsCharacterClass of ClassAtom is true .
+
+-
+It is a Syntax Error if IsCharacterClass of ClassAtomNoDash is false , IsCharacterClass of ClassAtom is false , and the CharacterValue of ClassAtomNoDash is strictly greater than the CharacterValue of ClassAtom .
+
+RegExpIdentifierStart ::
+\
+RegExpUnicodeEscapeSequence
+
+-
+It is a Syntax Error if the CharacterValue of RegExpUnicodeEscapeSequence is not the numeric value of some code point matched by the IdentifierStartChar lexical grammar production.
+
+RegExpIdentifierStart ::
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+-
+It is a Syntax Error if the RegExpIdentifierCodePoint of RegExpIdentifierStart is not matched by the UnicodeIDStart lexical grammar production.
+
+RegExpIdentifierPart ::
+\
+RegExpUnicodeEscapeSequence
+
+-
+It is a Syntax Error if the CharacterValue of RegExpUnicodeEscapeSequence is not the numeric value of some code point matched by the IdentifierPartChar lexical grammar production.
+
+RegExpIdentifierPart ::
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+-
+It is a Syntax Error if the RegExpIdentifierCodePoint of RegExpIdentifierPart is not matched by the UnicodeIDContinue lexical grammar production.
+
+UnicodePropertyValueExpression ::
+UnicodePropertyName
+=
+UnicodePropertyValue
+
+-
+It is a Syntax Error if the source text matched by UnicodePropertyName is not a Unicode property name or property alias listed in the “ Property name and aliases ” column of Table 65 .
+
+-
+It is a Syntax Error if the source text matched by UnicodePropertyValue is not a property value or property value alias for the Unicode property or property alias given by the source text matched by UnicodePropertyName listed in PropertyValueAliases.txt .
+
+UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue
+
+-
+It is a Syntax Error if the source text matched by LoneUnicodePropertyNameOrValue is not a Unicode property value or property value alias for the General_Category (gc) property listed in PropertyValueAliases.txt , nor a binary property or binary property alias listed in the “ Property name and aliases ” column of Table 66 , nor a binary property of strings listed in the “ Property name ” column of Table 67 .
+
+-
+It is a Syntax Error if the enclosing Pattern does not have a [UnicodeSetsMode] parameter and the source text matched by LoneUnicodePropertyNameOrValue is a binary property of strings listed in the “ Property name ” column of Table 67 .
+
+CharacterClassEscape ::
+P{
+UnicodePropertyValueExpression
+}
+
+-
+It is a Syntax Error if MayContainStrings of the UnicodePropertyValueExpression is true .
+
+CharacterClass ::
+[^
+ClassContents
+]
+
+-
+It is a Syntax Error if MayContainStrings of the ClassContents is true .
+
+NestedClass ::
+[^
+ClassContents
+]
+
+-
+It is a Syntax Error if MayContainStrings of the ClassContents is true .
+
+ClassSetRange ::
+ClassSetCharacter
+-
+ClassSetCharacter
+
+-
+It is a Syntax Error if the CharacterValue of the first ClassSetCharacter is strictly greater than the CharacterValue of the second ClassSetCharacter .
+
+22.2.1.2 Static Semantics: CountLeftCapturingParensWithin ( parseNode )
+
+The abstract operation CountLeftCapturingParensWithin takes argument parseNode (a Parse Node ) and returns a non-negative integer . It returns the number of left-capturing parentheses in parseNode . A left-capturing parenthesis is any ( pattern character that is matched by the ( terminal of the
+Atom ::
+(
+GroupSpecifier opt
+Disjunction
+)
+
+production.
+
+Note
+This section is amended in B.1.2.2 .
+
+It performs the following steps when called:
+
+- Assert : parseNode is an instance of a production in the RegExp Pattern grammar .
+
+- Return the number of
+Atom ::
+(
+GroupSpecifier opt
+Disjunction
+)
+
+Parse Nodes contained within parseNode .
+
+22.2.1.3 Static Semantics: CountLeftCapturingParensBefore ( parseNode )
+
+The abstract operation CountLeftCapturingParensBefore takes argument parseNode (a Parse Node ) and returns a non-negative integer . It returns the number of left-capturing parentheses within the enclosing pattern that occur to the left of parseNode .
+
+Note
+This section is amended in B.1.2.2 .
+
+It performs the following steps when called:
+
+- Assert : parseNode is an instance of a production in the RegExp Pattern grammar .
+
+- Let pattern be the Pattern containing parseNode .
+
+- Return the number of
+Atom ::
+(
+GroupSpecifier opt
+Disjunction
+)
+
+Parse Nodes contained within pattern that either occur before parseNode or contain parseNode .
+
+22.2.1.4 Static Semantics: MightBothParticipate ( x , y )
+
+The abstract operation MightBothParticipate takes arguments x (a Parse Node ) and y (a Parse Node ) and returns a Boolean. It performs the following steps when called:
+
+- Assert : x and y have the same enclosing Pattern .
+
+- If the enclosing Pattern contains a
+Disjunction ::
+Alternative
+|
+Disjunction
+
+Parse Node such that either x is contained within the Alternative and y is contained within the derived Disjunction , or x is contained within the derived Disjunction and y is contained within the Alternative , return false .
+
+- Return true .
+
+22.2.1.5 Static Semantics: CapturingGroupNumber
+
+The syntax-directed operation CapturingGroupNumber takes no arguments and returns a positive integer .
+
+Note
+This section is amended in B.1.2.1 .
+
+It is defined piecewise over the following productions:
+
+DecimalEscape :: NonZeroDigit
+
+- Return the MV of NonZeroDigit .
+
+DecimalEscape ::
+NonZeroDigit
+DecimalDigits
+
+- Let n be the number of code points in DecimalDigits .
+
+- Return (the MV of NonZeroDigit × 10 n plus the MV of DecimalDigits ).
+
+The definitions of “the MV of NonZeroDigit ” and “the MV of DecimalDigits ” are in 12.9.3 .
+
+22.2.1.6 Static Semantics: IsCharacterClass
+
+The syntax-directed operation IsCharacterClass takes no arguments and returns a Boolean.
+
+Note
+This section is amended in B.1.2.3 .
+
+It is defined piecewise over the following productions:
+
+ClassAtom ::
+-
+
+ClassAtomNoDash ::
+SourceCharacter but not one of \ or ] or -
+
+ClassEscape ::
+b
+
+-
+
+CharacterEscape
+
+- Return false .
+
+ClassEscape :: CharacterClassEscape
+
+- Return true .
+
+22.2.1.7 Static Semantics: CharacterValue
+
+The syntax-directed operation CharacterValue takes no arguments and returns a non-negative integer .
+
+Note 1
+This section is amended in B.1.2.4 .
+
+It is defined piecewise over the following productions:
+
+ClassAtom :: -
+
+- Return the numeric value of U+002D (HYPHEN-MINUS).
+
+ClassAtomNoDash :: SourceCharacter but not one of \ or ] or -
+
+- Let codePoint be the code point matched by SourceCharacter .
+
+- Return the numeric value of codePoint .
+
+ClassEscape :: b
+
+- Return the numeric value of U+0008 (BACKSPACE).
+
+ClassEscape :: -
+
+- Return the numeric value of U+002D (HYPHEN-MINUS).
+
+CharacterEscape :: ControlEscape
+
+- Return the numeric value according to Table 63 .
+
+Table 63: ControlEscape Code Point Values
+
+ControlEscape
+
+Numeric Value
+
+Code Point
+
+Unicode Name
+
+Symbol
+
+t
+
+9
+
+U+0009
+
+CHARACTER TABULATION
+
+<HT>
+
+n
+
+10
+
+U+000A
+
+LINE FEED (LF)
+
+<LF>
+
+v
+
+11
+
+U+000B
+
+LINE TABULATION
+
+<VT>
+
+f
+
+12
+
+U+000C
+
+FORM FEED (FF)
+
+<FF>
+
+r
+
+13
+
+U+000D
+
+CARRIAGE RETURN (CR)
+
+<CR>
+
+CharacterEscape ::
+c
+AsciiLetter
+
+- Let codePoint be the code point matched by AsciiLetter .
+
+- Let i be the numeric value of codePoint .
+
+- Return the remainder of dividing i by 32.
+
+CharacterEscape ::
+0
+[lookahead ∉ DecimalDigit ]
+
+- Return the numeric value of U+0000 (NULL).
+
+Note 2
+\0 represents the <NUL> character and cannot be followed by a decimal digit.
+
+CharacterEscape :: HexEscapeSequence
+
+- Return the MV of HexEscapeSequence .
+
+RegExpUnicodeEscapeSequence ::
+u
+HexLeadSurrogate
+\u
+HexTrailSurrogate
+
+- Let lead be the CharacterValue of HexLeadSurrogate .
+
+- Let trail be the CharacterValue of HexTrailSurrogate .
+
+- Let codePoint be UTF16SurrogatePairToCodePoint ( lead , trail ).
+
+- Return the numeric value of codePoint .
+
+RegExpUnicodeEscapeSequence ::
+u
+Hex4Digits
+
+- Return the MV of Hex4Digits .
+
+RegExpUnicodeEscapeSequence ::
+u{
+CodePoint
+}
+
+- Return the MV of CodePoint .
+
+HexLeadSurrogate :: Hex4Digits
+
+HexTrailSurrogate :: Hex4Digits
+
+HexNonSurrogate :: Hex4Digits
+
+- Return the MV of Hex4Digits .
+
+CharacterEscape :: IdentityEscape
+
+- Let codePoint be the code point matched by IdentityEscape .
+
+- Return the numeric value of codePoint .
+
+ClassSetCharacter :: SourceCharacter but not ClassSetSyntaxCharacter
+
+- Let codePoint be the code point matched by SourceCharacter .
+
+- Return the numeric value of codePoint .
+
+ClassSetCharacter ::
+\
+ClassSetReservedPunctuator
+
+- Let codePoint be the code point matched by ClassSetReservedPunctuator .
+
+- Return the numeric value of codePoint .
+
+ClassSetCharacter :: \b
+
+- Return the numeric value of U+0008 (BACKSPACE).
+
+22.2.1.8 Static Semantics: MayContainStrings
+
+The syntax-directed operation MayContainStrings takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+CharacterClassEscape ::
+d
+
+D
+
+s
+
+S
+
+w
+
+W
+
+P{
+UnicodePropertyValueExpression
+}
+
+UnicodePropertyValueExpression ::
+UnicodePropertyName
+=
+UnicodePropertyValue
+
+NestedClass ::
+[^
+ClassContents
+]
+
+ClassContents ::
+[empty]
+
+NonemptyClassRanges
+
+ClassSetOperand ::
+ClassSetCharacter
+
+- Return false .
+
+UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue
+
+- If the source text matched by LoneUnicodePropertyNameOrValue is a binary property of strings listed in the “ Property name ” column of Table 67 , return true .
+
+- Return false .
+
+ClassUnion ::
+ClassSetRange
+ClassUnion opt
+
+- If the ClassUnion is present, return MayContainStrings of the ClassUnion .
+
+- Return false .
+
+ClassUnion ::
+ClassSetOperand
+ClassUnion opt
+
+- If MayContainStrings of the ClassSetOperand is true , return true .
+
+- If ClassUnion is present, return MayContainStrings of the ClassUnion .
+
+- Return false .
+
+ClassIntersection ::
+ClassSetOperand
+&&
+ClassSetOperand
+
+- If MayContainStrings of the first ClassSetOperand is false , return false .
+
+- If MayContainStrings of the second ClassSetOperand is false , return false .
+
+- Return true .
+
+ClassIntersection ::
+ClassIntersection
+&&
+ClassSetOperand
+
+- If MayContainStrings of the ClassIntersection is false , return false .
+
+- If MayContainStrings of the ClassSetOperand is false , return false .
+
+- Return true .
+
+ClassSubtraction ::
+ClassSetOperand
+--
+ClassSetOperand
+
+- Return MayContainStrings of the first ClassSetOperand .
+
+ClassSubtraction ::
+ClassSubtraction
+--
+ClassSetOperand
+
+- Return MayContainStrings of the ClassSubtraction .
+
+ClassStringDisjunctionContents ::
+ClassString
+|
+ClassStringDisjunctionContents
+
+- If MayContainStrings of the ClassString is true , return true .
+
+- Return MayContainStrings of the ClassStringDisjunctionContents .
+
+ClassString :: [empty]
+
+- Return true .
+
+ClassString :: NonEmptyClassString
+
+- Return MayContainStrings of the NonEmptyClassString .
+
+NonEmptyClassString ::
+ClassSetCharacter
+NonEmptyClassString opt
+
+- If NonEmptyClassString is present, return true .
+
+- Return false .
+
+22.2.1.9 Static Semantics: GroupSpecifiersThatMatch ( thisGroupName )
+
+The abstract operation GroupSpecifiersThatMatch takes argument thisGroupName (a GroupName Parse Node ) and returns a List of GroupSpecifier Parse Nodes . It performs the following steps when called:
+
+- Let name be the CapturingGroupName of thisGroupName .
+
+- Let pattern be the Pattern containing thisGroupName .
+
+- Let result be a new empty List .
+
+- For each GroupSpecifier groupSpecifier that pattern contains, do
+- If the CapturingGroupName of groupSpecifier is name , then
+- Append groupSpecifier to result .
+
+- Return result .
+
+22.2.1.10 Static Semantics: CapturingGroupName
+
+The syntax-directed operation CapturingGroupName takes no arguments and returns a String. It is defined piecewise over the following productions:
+
+GroupName ::
+<
+RegExpIdentifierName
+>
+
+- Let idTextUnescaped be the RegExpIdentifierCodePoints of RegExpIdentifierName .
+
+- Return CodePointsToString ( idTextUnescaped ).
+
+22.2.1.11 Static Semantics: RegExpIdentifierCodePoints
+
+The syntax-directed operation RegExpIdentifierCodePoints takes no arguments and returns a List of code points. It is defined piecewise over the following productions:
+
+RegExpIdentifierName :: RegExpIdentifierStart
+
+- Let codePoint be the RegExpIdentifierCodePoint of RegExpIdentifierStart .
+
+- Return « codePoint ».
+
+RegExpIdentifierName ::
+RegExpIdentifierName
+RegExpIdentifierPart
+
+- Let codePoints be the RegExpIdentifierCodePoints of the derived RegExpIdentifierName .
+
+- Let codePoint be the RegExpIdentifierCodePoint of RegExpIdentifierPart .
+
+- Return the list-concatenation of codePoints and « codePoint ».
+
+22.2.1.12 Static Semantics: RegExpIdentifierCodePoint
+
+The syntax-directed operation RegExpIdentifierCodePoint takes no arguments and returns a code point. It is defined piecewise over the following productions:
+
+RegExpIdentifierStart :: IdentifierStartChar
+
+- Return the code point matched by IdentifierStartChar .
+
+RegExpIdentifierPart :: IdentifierPartChar
+
+- Return the code point matched by IdentifierPartChar .
+
+RegExpIdentifierStart ::
+\
+RegExpUnicodeEscapeSequence
+
+RegExpIdentifierPart ::
+\
+RegExpUnicodeEscapeSequence
+
+- Return the code point whose numeric value is the CharacterValue of RegExpUnicodeEscapeSequence .
+
+RegExpIdentifierStart ::
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+RegExpIdentifierPart ::
+UnicodeLeadSurrogate
+UnicodeTrailSurrogate
+
+- Let lead be the code unit whose numeric value is the numeric value of the code point matched by UnicodeLeadSurrogate .
+
+- Let trail be the code unit whose numeric value is the numeric value of the code point matched by UnicodeTrailSurrogate .
+
+- Return UTF16SurrogatePairToCodePoint ( lead , trail ).
+
+22.2.2 Pattern Semantics
+
+A regular expression pattern is converted into an Abstract Closure using the process described below. An implementation is encouraged to use more efficient algorithms than the ones listed below, as long as the results are the same. The Abstract Closure is used as the value of a RegExp object's [[RegExpMatcher]] internal slot.
+
+A Pattern is a BMP pattern if its associated flags contain neither a u nor a v . Otherwise, it is a Unicode pattern. A BMP pattern matches against a String interpreted as consisting of a sequence of 16-bit values that are Unicode code points in the range of the Basic Multilingual Plane. A Unicode pattern matches against a String interpreted as consisting of Unicode code points encoded using UTF-16. In the context of describing the behaviour of a BMP pattern “character” means a single 16-bit Unicode BMP code point. In the context of describing the behaviour of a Unicode pattern “character” means a UTF-16 encoded code point ( 6.1.4 ). In either context, “character value” means the numeric value of the corresponding non-encoded code point.
+
+The syntax and semantics of Pattern is defined as if the source text for the Pattern was a List of SourceCharacter values where each SourceCharacter corresponds to a Unicode code point. If a BMP pattern contains a non-BMP SourceCharacter the entire pattern is encoded using UTF-16 and the individual code units of that encoding are used as the elements of the List .
+
+Note
+For example, consider a pattern expressed in source text as the single non-BMP character U+1D11E (MUSICAL SYMBOL G CLEF). Interpreted as a Unicode pattern, it would be a single element (character) List consisting of the single code point U+1D11E. However, interpreted as a BMP pattern, it is first UTF-16 encoded to produce a two element List consisting of the code units 0xD834 and 0xDD1E.
+
+Patterns are passed to the RegExp constructor as ECMAScript String values in which non-BMP characters are UTF-16 encoded. For example, the single character MUSICAL SYMBOL G CLEF pattern, expressed as a String value, is a String of length 2 whose elements were the code units 0xD834 and 0xDD1E. So no further translation of the string would be necessary to process it as a BMP pattern consisting of two pattern characters. However, to process it as a Unicode pattern UTF16SurrogatePairToCodePoint must be used in producing a List whose sole element is a single pattern character, the code point U+1D11E.
+
+An implementation may not actually perform such translations to or from UTF-16, but the semantics of this specification requires that the result of pattern matching be as if such translations were performed.
+
+22.2.2.1 Notation
+
+The descriptions below use the following internal data structures:
+
+-
+A CharSetElement is one of the two following entities:
+
+-
+If regexpRecord . [[UnicodeSets]] is false , then a CharSetElement is a character in the sense of the Pattern Semantics above.
+
+-
+If regexpRecord . [[UnicodeSets]] is true , then a CharSetElement is a sequence whose elements are characters in the sense of the Pattern Semantics above. This includes the empty sequence, sequences of one character, and sequences of more than one character. For convenience, when working with CharSetElements of this kind, an individual character is treated interchangeably with a sequence of one character.
+
+-
+A CharSet is a mathematical set of CharSetElements.
+
+-
+A CaptureRange is a Record { [[StartIndex]] , [[EndIndex]] } that represents the range of characters included in a capture, where [[StartIndex]] is an integer representing the start index (inclusive) of the range within input , and [[EndIndex]] is an integer representing the end index (exclusive) of the range within input . For any CaptureRange , these indices must satisfy the invariant that [[StartIndex]] ≤ [[EndIndex]] .
+
+-
+A MatchState is a Record { [[Input]] , [[EndIndex]] , [[Captures]] } where [[Input]] is a List of characters representing the String being matched, [[EndIndex]] is an integer , and [[Captures]] is a List of values, one for each left-capturing parenthesis in the pattern. MatchStates are used to represent partial match states in the regular expression matching algorithms. The [[EndIndex]] is one plus the index of the last input character matched so far by the pattern, while [[Captures]] holds the results of capturing parentheses. The n th element of [[Captures]] is either a CaptureRange representing the range of characters captured by the n th set of capturing parentheses, or undefined if the n th set of capturing parentheses hasn't been reached yet. Due to backtracking, many MatchStates may be in use at any time during the matching process.
+
+-
+A MatcherContinuation is an Abstract Closure that takes one MatchState argument and returns either a MatchState or failure . The MatcherContinuation attempts to match the remaining portion (specified by the closure's captured values) of the pattern against input , starting at the intermediate state given by its MatchState argument. If the match succeeds, the MatcherContinuation returns the final MatchState that it reached; if the match fails, the MatcherContinuation returns failure .
+
+-
+A Matcher is an Abstract Closure that takes two arguments—a MatchState and a MatcherContinuation —and returns either a MatchState or failure . A Matcher attempts to match a middle subpattern (specified by the closure's captured values) of the pattern against the MatchState 's [[Input]] , starting at the intermediate state given by its MatchState argument. The MatcherContinuation argument should be a closure that matches the rest of the pattern. After matching the subpattern of a pattern to obtain a new MatchState , the Matcher then calls MatcherContinuation on that new MatchState to test if the rest of the pattern can match as well. If it can, the Matcher returns the MatchState returned by MatcherContinuation ; if not, the Matcher may try different choices at its choice points, repeatedly calling MatcherContinuation until it either succeeds or all possibilities have been exhausted.
+
+22.2.2.1.1 RegExp Records
+
+A RegExp Record is a Record used to store information about a RegExp that is needed during compilation and possibly during matching.
+
+It has the following fields:
+
+Table 64: RegExp Record Fields
+
+Field Name
+Value
+Meaning
+
+[[IgnoreCase]]
+a Boolean
+indicates whether "i" appears in the RegExp's flags
+
+[[Multiline]]
+a Boolean
+indicates whether "m" appears in the RegExp's flags
+
+[[DotAll]]
+a Boolean
+indicates whether "s" appears in the RegExp's flags
+
+[[Unicode]]
+a Boolean
+indicates whether "u" appears in the RegExp's flags
+
+[[UnicodeSets]]
+a Boolean
+indicates whether "v" appears in the RegExp's flags
+
+[[CapturingGroupsCount]]
+a non-negative integer
+the number of left-capturing parentheses in the RegExp's pattern
+
+22.2.2.2 Runtime Semantics: CompilePattern
+
+The syntax-directed operation CompilePattern takes argument regexpRecord (a RegExp Record ) and returns an Abstract Closure that takes a List of characters and a non-negative integer and returns either a MatchState or failure . It is defined piecewise over the following productions:
+
+Pattern :: Disjunction
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and forward .
+
+- Return a new Abstract Closure with parameters ( input , index ) that captures regexpRecord and m and performs the following steps when called:
+- Assert : input is a List of characters.
+
+- Assert : 0 ≤ index ≤ the number of elements in input .
+
+- Let c be a new MatcherContinuation with parameters ( y ) that captures nothing and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return y .
+
+- Let capability be a List of regexpRecord . [[CapturingGroupsCount]] undefined values, indexed 1 through regexpRecord . [[CapturingGroupsCount]] .
+
+- Let x be the MatchState { [[Input]] : input , [[EndIndex]] : index , [[Captures]] : capability }.
+
+- Return m ( x , c ).
+
+Note
+A Pattern compiles to an Abstract Closure value. RegExpBuiltinExec can then apply this procedure to a List of characters and an offset within that List to determine whether the pattern would match starting at exactly that offset within the List , and, if it does match, what the values of the capturing parentheses would be. The algorithms in 22.2.2 are designed so that compiling a pattern may throw a SyntaxError exception; on the other hand, once the pattern is successfully compiled, applying the resulting Abstract Closure to find a match in a List of characters cannot throw an exception (except for any implementation-defined exceptions that can occur anywhere such as out-of-memory).
+
+22.2.2.3 Runtime Semantics: CompileSubpattern
+
+The syntax-directed operation CompileSubpattern takes arguments regexpRecord (a RegExp Record ) and direction ( forward or backward ) and returns a Matcher .
+
+Note 1
+This section is amended in B.1.2.5 .
+
+It is defined piecewise over the following productions:
+
+Disjunction ::
+Alternative
+|
+Disjunction
+
+- Let m1 be CompileSubpattern of Alternative with arguments regexpRecord and direction .
+
+- Let m2 be CompileSubpattern of Disjunction with arguments regexpRecord and direction .
+
+- Return MatchTwoAlternatives ( m1 , m2 ).
+
+Note 2
+The | regular expression operator separates two alternatives. The pattern first tries to match the left Alternative (followed by the sequel of the regular expression); if it fails, it tries to match the right Disjunction (followed by the sequel of the regular expression). If the left Alternative , the right Disjunction , and the sequel all have choice points, all choices in the sequel are tried before moving on to the next choice in the left Alternative . If choices in the left Alternative are exhausted, the right Disjunction is tried instead of the left Alternative . Any capturing parentheses inside a portion of the pattern skipped by | produce undefined values instead of Strings. Thus, for example,
+
+/a|ab/. exec ( "abc" )
+returns the result "a" and not "ab" . Moreover,
+
+/((a)|(ab))((c)|(bc))/. exec ( "abc" )
+returns the array
+
+[ "abc" , "a" , "a" , undefined , "bc" , undefined , "bc" ]
+and not
+
+[ "abc" , "ab" , undefined , "ab" , "c" , "c" , undefined ]
+The order in which the two alternatives are tried is independent of the value of direction .
+
+Alternative :: [empty]
+
+- Return EmptyMatcher ().
+
+Alternative ::
+Alternative
+Term
+
+- Let m1 be CompileSubpattern of Alternative with arguments regexpRecord and direction .
+
+- Let m2 be CompileSubpattern of Term with arguments regexpRecord and direction .
+
+- Return MatchSequence ( m1 , m2 , direction ).
+
+Note 3
+Consecutive Term s try to simultaneously match consecutive portions of input . When direction is forward , if the left Alternative , the right Term , and the sequel of the regular expression all have choice points, all choices in the sequel are tried before moving on to the next choice in the right Term , and all choices in the right Term are tried before moving on to the next choice in the left Alternative . When direction is backward , the evaluation order of Alternative and Term are reversed.
+
+Term :: Assertion
+
+- Return CompileAssertion of Assertion with argument regexpRecord .
+
+Note 4
+The resulting Matcher is independent of direction .
+
+Term :: Atom
+
+- Return CompileAtom of Atom with arguments regexpRecord and direction .
+
+Term ::
+Atom
+Quantifier
+
+- Let m be CompileAtom of Atom with arguments regexpRecord and direction .
+
+- Let q be CompileQuantifier of Quantifier .
+
+- Assert : q . [[Min]] ≤ q . [[Max]] .
+
+- Let parenIndex be CountLeftCapturingParensBefore ( Term ).
+
+- Let parenCount be CountLeftCapturingParensWithin ( Atom ).
+
+- Return a new Matcher with parameters ( x , c ) that captures m , q , parenIndex , and parenCount and performs the following steps when called:
+- Assert : x is a MatchState .
+
+- Assert : c is a MatcherContinuation .
+
+- Return RepeatMatcher ( m , q . [[Min]] , q . [[Max]] , q . [[Greedy]] , x , c , parenIndex , parenCount ).
+
+22.2.2.3.1 RepeatMatcher ( m , min , max , greedy , matchState , continue , parenIndex , parenCount )
+
+The abstract operation RepeatMatcher takes arguments m (a Matcher ), min (a non-negative integer ), max (a non-negative integer or +∞), greedy (a Boolean), matchState (a MatchState ), continue (a MatcherContinuation ), parenIndex (a non-negative integer ), and parenCount (a non-negative integer ) and returns either a MatchState or failure . It performs the following steps when called:
+
+- If max = 0, return continue ( matchState ).
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures m , min , max , greedy , matchState , continue , parenIndex , and parenCount and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- If min = 0 and y . [[EndIndex]] = matchState . [[EndIndex]] , return failure .
+
+- If min = 0, let min2 be 0; else let min2 be min - 1.
+
+- If max = +∞, let max2 be +∞; else let max2 be max - 1.
+
+- Return RepeatMatcher ( m , min2 , max2 , greedy , y , continue , parenIndex , parenCount ).
+
+- Let capability be a copy of matchState . [[Captures]] .
+
+- For each integer k in the inclusive interval from parenIndex + 1 to parenIndex + parenCount , set capability [ k ] to undefined .
+
+- Let input be matchState . [[Input]] .
+
+- Let e be matchState . [[EndIndex]] .
+
+- Let xr be the MatchState { [[Input]] : input , [[EndIndex]] : e , [[Captures]] : capability }.
+
+- If min ≠ 0, return m ( xr , d ).
+
+- If greedy is false , then
+- Let z be continue ( matchState ).
+
+- If z is not failure , return z .
+
+- Return m ( xr , d ).
+
+- Let z be m ( xr , d ).
+
+- If z is not failure , return z .
+
+- Return continue ( matchState ).
+
+Note 1
+An Atom followed by a Quantifier is repeated the number of times specified by the Quantifier . A Quantifier can be non-greedy, in which case the Atom pattern is repeated as few times as possible while still matching the sequel, or it can be greedy, in which case the Atom pattern is repeated as many times as possible while still matching the sequel. The Atom pattern is repeated rather than the input character sequence that it matches, so different repetitions of the Atom can match different input substrings.
+
+Note 2
+If the Atom and the sequel of the regular expression all have choice points, the Atom is first matched as many (or as few, if non-greedy) times as possible. All choices in the sequel are tried before moving on to the next choice in the last repetition of Atom . All choices in the last (n th ) repetition of Atom are tried before moving on to the next choice in the next-to-last (n - 1) st repetition of Atom ; at which point it may turn out that more or fewer repetitions of Atom are now possible; these are exhausted (again, starting with either as few or as many as possible) before moving on to the next choice in the (n - 1) st repetition of Atom and so on.
+
+Compare
+
+/a[a-z]{ 2 , 4 }/. exec ( "abcdefghi" )
+which returns "abcde" with
+
+/a[a-z]{ 2 , 4 }?/. exec ( "abcdefghi" )
+which returns "abc" .
+
+Consider also
+
+/(aa|aabaac|ba|b|c)*/. exec ( "aabaac" )
+which, by the choice point ordering above, returns the array
+
+[ "aaba" , "ba" ]
+and not any of:
+
+[ "aabaac" , "aabaac" ]
+[ "aabaac" , "c" ]
+The above ordering of choice points can be used to write a regular expression that calculates the greatest common divisor of two numbers (represented in unary notation). The following example calculates the gcd of 10 and 15:
+
+"aaaaaaaaaa,aaaaaaaaaaaaaaa" . replace ( /^(a+)\1*,\1+$/ , "$1" )
+which returns the gcd in unary notation "aaaaa" .
+
+Note 3
+Step 4 of the RepeatMatcher clears Atom 's captures each time Atom is repeated. We can see its behaviour in the regular expression
+
+/(z)((a+)?(b+)?(c))*/. exec ( "zaacbbbcac" )
+which returns the array
+
+[ "zaacbbbcac" , "z" , "ac" , "a" , undefined , "c" ]
+and not
+
+[ "zaacbbbcac" , "z" , "ac" , "a" , "bbb" , "c" ]
+because each iteration of the outermost * clears all captured Strings contained in the quantified Atom , which in this case includes capture Strings numbered 2, 3, 4, and 5.
+
+Note 4
+Step 2.b of the RepeatMatcher states that once the minimum number of repetitions has been satisfied, any more expansions of Atom that match the empty character sequence are not considered for further repetitions. This prevents the regular expression engine from falling into an infinite loop on patterns such as:
+
+/(a*)*/. exec ( "b" )
+or the slightly more complicated:
+
+/(a*)b\ 1 +/. exec ( "baaaac" )
+which returns the array
+
+[ "b" , "" ]
+
+22.2.2.3.2 EmptyMatcher ( )
+
+The abstract operation EmptyMatcher takes no arguments and returns a Matcher . It performs the following steps when called:
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures nothing and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Return continue ( matchState ).
+
+22.2.2.3.3 MatchTwoAlternatives ( m1 , m2 )
+
+The abstract operation MatchTwoAlternatives takes arguments m1 (a Matcher ) and m2 (a Matcher ) and returns a Matcher . It performs the following steps when called:
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m1 and m2 and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let result be m1 ( matchState , continue ).
+
+- If result is not failure , return result .
+
+- Return m2 ( matchState , continue ).
+
+22.2.2.3.4 MatchSequence ( m1 , m2 , direction )
+
+The abstract operation MatchSequence takes arguments m1 (a Matcher ), m2 (a Matcher ), and direction ( forward or backward ) and returns a Matcher . It performs the following steps when called:
+
+- If direction is forward , then
+- Return a new Matcher with parameters ( matchState , continue ) that captures m1 and m2 and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures continue and m2 and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return m2 ( y , continue ).
+
+- Return m1 ( matchState , d ).
+
+- Assert : direction is backward .
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m1 and m2 and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures continue and m1 and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return m1 ( y , continue ).
+
+- Return m2 ( matchState , d ).
+
+22.2.2.4 Runtime Semantics: CompileAssertion
+
+The syntax-directed operation CompileAssertion takes argument regexpRecord (a RegExp Record ) and returns a Matcher .
+
+Note 1
+This section is amended in B.1.2.6 .
+
+It is defined piecewise over the following productions:
+
+Assertion :: ^
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures regexpRecord and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let input be matchState . [[Input]] .
+
+- Let e be matchState . [[EndIndex]] .
+
+- If e = 0, or if regexpRecord . [[Multiline]] is true and the character input [ e - 1] is matched by LineTerminator , then
+- Return continue ( matchState ).
+
+- Return failure .
+
+Note 2
+Even when the y flag is used with a pattern, ^ always matches only at the beginning of input , or (if regexpRecord . [[Multiline]] is true ) at the beginning of a line.
+
+Assertion :: $
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures regexpRecord and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let input be matchState . [[Input]] .
+
+- Let e be matchState . [[EndIndex]] .
+
+- Let inputLength be the number of elements in input .
+
+- If e = inputLength , or if regexpRecord . [[Multiline]] is true and the character input [ e ] is matched by LineTerminator , then
+- Return continue ( matchState ).
+
+- Return failure .
+
+Assertion :: \b
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures regexpRecord and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let input be matchState . [[Input]] .
+
+- Let e be matchState . [[EndIndex]] .
+
+- Let a be IsWordChar ( regexpRecord , input , e - 1).
+
+- Let b be IsWordChar ( regexpRecord , input , e ).
+
+- If a is true and b is false , or if a is false and b is true , return continue ( matchState ).
+
+- Return failure .
+
+Assertion :: \B
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures regexpRecord and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let input be matchState . [[Input]] .
+
+- Let e be matchState . [[EndIndex]] .
+
+- Let a be IsWordChar ( regexpRecord , input , e - 1).
+
+- Let b be IsWordChar ( regexpRecord , input , e ).
+
+- If a is true and b is true , or if a is false and b is false , return continue ( matchState ).
+
+- Return failure .
+
+Assertion ::
+(?=
+Disjunction
+)
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and forward .
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures nothing and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return y .
+
+- Let result be m ( matchState , d ).
+
+- If result is failure , return failure .
+
+- Assert : result is a MatchState .
+
+- Let capability be result . [[Captures]] .
+
+- Let input be matchState . [[Input]] .
+
+- Let xe be matchState . [[EndIndex]] .
+
+- Let z be the MatchState { [[Input]] : input , [[EndIndex]] : xe , [[Captures]] : capability }.
+
+- Return continue ( z ).
+
+Note 3
+The form (?= Disjunction ) specifies a zero-width positive lookahead. In order for it to succeed, the pattern inside Disjunction must match at the current position, but the current position is not advanced before matching the sequel. If Disjunction can match at the current position in several ways, only the first one is tried. Unlike other regular expression operators, there is no backtracking into a (?= form (this unusual behaviour is inherited from Perl). This only matters when the Disjunction contains capturing parentheses and the sequel of the pattern contains backreferences to those captures.
+
+For example,
+
+/(?=(a+))/. exec ( "baaabac" )
+matches the empty String immediately after the first b and therefore returns the array:
+
+[ "" , "aaa" ]
+To illustrate the lack of backtracking into the lookahead, consider:
+
+/(?=(a+))a*b\ 1 /. exec ( "baaabac" )
+This expression returns
+
+[ "aba" , "a" ]
+and not:
+
+[ "aaaba" , "a" ]
+
+Assertion ::
+(?!
+Disjunction
+)
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and forward .
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures nothing and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return y .
+
+- Let result be m ( matchState , d ).
+
+- If result is not failure , return failure .
+
+- Return continue ( matchState ).
+
+Note 4
+The form (?! Disjunction ) specifies a zero-width negative lookahead. In order for it to succeed, the pattern inside Disjunction must fail to match at the current position. The current position is not advanced before matching the sequel. Disjunction can contain capturing parentheses, but backreferences to them only make sense from within Disjunction itself. Backreferences to these capturing parentheses from elsewhere in the pattern always return undefined because the negative lookahead must fail for the pattern to succeed. For example,
+
+/(.*?) a (?!(a+)b\2c)\ 2 (.*)/. exec ( "baaabaac" )
+looks for an a not immediately followed by some positive number n of a 's, a b , another n a 's (specified by the first \2 ) and a c . The second \2 is outside the negative lookahead, so it matches against undefined and therefore always succeeds. The whole expression returns the array:
+
+[ "baaabaac" , "ba" , undefined , "abaac" ]
+
+Assertion ::
+(?<=
+Disjunction
+)
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and backward .
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures nothing and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return y .
+
+- Let result be m ( matchState , d ).
+
+- If result is failure , return failure .
+
+- Assert : result is a MatchState .
+
+- Let capability be result . [[Captures]] .
+
+- Let input be matchState . [[Input]] .
+
+- Let xe be matchState . [[EndIndex]] .
+
+- Let z be the MatchState { [[Input]] : input , [[EndIndex]] : xe , [[Captures]] : capability }.
+
+- Return continue ( z ).
+
+Assertion ::
+(?<!
+Disjunction
+)
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and backward .
+
+- Return a new Matcher with parameters ( matchState , continue ) that captures m and performs the following steps when called:
+- Assert : matchState is a MatchState .
+
+- Assert : continue is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures nothing and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Return y .
+
+- Let result be m ( matchState , d ).
+
+- If result is not failure , return failure .
+
+- Return continue ( matchState ).
+
+22.2.2.4.1 IsWordChar ( regexpRecord , input , e )
+
+The abstract operation IsWordChar takes arguments regexpRecord (a RegExp Record ), input (a List of characters), and e (an integer ) and returns a Boolean. It performs the following steps when called:
+
+- Let inputLength be the number of elements in input .
+
+- If e = -1 or e = inputLength , return false .
+
+- Let char be the character input [ e ].
+
+- If WordCharacters ( regexpRecord ) contains char , return true .
+
+- Return false .
+
+22.2.2.5 Runtime Semantics: CompileQuantifier
+
+The syntax-directed operation CompileQuantifier takes no arguments and returns a Record with fields [[Min]] (a non-negative integer ), [[Max]] (a non-negative integer or +∞), and [[Greedy]] (a Boolean). It is defined piecewise over the following productions:
+
+Quantifier :: QuantifierPrefix
+
+- Let qp be CompileQuantifierPrefix of QuantifierPrefix .
+
+- Return the Record { [[Min]] : qp . [[Min]] , [[Max]] : qp . [[Max]] , [[Greedy]] : true }.
+
+Quantifier ::
+QuantifierPrefix
+?
+
+- Let qp be CompileQuantifierPrefix of QuantifierPrefix .
+
+- Return the Record { [[Min]] : qp . [[Min]] , [[Max]] : qp . [[Max]] , [[Greedy]] : false }.
+
+22.2.2.6 Runtime Semantics: CompileQuantifierPrefix
+
+The syntax-directed operation CompileQuantifierPrefix takes no arguments and returns a Record with fields [[Min]] (a non-negative integer ) and [[Max]] (a non-negative integer or +∞). It is defined piecewise over the following productions:
+
+QuantifierPrefix :: *
+
+- Return the Record { [[Min]] : 0, [[Max]] : +∞ }.
+
+QuantifierPrefix :: +
+
+- Return the Record { [[Min]] : 1, [[Max]] : +∞ }.
+
+QuantifierPrefix :: ?
+
+- Return the Record { [[Min]] : 0, [[Max]] : 1 }.
+
+QuantifierPrefix ::
+{
+DecimalDigits
+}
+
+- Let i be the MV of DecimalDigits (see 12.9.3 ).
+
+- Return the Record { [[Min]] : i , [[Max]] : i }.
+
+QuantifierPrefix ::
+{
+DecimalDigits
+,}
+
+- Let i be the MV of DecimalDigits .
+
+- Return the Record { [[Min]] : i , [[Max]] : +∞ }.
+
+QuantifierPrefix ::
+{
+DecimalDigits
+,
+DecimalDigits
+}
+
+- Let i be the MV of the first DecimalDigits .
+
+- Let j be the MV of the second DecimalDigits .
+
+- Return the Record { [[Min]] : i , [[Max]] : j }.
+
+22.2.2.7 Runtime Semantics: CompileAtom
+
+The syntax-directed operation CompileAtom takes arguments regexpRecord (a RegExp Record ) and direction ( forward or backward ) and returns a Matcher .
+
+Note 1
+This section is amended in B.1.2.7 .
+
+It is defined piecewise over the following productions:
+
+Atom :: PatternCharacter
+
+- Let char be the character matched by PatternCharacter .
+
+- Let charSet be a one-element CharSet containing the character char .
+
+- Return CharacterSetMatcher ( regexpRecord , charSet , false , direction ).
+
+Atom :: .
+
+- Let charSet be AllCharacters ( regexpRecord ).
+
+- If regexpRecord . [[DotAll]] is not true , then
+- Remove from charSet all characters corresponding to a code point on the right-hand side of the LineTerminator production.
+
+- Return CharacterSetMatcher ( regexpRecord , charSet , false , direction ).
+
+Atom :: CharacterClass
+
+- Let cc be CompileCharacterClass of CharacterClass with argument regexpRecord .
+
+- Let cs be cc . [[CharSet]] .
+
+- If regexpRecord . [[UnicodeSets]] is false or every CharSetElement of cs consists of a single character (including if cs is empty), return CharacterSetMatcher ( regexpRecord , cs , cc . [[Invert]] , direction ).
+
+- Assert : cc . [[Invert]] is false .
+
+- Let listOfMatchers be an empty List of Matchers .
+
+- Let csSequences be a new empty List .
+
+- For each CharSetElement s of cs , do
+- If the length of s > 1, append s to csSequences .
+
+- Sort csSequences according to the length of each CharSetElement in descending order.
+
+- For each CharSetElement s of csSequences , do
+- Assert : s is a sequence of 2 or more code points.
+
+- Let remaining be a List consisting of the code points of s .
+
+- Let cs2 be a one-element CharSet containing the last element of remaining .
+
+- Let m2 be CharacterSetMatcher ( regexpRecord , cs2 , false , direction ).
+
+- Remove the last element of remaining .
+
+- For each code point c1 of remaining , in reverse List order, do
+- Let cs1 be a one-element CharSet containing c1 .
+
+- Let m1 be CharacterSetMatcher ( regexpRecord , cs1 , false , direction ).
+
+- Set m2 to MatchSequence ( m1 , m2 , direction ).
+
+- Append m2 to listOfMatchers .
+
+- Let singles be the CharSet containing every CharSetElement of cs that consists of a single character.
+
+- Append CharacterSetMatcher ( regexpRecord , singles , false , direction ) to listOfMatchers .
+
+- If cs contains the empty sequence of characters, append EmptyMatcher () to listOfMatchers .
+
+- Let m2 be the last Matcher in listOfMatchers .
+
+- For each Matcher m1 of listOfMatchers , iterating backwards from its second-to-last element, do
+- Set m2 to MatchTwoAlternatives ( m1 , m2 ).
+
+- Return m2 .
+
+Atom ::
+(
+GroupSpecifier opt
+Disjunction
+)
+
+- Let m be CompileSubpattern of Disjunction with arguments regexpRecord and direction .
+
+- Let parenIndex be CountLeftCapturingParensBefore ( Atom ).
+
+- Return a new Matcher with parameters ( x , c ) that captures direction , m , and parenIndex and performs the following steps when called:
+- Assert : x is a MatchState .
+
+- Assert : c is a MatcherContinuation .
+
+- Let d be a new MatcherContinuation with parameters ( y ) that captures x , c , direction , and parenIndex and performs the following steps when called:
+- Assert : y is a MatchState .
+
+- Let capability be a copy of y . [[Captures]] .
+
+- Let input be x . [[Input]] .
+
+- Let xe be x . [[EndIndex]] .
+
+- Let ye be y . [[EndIndex]] .
+
+- If direction is forward , then
+- Assert : xe ≤ ye .
+
+- Let r be the CaptureRange { [[StartIndex]] : xe , [[EndIndex]] : ye }.
+
+- Else,
+- Assert : direction is backward .
+
+- Assert : ye ≤ xe .
+
+- Let r be the CaptureRange { [[StartIndex]] : ye , [[EndIndex]] : xe }.
+
+- Set capability [ parenIndex + 1] to r .
+
+- Let z be the MatchState { [[Input]] : input , [[EndIndex]] : ye , [[Captures]] : capability }.
+
+- Return c ( z ).
+
+- Return m ( x , d ).
+
+Note 2
+Parentheses of the form ( Disjunction ) serve both to group the components of the Disjunction pattern together and to save the result of the match. The result can be used either in a backreference ( \ followed by a non-zero decimal number), referenced in a replace String, or returned as part of an array from the regular expression matching Abstract Closure . To inhibit the capturing behaviour of parentheses, use the form (?: Disjunction ) instead.
+
+Atom ::
+(?
+RegularExpressionModifiers
+:
+Disjunction
+)
+
+- Let addModifiers be the source text matched by RegularExpressionModifiers .
+
+- Let removeModifiers be the empty String.
+
+- Let modifiedRer be UpdateModifiers ( regexpRecord , CodePointsToString ( addModifiers ), removeModifiers ).
+
+- Return CompileSubpattern of Disjunction with arguments modifiedRer and direction .
+
+Atom ::
+(?
+RegularExpressionModifiers
+-
+RegularExpressionModifiers
+:
+Disjunction
+)
+
+- Let addModifiers be the source text matched by the first RegularExpressionModifiers .
+
+- Let removeModifiers be the source text matched by the second RegularExpressionModifiers .
+
+- Let modifiedRer be UpdateModifiers ( regexpRecord , CodePointsToString ( addModifiers ), CodePointsToString ( removeModifiers )).
+
+- Return CompileSubpattern of Disjunction with arguments modifiedRer and direction .
+
+AtomEscape :: DecimalEscape
+
+- Let n be the CapturingGroupNumber of DecimalEscape .
+
+- Assert : n ≤ regexpRecord . [[CapturingGroupsCount]] .
+
+- Return BackreferenceMatcher ( regexpRecord , « n », direction ).
+
+Note 3
+An escape sequence of the form \ followed by a non-zero decimal number n matches the result of the n th set of capturing parentheses ( 22.2.2.1 ). It is an error if the regular expression has fewer than n capturing parentheses. If the regular expression has n or more capturing parentheses but the n th one is undefined because it has not captured anything, then the backreference always succeeds.
+
+AtomEscape :: CharacterEscape
+
+- Let charValue be the CharacterValue of CharacterEscape .
+
+- Let char be the character whose character value is charValue .
+
+- Let charSet be a one-element CharSet containing the character char .
+
+- Return CharacterSetMatcher ( regexpRecord , charSet , false , direction ).
+
+AtomEscape :: CharacterClassEscape
+
+- Let cs be CompileToCharSet of CharacterClassEscape with argument regexpRecord .
+
+- If regexpRecord . [[UnicodeSets]] is false or every CharSetElement of cs consists of a single character (including if cs is empty), return CharacterSetMatcher ( regexpRecord , cs , false , direction ).
+
+- Let listOfMatchers be an empty List of Matchers .
+
+- Let csSequences be a new empty List .
+
+- For each CharSetElement s of cs , do
+- If the length of s > 1, append s to csSequences .
+
+- Sort csSequences according to the length of each CharSetElement in descending order.
+
+- For each CharSetElement s of csSequences , do
+- Assert : s is a sequence of 2 or more code points.
+
+- Let remaining be a List consisting of the code points of s .
+
+- Let cs2 be a one-element CharSet containing the last element of remaining .
+
+- Let m2 be CharacterSetMatcher ( regexpRecord , cs2 , false , direction ).
+
+- Remove the last element of remaining .
+
+- For each code point c1 of remaining , in reverse List order, do
+- Let cs1 be a one-element CharSet containing c1 .
+
+- Let m1 be CharacterSetMatcher ( regexpRecord , cs1 , false , direction ).
+
+- Set m2 to MatchSequence ( m1 , m2 , direction ).
+
+- Append m2 to listOfMatchers .
+
+- Let singles be the CharSet containing every CharSetElement of cs that consists of a single character.
+
+- Append CharacterSetMatcher ( regexpRecord , singles , false , direction ) to listOfMatchers .
+
+- If cs contains the empty sequence of characters, append EmptyMatcher () to listOfMatchers .
+
+- Let m2 be the last Matcher in listOfMatchers .
+
+- For each Matcher m1 of listOfMatchers , iterating backwards from its second-to-last element, do
+- Set m2 to MatchTwoAlternatives ( m1 , m2 ).
+
+- Return m2 .
+
+AtomEscape ::
+k
+GroupName
+
+- Let matchingGroupSpecifiers be GroupSpecifiersThatMatch ( GroupName ).
+
+- Let parenIndices be a new empty List .
+
+- For each GroupSpecifier groupSpecifier of matchingGroupSpecifiers , do
+- Let parenIndex be CountLeftCapturingParensBefore ( groupSpecifier ).
+
+- Append parenIndex to parenIndices .
+
+- Return BackreferenceMatcher ( regexpRecord , parenIndices , direction ).
+
+22.2.2.7.1 CharacterSetMatcher ( regexpRecord , charSet , invert , direction )
+
+The abstract operation CharacterSetMatcher takes arguments regexpRecord (a RegExp Record ), charSet (a CharSet ), invert (a Boolean), and direction ( forward or backward ) and returns a Matcher . It performs the following steps when called:
+
+- If regexpRecord . [[UnicodeSets]] is true , then
+- Assert : invert is false .
+
+- Assert : Every CharSetElement of charSet consists of a single character.
+
+- Return a new Matcher with parameters ( x , c ) that captures regexpRecord , charSet , invert , and direction and performs the following steps when called:
+- Assert : x is a MatchState .
+
+- Assert : c is a MatcherContinuation .
+
+- Let input be x . [[Input]] .
+
+- Let endIndex be x . [[EndIndex]] .
+
+- If direction is forward , let f be endIndex + 1.
+
+- Else, let f be endIndex - 1.
+
+- Let inputLength be the number of elements in input .
+
+- If f < 0 or f > inputLength , return failure .
+
+- Let index be min ( endIndex , f ).
+
+- Let char be the character input [ index ].
+
+- Let cc be Canonicalize ( regexpRecord , char ).
+
+- If there exists a CharSetElement in charSet containing exactly one character a such that Canonicalize ( regexpRecord , a ) is cc , let found be true ; else let found be false .
+
+- If invert is false and found is false , return failure .
+
+- If invert is true and found is true , return failure .
+
+- Let capability be x . [[Captures]] .
+
+- Let y be the MatchState { [[Input]] : input , [[EndIndex]] : f , [[Captures]] : capability }.
+
+- Return c ( y ).
+
+22.2.2.7.2 BackreferenceMatcher ( regexpRecord , ns , direction )
+
+The abstract operation BackreferenceMatcher takes arguments regexpRecord (a RegExp Record ), ns (a List of positive integers ), and direction ( forward or backward ) and returns a Matcher . It performs the following steps when called:
+
+- Return a new Matcher with parameters ( x , c ) that captures regexpRecord , ns , and direction and performs the following steps when called:
+- Assert : x is a MatchState .
+
+- Assert : c is a MatcherContinuation .
+
+- Let input be x . [[Input]] .
+
+- Let capability be x . [[Captures]] .
+
+- Let r be undefined .
+
+- For each integer n of ns , do
+- If capability [ n ] is not undefined , then
+- Assert : r is undefined .
+
+- Set r to capability [ n ].
+
+- If r is undefined , return c ( x ).
+
+- Let endIndex be x . [[EndIndex]] .
+
+- Let rs be r . [[StartIndex]] .
+
+- Let re be r . [[EndIndex]] .
+
+- Let length be re - rs .
+
+- If direction is forward , let f be endIndex + length .
+
+- Else, let f be endIndex - length .
+
+- Let inputLength be the number of elements in input .
+
+- If f < 0 or f > inputLength , return failure .
+
+- Let g be min ( endIndex , f ).
+
+- If there exists an integer i in the interval from 0 (inclusive) to length (exclusive) such that Canonicalize ( regexpRecord , input [ rs + i ]) is not Canonicalize ( regexpRecord , input [ g + i ]), return failure .
+
+- Let y be the MatchState { [[Input]] : input , [[EndIndex]] : f , [[Captures]] : capability }.
+
+- Return c ( y ).
+
+22.2.2.7.3 Canonicalize ( regexpRecord , char )
+
+The abstract operation Canonicalize takes arguments regexpRecord (a RegExp Record ) and char (a character) and returns a character. It performs the following steps when called:
+
+- If HasEitherUnicodeFlag ( regexpRecord ) is true and regexpRecord . [[IgnoreCase]] is true , then
+- If the file CaseFolding.txt of the Unicode Character Database provides a simple or common case folding mapping for char , return the result of applying that mapping to char .
+
+- Return char .
+
+- If regexpRecord . [[IgnoreCase]] is false , return char .
+
+- Assert : char is a UTF-16 code unit.
+
+- Let codePoint be the code point whose numeric value is the numeric value of char .
+
+- Let mappedCodePoints be toUppercase(« codePoint »), according to the Unicode Default Case Conversion algorithm.
+
+- If the length of CodePointsToString ( mappedCodePoints ) ≠ 1, return char .
+
+- Assert : The number of elements in mappedCodePoints is 1.
+
+- Let mappedCodePoint be the single code point element of mappedCodePoints .
+
+- If the numeric value of char ≥ 128 and the numeric value of mappedCodePoint < 128, return char .
+
+- Return the code unit whose numeric value is the numeric value of mappedCodePoint .
+
+Note
+In case-insignificant matches when HasEitherUnicodeFlag ( regexpRecord ) is true , all characters are implicitly case-folded using the simple mapping provided by the Unicode Standard immediately before they are compared. The simple mapping always maps to a single code point, so it does not map, for example, ß (U+00DF LATIN SMALL LETTER SHARP S) to ss or SS . It may however map code points outside the Basic Latin block to code points within it—for example, ſ (U+017F LATIN SMALL LETTER LONG S) case-folds to s (U+0073 LATIN SMALL LETTER S) and K (U+212A KELVIN SIGN) case-folds to k (U+006B LATIN SMALL LETTER K). Strings containing those code points are matched by regular expressions such as /[a-z]/ui .
+
+In case-insignificant matches when HasEitherUnicodeFlag ( regexpRecord ) is false , the mapping is based on Unicode Default Case Conversion algorithm toUppercase rather than toCasefold, which results in some subtle differences. For example, Ω (U+2126 OHM SIGN) is mapped by toUppercase to itself but by toCasefold to ω (U+03C9 GREEK SMALL LETTER OMEGA) along with Ω (U+03A9 GREEK CAPITAL LETTER OMEGA), so "\u2126" is matched by /[ω]/ui and /[\u03A9]/ui but not by /[ω]/i or /[\u03A9]/i . Also, no code point outside the Basic Latin block is mapped to a code point within it, so strings such as "\u017F ſ" and "\u212A K" are not matched by /[a-z]/i .
+
+22.2.2.7.4 UpdateModifiers ( regexpRecord , add , remove )
+
+The abstract operation UpdateModifiers takes arguments regexpRecord (a RegExp Record ), add (a String), and remove (a String) and returns a RegExp Record . It performs the following steps when called:
+
+- Assert : add and remove have no elements in common.
+
+- Let ignoreCase be regexpRecord . [[IgnoreCase]] .
+
+- Let multiline be regexpRecord . [[Multiline]] .
+
+- Let dotAll be regexpRecord . [[DotAll]] .
+
+- Let unicode be regexpRecord . [[Unicode]] .
+
+- Let unicodeSets be regexpRecord . [[UnicodeSets]] .
+
+- Let capturingGroupsCount be regexpRecord . [[CapturingGroupsCount]] .
+
+- If remove contains "i" , set ignoreCase to false .
+
+- Else if add contains "i" , set ignoreCase to true .
+
+- If remove contains "m" , set multiline to false .
+
+- Else if add contains "m" , set multiline to true .
+
+- If remove contains "s" , set dotAll to false .
+
+- Else if add contains "s" , set dotAll to true .
+
+- Return the RegExp Record { [[IgnoreCase]] : ignoreCase , [[Multiline]] : multiline , [[DotAll]] : dotAll , [[Unicode]] : unicode , [[UnicodeSets]] : unicodeSets , [[CapturingGroupsCount]] : capturingGroupsCount }.
+
+22.2.2.8 Runtime Semantics: CompileCharacterClass
+
+The syntax-directed operation CompileCharacterClass takes argument regexpRecord (a RegExp Record ) and returns a Record with fields [[CharSet]] (a CharSet ) and [[Invert]] (a Boolean). It is defined piecewise over the following productions:
+
+CharacterClass ::
+[
+ClassContents
+]
+
+- Let charSet be CompileToCharSet of ClassContents with argument regexpRecord .
+
+- Return the Record { [[CharSet]] : charSet , [[Invert]] : false }.
+
+CharacterClass ::
+[^
+ClassContents
+]
+
+- Let charSet be CompileToCharSet of ClassContents with argument regexpRecord .
+
+- If regexpRecord . [[UnicodeSets]] is true , then
+- Return the Record { [[CharSet]] : CharacterComplement ( regexpRecord , charSet ), [[Invert]] : false }.
+
+- Return the Record { [[CharSet]] : charSet , [[Invert]] : true }.
+
+22.2.2.9 Runtime Semantics: CompileToCharSet
+
+The syntax-directed operation CompileToCharSet takes argument regexpRecord (a RegExp Record ) and returns a CharSet .
+
+Note 1
+This section is amended in B.1.2.8 .
+
+It is defined piecewise over the following productions:
+
+ClassContents :: [empty]
+
+- Return the empty CharSet .
+
+NonemptyClassRanges ::
+ClassAtom
+NonemptyClassRangesNoDash
+
+- Let charSet be CompileToCharSet of ClassAtom with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of NonemptyClassRangesNoDash with argument regexpRecord .
+
+- Return the union of CharSets charSet and otherSet .
+
+NonemptyClassRanges ::
+ClassAtom
+-
+ClassAtom
+ClassContents
+
+- Let charSet be CompileToCharSet of the first ClassAtom with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the second ClassAtom with argument regexpRecord .
+
+- Let remainingSet be CompileToCharSet of ClassContents with argument regexpRecord .
+
+- Let rangeSet be CharacterRange ( charSet , otherSet ).
+
+- Return the union of rangeSet and remainingSet .
+
+NonemptyClassRangesNoDash ::
+ClassAtomNoDash
+NonemptyClassRangesNoDash
+
+- Let charSet be CompileToCharSet of ClassAtomNoDash with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of NonemptyClassRangesNoDash with argument regexpRecord .
+
+- Return the union of CharSets charSet and otherSet .
+
+NonemptyClassRangesNoDash ::
+ClassAtomNoDash
+-
+ClassAtom
+ClassContents
+
+- Let charSet be CompileToCharSet of ClassAtomNoDash with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of ClassAtom with argument regexpRecord .
+
+- Let remainingSet be CompileToCharSet of ClassContents with argument regexpRecord .
+
+- Let rangeSet be CharacterRange ( charSet , otherSet ).
+
+- Return the union of rangeSet and remainingSet .
+
+Note 2
+ClassContents can expand into a single ClassAtom and/or ranges of two ClassAtom separated by dashes. In the latter case the ClassContents includes all characters between the first ClassAtom and the second ClassAtom , inclusive; an error occurs if either ClassAtom does not represent a single character (for example, if one is \w) or if the first ClassAtom 's character value is strictly greater than the second ClassAtom 's character value.
+
+Note 3
+Even if the pattern ignores case, the case of the two ends of a range is significant in determining which characters belong to the range. Thus, for example, the pattern /[E-F]/i matches only the letters E , F , e , and f , while the pattern /[E-f]/i matches all uppercase and lowercase letters in the Unicode Basic Latin block as well as the symbols [ , \ , ] , ^ , _ , and ` .
+
+Note 4
+A - character can be treated literally or it can denote a range. It is treated literally if it is the first or last character of ClassContents , the beginning or end limit of a range specification, or immediately follows a range specification.
+
+ClassAtom :: -
+
+- Return the CharSet containing the single character - U+002D (HYPHEN-MINUS).
+
+ClassAtomNoDash :: SourceCharacter but not one of \ or ] or -
+
+- Return the CharSet containing the character matched by SourceCharacter .
+
+ClassEscape ::
+b
+
+-
+
+CharacterEscape
+
+- Let charValue be the CharacterValue of this ClassEscape .
+
+- Let char be the character whose character value is charValue .
+
+- Return the CharSet containing the single character char .
+
+Note 5
+A ClassAtom can use any of the escape sequences that are allowed in the rest of the regular expression except for \b , \B , and backreferences. Inside a CharacterClass , \b means the backspace character, while \B and backreferences raise errors. Using a backreference inside a ClassAtom causes an error.
+
+CharacterClassEscape :: d
+
+- Return the ten-element CharSet containing the characters 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , and 9 .
+
+CharacterClassEscape :: D
+
+- Let charSet be the CharSet returned by
+CharacterClassEscape :: d
+
+.
+
+- Return CharacterComplement ( regexpRecord , charSet ).
+
+CharacterClassEscape :: s
+
+- Return the CharSet containing all characters corresponding to a code point on the right-hand side of the WhiteSpace or LineTerminator productions.
+
+CharacterClassEscape :: S
+
+- Let charSet be the CharSet returned by
+CharacterClassEscape :: s
+
+.
+
+- Return CharacterComplement ( regexpRecord , charSet ).
+
+CharacterClassEscape :: w
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , WordCharacters ( regexpRecord )).
+
+CharacterClassEscape :: W
+
+- Let charSet be the CharSet returned by
+CharacterClassEscape :: w
+
+.
+
+- Return CharacterComplement ( regexpRecord , charSet ).
+
+CharacterClassEscape ::
+p{
+UnicodePropertyValueExpression
+}
+
+- Return CompileToCharSet of UnicodePropertyValueExpression with argument regexpRecord .
+
+CharacterClassEscape ::
+P{
+UnicodePropertyValueExpression
+}
+
+- Let charSet be CompileToCharSet of UnicodePropertyValueExpression with argument regexpRecord .
+
+- Assert : charSet contains only single code points.
+
+- Return CharacterComplement ( regexpRecord , charSet ).
+
+UnicodePropertyValueExpression ::
+UnicodePropertyName
+=
+UnicodePropertyValue
+
+- Let ps be the source text matched by UnicodePropertyName .
+
+- Let p be UnicodeMatchProperty ( regexpRecord , ps ).
+
+- Assert : p is a Unicode property name or property alias listed in the “ Property name and aliases ” column of Table 65 .
+
+- Let vs be the source text matched by UnicodePropertyValue .
+
+- Let v be UnicodeMatchPropertyValue ( p , vs ).
+
+- Let charSet be the CharSet containing all Unicode code points whose character database definition includes the property p with value v .
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , charSet ).
+
+UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue
+
+- Let s be the source text matched by LoneUnicodePropertyNameOrValue .
+
+- If UnicodeMatchPropertyValue ( General_Category , s ) is a Unicode property value or property value alias for the General_Category (gc) property listed in PropertyValueAliases.txt , then
+- Return the CharSet containing all Unicode code points whose character database definition includes the property “General_Category” with value s .
+
+- Let p be UnicodeMatchProperty ( regexpRecord , s ).
+
+- Assert : p is a binary Unicode property or binary property alias listed in the “ Property name and aliases ” column of Table 66 , or a binary Unicode property of strings listed in the “ Property name ” column of Table 67 .
+
+- Let charSet be the CharSet containing all CharSetElements whose character database definition includes the property p with value “True”.
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , charSet ).
+
+ClassUnion ::
+ClassSetRange
+ClassUnion opt
+
+- Let charSet be CompileToCharSet of ClassSetRange with argument regexpRecord .
+
+- If ClassUnion is present, then
+- Let otherSet be CompileToCharSet of ClassUnion with argument regexpRecord .
+
+- Return the union of CharSets charSet and otherSet .
+
+- Return charSet .
+
+ClassUnion ::
+ClassSetOperand
+ClassUnion opt
+
+- Let charSet be CompileToCharSet of ClassSetOperand with argument regexpRecord .
+
+- If ClassUnion is present, then
+- Let otherSet be CompileToCharSet of ClassUnion with argument regexpRecord .
+
+- Return the union of CharSets charSet and otherSet .
+
+- Return charSet .
+
+ClassIntersection ::
+ClassSetOperand
+&&
+ClassSetOperand
+
+- Let charSet be CompileToCharSet of the first ClassSetOperand with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the second ClassSetOperand with argument regexpRecord .
+
+- Return the intersection of CharSets charSet and otherSet .
+
+ClassIntersection ::
+ClassIntersection
+&&
+ClassSetOperand
+
+- Let charSet be CompileToCharSet of the ClassIntersection with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the ClassSetOperand with argument regexpRecord .
+
+- Return the intersection of CharSets charSet and otherSet .
+
+ClassSubtraction ::
+ClassSetOperand
+--
+ClassSetOperand
+
+- Let charSet be CompileToCharSet of the first ClassSetOperand with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the second ClassSetOperand with argument regexpRecord .
+
+- Return the CharSet containing the CharSetElements of charSet which are not also CharSetElements of otherSet .
+
+ClassSubtraction ::
+ClassSubtraction
+--
+ClassSetOperand
+
+- Let charSet be CompileToCharSet of the ClassSubtraction with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the ClassSetOperand with argument regexpRecord .
+
+- Return the CharSet containing the CharSetElements of charSet which are not also CharSetElements of otherSet .
+
+ClassSetRange ::
+ClassSetCharacter
+-
+ClassSetCharacter
+
+- Let charSet be CompileToCharSet of the first ClassSetCharacter with argument regexpRecord .
+
+- Let otherSet be CompileToCharSet of the second ClassSetCharacter with argument regexpRecord .
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , CharacterRange ( charSet , otherSet )).
+
+Note 6
+The result will often consist of two or more ranges. When UnicodeSets is true and IgnoreCase is true , then MaybeSimpleCaseFolding ( regexpRecord , [Ā-č]) will include only the odd-numbered code points of that range.
+
+ClassSetOperand :: ClassSetCharacter
+
+- Let charSet be CompileToCharSet of ClassSetCharacter with argument regexpRecord .
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , charSet ).
+
+ClassSetOperand :: ClassStringDisjunction
+
+- Let charSet be CompileToCharSet of ClassStringDisjunction with argument regexpRecord .
+
+- Return MaybeSimpleCaseFolding ( regexpRecord , charSet ).
+
+ClassSetOperand :: NestedClass
+
+- Return CompileToCharSet of NestedClass with argument regexpRecord .
+
+NestedClass ::
+[
+ClassContents
+]
+
+- Return CompileToCharSet of ClassContents with argument regexpRecord .
+
+NestedClass ::
+[^
+ClassContents
+]
+
+- Let charSet be CompileToCharSet of ClassContents with argument regexpRecord .
+
+- Return CharacterComplement ( regexpRecord , charSet ).
+
+NestedClass ::
+\
+CharacterClassEscape
+
+- Return CompileToCharSet of CharacterClassEscape with argument regexpRecord .
+
+ClassStringDisjunction ::
+\q{
+ClassStringDisjunctionContents
+}
+
+- Return CompileToCharSet of ClassStringDisjunctionContents with argument regexpRecord .
+
+ClassStringDisjunctionContents :: ClassString
+
+- Let s be CompileClassSetString of ClassString with argument regexpRecord .
+
+- Return the CharSet containing the one string s .
+
+ClassStringDisjunctionContents ::
+ClassString
+|
+ClassStringDisjunctionContents
+
+- Let s be CompileClassSetString of ClassString with argument regexpRecord .
+
+- Let charSet be the CharSet containing the one string s .
+
+- Let otherSet be CompileToCharSet of ClassStringDisjunctionContents with argument regexpRecord .
+
+- Return the union of CharSets charSet and otherSet .
+
+ClassSetCharacter ::
+SourceCharacter but not ClassSetSyntaxCharacter
+
+\
+CharacterEscape
+
+\
+ClassSetReservedPunctuator
+
+- Let charValue be the CharacterValue of this ClassSetCharacter .
+
+- Let char be the character whose character value is charValue .
+
+- Return the CharSet containing the single character char .
+
+ClassSetCharacter :: \b
+
+- Return the CharSet containing the single character U+0008 (BACKSPACE).
+
+22.2.2.9.1 CharacterRange ( charSet , otherSet )
+
+The abstract operation CharacterRange takes arguments charSet (a CharSet ) and otherSet (a CharSet ) and returns a CharSet . It performs the following steps when called:
+
+- Assert : charSet and otherSet each contain exactly one character.
+
+- Let a be the one character in CharSet charSet .
+
+- Let b be the one character in CharSet otherSet .
+
+- Let i be the character value of character a .
+
+- Let j be the character value of character b .
+
+- Assert : i ≤ j .
+
+- Return the CharSet containing all characters with a character value in the inclusive interval from i to j .
+
+22.2.2.9.2 HasEitherUnicodeFlag ( regexpRecord )
+
+The abstract operation HasEitherUnicodeFlag takes argument regexpRecord (a RegExp Record ) and returns a Boolean. It performs the following steps when called:
+
+- If regexpRecord . [[Unicode]] is true or regexpRecord . [[UnicodeSets]] is true , return true .
+
+- Return false .
+
+22.2.2.9.3 WordCharacters ( regexpRecord )
+
+The abstract operation WordCharacters takes argument regexpRecord (a RegExp Record ) and returns a CharSet . Returns a CharSet containing the characters considered “word characters” for the purposes of \b , \B , \w , and \W . It performs the following steps when called:
+
+- Let basicWordChars be the CharSet containing every character in the ASCII word characters .
+
+- Let extraWordChars be the CharSet containing all characters c such that c is not in basicWordChars but Canonicalize ( regexpRecord , c ) is in basicWordChars .
+
+- Assert : extraWordChars is empty unless HasEitherUnicodeFlag ( regexpRecord ) is true and regexpRecord . [[IgnoreCase]] is true .
+
+- Return the union of basicWordChars and extraWordChars .
+
+22.2.2.9.4 AllCharacters ( regexpRecord )
+
+The abstract operation AllCharacters takes argument regexpRecord (a RegExp Record ) and returns a CharSet . Returns the set of “all characters” according to the regular expression flags. It performs the following steps when called:
+
+- If regexpRecord . [[UnicodeSets]] is true and regexpRecord . [[IgnoreCase]] is true , then
+- Return the CharSet containing all Unicode code points c that do not have a Simple Case Folding mapping (that is, scf ( c )= c ).
+
+- If HasEitherUnicodeFlag ( regexpRecord ) is true , then
+- Return the CharSet containing all code point values.
+
+- Return the CharSet containing all code unit values.
+
+22.2.2.9.5 MaybeSimpleCaseFolding ( regexpRecord , charSet )
+
+The abstract operation MaybeSimpleCaseFolding takes arguments regexpRecord (a RegExp Record ) and charSet (a CharSet ) and returns a CharSet . If regexpRecord . [[UnicodeSets]] is false or regexpRecord . [[IgnoreCase]] is false , it returns charSet . Otherwise, it uses the Simple Case Folding ( scf( codePoint ) ) definitions in the file CaseFolding.txt of the Unicode Character Database (each of which maps a single code point to another single code point) to map each CharSetElement of charSet character-by-character into a canonical form and returns the resulting CharSet . It performs the following steps when called:
+
+- If regexpRecord . [[UnicodeSets]] is false or regexpRecord . [[IgnoreCase]] is false , return charSet .
+
+- Let otherSet be a new empty CharSet .
+
+- For each CharSetElement s of charSet , do
+- Let t be an empty sequence of characters.
+
+- For each single code point codePoint of s , do
+- Append scf ( codePoint ) to t .
+
+- Add t to otherSet .
+
+- Return otherSet .
+
+22.2.2.9.6 CharacterComplement ( regexpRecord , complement )
+
+The abstract operation CharacterComplement takes arguments regexpRecord (a RegExp Record ) and complement (a CharSet ) and returns a CharSet . It performs the following steps when called:
+
+- Let charSet be AllCharacters ( regexpRecord ).
+
+- Return the CharSet containing the CharSetElements of charSet which are not also CharSetElements of complement .
+
+22.2.2.9.7 UnicodeMatchProperty ( regexpRecord , p )
+
+The abstract operation UnicodeMatchProperty takes arguments regexpRecord (a RegExp Record ) and p ( ECMAScript source text ) and returns a Unicode property name . It performs the following steps when called:
+
+- If regexpRecord . [[UnicodeSets]] is true and p is a Unicode property name listed in the “ Property name ” column of Table 67 , then
+- Return the List of Unicode code points p .
+
+- Assert : p is a Unicode property name or property alias listed in the “ Property name and aliases ” column of Table 65 or Table 66 .
+
+- Let c be the canonical property name of p as given in the “ Canonical property name ” column of the corresponding row.
+
+- Return the List of Unicode code points c .
+
+Implementations must support the Unicode property names and aliases listed in Table 65 , Table 66 , and Table 67 . To ensure interoperability, implementations must not support any other property names or aliases.
+
+Note 1
+For example, Script_Extensions ( property name ) and scx (property alias) are valid, but script_extensions or Scx aren't.
+
+Note 2
+The listed properties form a superset of what UTS18 RL1.2 requires.
+
+Note 3
+The spellings of entries in these tables (including casing) match the spellings used in the file PropertyAliases.txt in the Unicode Character Database. The precise spellings in that file are guaranteed to be stable .
+
+Table 65: Non-binary Unicode property aliases and their canonical property names
+
+Property name and aliases
+Canonical property name
+
+General_Category
+General_Category
+
+gc
+
+Script
+Script
+
+sc
+
+Script_Extensions
+Script_Extensions
+
+scx
+
+Table 66: Binary Unicode property aliases and their canonical property names
+
+Property name and aliases
+Canonical property name
+
+ASCII
+ASCII
+
+ASCII_Hex_Digit
+ASCII_Hex_Digit
+
+AHex
+
+Alphabetic
+Alphabetic
+
+Alpha
+
+Any
+Any
+
+Assigned
+Assigned
+
+Bidi_Control
+Bidi_Control
+
+Bidi_C
+
+Bidi_Mirrored
+Bidi_Mirrored
+
+Bidi_M
+
+Case_Ignorable
+Case_Ignorable
+
+CI
+
+Cased
+Cased
+
+Changes_When_Casefolded
+Changes_When_Casefolded
+
+CWCF
+
+Changes_When_Casemapped
+Changes_When_Casemapped
+
+CWCM
+
+Changes_When_Lowercased
+Changes_When_Lowercased
+
+CWL
+
+Changes_When_NFKC_Casefolded
+Changes_When_NFKC_Casefolded
+
+CWKCF
+
+Changes_When_Titlecased
+Changes_When_Titlecased
+
+CWT
+
+Changes_When_Uppercased
+Changes_When_Uppercased
+
+CWU
+
+Dash
+Dash
+
+Default_Ignorable_Code_Point
+Default_Ignorable_Code_Point
+
+DI
+
+Deprecated
+Deprecated
+
+Dep
+
+Diacritic
+Diacritic
+
+Dia
+
+Emoji
+Emoji
+
+Emoji_Component
+Emoji_Component
+
+EComp
+
+Emoji_Modifier
+Emoji_Modifier
+
+EMod
+
+Emoji_Modifier_Base
+Emoji_Modifier_Base
+
+EBase
+
+Emoji_Presentation
+Emoji_Presentation
+
+EPres
+
+Extended_Pictographic
+Extended_Pictographic
+
+ExtPict
+
+Extender
+Extender
+
+Ext
+
+Grapheme_Base
+Grapheme_Base
+
+Gr_Base
+
+Grapheme_Extend
+Grapheme_Extend
+
+Gr_Ext
+
+Hex_Digit
+Hex_Digit
+
+Hex
+
+IDS_Binary_Operator
+IDS_Binary_Operator
+
+IDSB
+
+IDS_Trinary_Operator
+IDS_Trinary_Operator
+
+IDST
+
+ID_Continue
+ID_Continue
+
+IDC
+
+ID_Start
+ID_Start
+
+IDS
+
+Ideographic
+Ideographic
+
+Ideo
+
+Join_Control
+Join_Control
+
+Join_C
+
+Logical_Order_Exception
+Logical_Order_Exception
+
+LOE
+
+Lowercase
+Lowercase
+
+Lower
+
+Math
+Math
+
+Noncharacter_Code_Point
+Noncharacter_Code_Point
+
+NChar
+
+Pattern_Syntax
+Pattern_Syntax
+
+Pat_Syn
+
+Pattern_White_Space
+Pattern_White_Space
+
+Pat_WS
+
+Quotation_Mark
+Quotation_Mark
+
+QMark
+
+Radical
+Radical
+
+Regional_Indicator
+Regional_Indicator
+
+RI
+
+Sentence_Terminal
+Sentence_Terminal
+
+STerm
+
+Soft_Dotted
+Soft_Dotted
+
+SD
+
+Terminal_Punctuation
+Terminal_Punctuation
+
+Term
+
+Unified_Ideograph
+Unified_Ideograph
+
+UIdeo
+
+Uppercase
+Uppercase
+
+Upper
+
+Variation_Selector
+Variation_Selector
+
+VS
+
+White_Space
+White_Space
+
+space
+
+XID_Continue
+XID_Continue
+
+XIDC
+
+XID_Start
+XID_Start
+
+XIDS
+
+Table 67: Binary Unicode properties of strings
+
+Property name
+
+Basic_Emoji
+
+Emoji_Keycap_Sequence
+
+RGI_Emoji_Modifier_Sequence
+
+RGI_Emoji_Flag_Sequence
+
+RGI_Emoji_Tag_Sequence
+
+RGI_Emoji_ZWJ_Sequence
+
+RGI_Emoji
+
+22.2.2.9.8 UnicodeMatchPropertyValue ( p , v )
+
+The abstract operation UnicodeMatchPropertyValue takes arguments p ( ECMAScript source text ) and v ( ECMAScript source text ) and returns a Unicode property value. It performs the following steps when called:
+
+- Assert : p is a canonical, unaliased Unicode property name listed in the “ Canonical property name ” column of Table 65 .
+
+- Assert : v is a property value or property value alias for the Unicode property p listed in PropertyValueAliases.txt .
+
+- Let value be the canonical property value of v as given in the “Canonical property value” column of the corresponding row.
+
+- Return the List of Unicode code points value .
+
+Implementations must support the Unicode property values and property value aliases listed in PropertyValueAliases.txt for the properties listed in Table 65 . To ensure interoperability, implementations must not support any other property values or property value aliases.
+
+Note 1
+For example, Xpeo and Old_Persian are valid Script_Extensions values, but xpeo and Old Persian aren't.
+
+Note 2
+This algorithm differs from the matching rules for symbolic values listed in UAX44 : case, white space , U+002D (HYPHEN-MINUS), and U+005F (LOW LINE) are not ignored, and the Is prefix is not supported.
+
+22.2.2.10 Runtime Semantics: CompileClassSetString
+
+The syntax-directed operation CompileClassSetString takes argument regexpRecord (a RegExp Record ) and returns a sequence of characters. It is defined piecewise over the following productions:
+
+ClassString :: [empty]
+
+- Return an empty sequence of characters.
+
+ClassString :: NonEmptyClassString
+
+- Return CompileClassSetString of NonEmptyClassString with argument regexpRecord .
+
+NonEmptyClassString ::
+ClassSetCharacter
+NonEmptyClassString opt
+
+- Let cs be CompileToCharSet of ClassSetCharacter with argument regexpRecord .
+
+- Let s1 be the sequence of characters that is the single CharSetElement of cs .
+
+- If NonEmptyClassString is present, then
+- Let s2 be CompileClassSetString of NonEmptyClassString with argument regexpRecord .
+
+- Return the concatenation of s1 and s2 .
+
+- Return s1 .
+
+22.2.3 Abstract Operations for RegExp Creation
+
+22.2.3.1 RegExpCreate ( pattern , flags )
+
+The abstract operation RegExpCreate takes arguments pattern (an ECMAScript language value ) and flags (a String or undefined ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let obj be ! RegExpAlloc ( %RegExp% ).
+
+- Return ? RegExpInitialize ( obj , pattern , flags ).
+
+22.2.3.2 RegExpAlloc ( newTarget )
+
+The abstract operation RegExpAlloc takes argument newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let obj be ? OrdinaryCreateFromConstructor ( newTarget , "%RegExp.prototype%" , « [[OriginalSource]] , [[OriginalFlags]] , [[RegExpRecord]] , [[RegExpMatcher]] »).
+
+- Perform ! DefinePropertyOrThrow ( obj , "lastIndex" , PropertyDescriptor { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return obj .
+
+22.2.3.3 RegExpInitialize ( obj , pattern , flags )
+
+The abstract operation RegExpInitialize takes arguments obj (an Object), pattern (an ECMAScript language value ), and flags (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- If pattern is undefined , set pattern to the empty String.
+
+- Else, set pattern to ? ToString ( pattern ).
+
+- If flags is undefined , set flags to the empty String.
+
+- Else, set flags to ? ToString ( flags ).
+
+- If flags contains any code unit other than "d" , "g" , "i" , "m" , "s" , "u" , "v" , or "y" , throw a SyntaxError exception.
+
+- If flags contains any code unit more than once, throw a SyntaxError exception.
+
+- If flags contains "i" , let i be true ; else let i be false .
+
+- If flags contains "m" , let m be true ; else let m be false .
+
+- If flags contains "s" , let s be true ; else let s be false .
+
+- If flags contains "u" , let u be true ; else let u be false .
+
+- If flags contains "v" , let v be true ; else let v be false .
+
+- If u is true or v is true , then
+- Let patternText be StringToCodePoints ( pattern ).
+
+- Else,
+- Let patternText be the result of interpreting each of pattern 's 16-bit elements as a Unicode BMP code point. UTF-16 decoding is not applied to the elements.
+
+- Let parseResult be ParsePattern ( patternText , u , v ).
+
+- If parseResult is a non-empty List of SyntaxError objects, throw a SyntaxError exception.
+
+- Assert : parseResult is a Pattern Parse Node .
+
+- Set obj . [[OriginalSource]] to pattern .
+
+- Set obj . [[OriginalFlags]] to flags .
+
+- Let capturingGroupsCount be CountLeftCapturingParensWithin ( parseResult ).
+
+- Let regexpRecord be the RegExp Record { [[IgnoreCase]] : i , [[Multiline]] : m , [[DotAll]] : s , [[Unicode]] : u , [[UnicodeSets]] : v , [[CapturingGroupsCount]] : capturingGroupsCount }.
+
+- Set obj . [[RegExpRecord]] to regexpRecord .
+
+- Set obj . [[RegExpMatcher]] to CompilePattern of parseResult with argument regexpRecord .
+
+- Perform ? Set ( obj , "lastIndex" , +0 𝔽 , true ).
+
+- Return obj .
+
+22.2.3.4 Static Semantics: ParsePattern ( patternText , u , v )
+
+The abstract operation ParsePattern takes arguments patternText (a sequence of Unicode code points), u (a Boolean), and v (a Boolean) and returns a Parse Node or a non-empty List of SyntaxError objects.
+
+Note
+This section is amended in B.1.2.9 .
+
+It performs the following steps when called:
+
+- If v is true and u is true , then
+- Let parseResult be a List containing one or more SyntaxError objects.
+
+- Else if v is true , then
+- Let parseResult be ParseText ( patternText , Pattern [+UnicodeMode, +UnicodeSetsMode, +NamedCaptureGroups] ).
+
+- Else if u is true , then
+- Let parseResult be ParseText ( patternText , Pattern [+UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] ).
+
+- Else,
+- Let parseResult be ParseText ( patternText , Pattern [~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] ).
+
+- Return parseResult .
+
+22.2.4 The RegExp Constructor
+
+The RegExp constructor :
+
+- is %RegExp% .
+
+- is the initial value of the "RegExp" property of the global object .
+
+- creates and initializes a new RegExp object when called as a constructor .
+
+- when called as a function rather than as a constructor , returns either a new RegExp object, or the argument itself if the only argument is a RegExp object.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified RegExp behaviour must include a super call to the RegExp constructor to create and initialize subclass instances with the necessary internal slots.
+
+22.2.4.1 RegExp ( patternOrRegexp , flags )
+
+This function performs the following steps when called:
+
+- Let patternIsRegExp be ? IsRegExp ( patternOrRegexp ).
+
+- If NewTarget is undefined , then
+- Let newTarget be the active function object .
+
+- If patternIsRegExp is true and flags is undefined , then
+- Let patternCtor be ? Get ( patternOrRegexp , "constructor" ).
+
+- If SameValue ( newTarget , patternCtor ) is true , return patternOrRegexp .
+
+- Else,
+- Let newTarget be NewTarget.
+
+- If patternOrRegexp is an Object and patternOrRegexp has a [[RegExpMatcher]] internal slot, then
+- Let patternSource be patternOrRegexp . [[OriginalSource]] .
+
+- If flags is undefined , set flags to patternOrRegexp . [[OriginalFlags]] .
+
+- Else if patternIsRegExp is true , then
+- Let patternSource be ? Get ( patternOrRegexp , "source" ).
+
+- If flags is undefined , then
+- Set flags to ? Get ( patternOrRegexp , "flags" ).
+
+- Else,
+- Let patternSource be patternOrRegexp .
+
+- Let obj be ? RegExpAlloc ( newTarget ).
+
+- Return ? RegExpInitialize ( obj , patternSource , flags ).
+
+Note
+If pattern is supplied using a StringLiteral , the usual escape sequence substitutions are performed before the String is processed by this function. If pattern must contain an escape sequence to be recognized by this function, any U+005C (REVERSE SOLIDUS) code points must be escaped within the StringLiteral to prevent them being removed when the contents of the StringLiteral are formed.
+
+22.2.5 Properties of the RegExp Constructor
+
+The RegExp constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+22.2.5.1 RegExp.escape ( string )
+
+This function returns a copy of string in which characters that are potentially special in a regular expression Pattern have been replaced by equivalent escape sequences.
+
+It performs the following steps when called:
+
+- If string is not a String , throw a TypeError exception.
+
+- Let escaped be the empty String.
+
+- Let codePointList be StringToCodePoints ( string ).
+
+- For each code point codePoint of codePointList , do
+- If escaped is the empty String and codePoint is matched by either DecimalDigit or AsciiLetter , then
+- NOTE : Escaping a leading digit ensures that output corresponds with pattern text which may be used after a \0 character escape or a DecimalEscape such as \1 and still match string rather than be interpreted as an extension of the preceding escape sequence. Escaping a leading ASCII letter does the same for the context after \c .
+
+- Let numericValue be the numeric value of codePoint .
+
+- Let hex be Number::toString ( 𝔽 ( numericValue ), 16).
+
+- Assert : The length of hex is 2.
+
+- Set escaped to the string-concatenation of the code unit 0x005C (REVERSE SOLIDUS), "x" , and hex .
+
+- Else,
+- Set escaped to the string-concatenation of escaped and EncodeForRegExpEscape ( codePoint ).
+
+- Return escaped .
+
+Note
+Despite having similar names, EscapeRegExpPattern and RegExp.escape do not perform similar actions. The former escapes a pattern for representation as a string, while this function escapes a string for representation inside a pattern.
+
+22.2.5.1.1 EncodeForRegExpEscape ( codePoint )
+
+The abstract operation EncodeForRegExpEscape takes argument codePoint (a code point) and returns a String. It returns a String representing a Pattern for matching codePoint . If codePoint is white space or an ASCII punctuator, the returned value is an escape sequence. Otherwise, the returned value is a String representation of codePoint itself. It performs the following steps when called:
+
+- If codePoint is matched by SyntaxCharacter or codePoint is U+002F (SOLIDUS), then
+- Return the string-concatenation of 0x005C (REVERSE SOLIDUS) and UTF16EncodeCodePoint ( codePoint ).
+
+- If codePoint is a code point listed in the “Code Point” column of Table 63 , then
+- Return the string-concatenation of 0x005C (REVERSE SOLIDUS) and the string in the “ControlEscape” column of the row whose “Code Point” column contains codePoint .
+
+- Let otherPunctuators be the string-concatenation of ",-=<>#&!%:;@~'`" and the code unit 0x0022 (QUOTATION MARK).
+
+- Let toEscape be StringToCodePoints ( otherPunctuators ).
+
+- If toEscape contains codePoint , codePoint is matched by either WhiteSpace or LineTerminator , or codePoint has the same numeric value as a leading surrogate or trailing surrogate , then
+- Let codePointNumber be the numeric value of codePoint .
+
+- If codePointNumber ≤ 0xFF, then
+- Let hex be Number::toString ( 𝔽 ( codePointNumber ), 16).
+
+- Return the string-concatenation of the code unit 0x005C (REVERSE SOLIDUS), "x" , and StringPad ( hex , 2, "0" , start ).
+
+- Let escaped be the empty String.
+
+- Let codeUnits be UTF16EncodeCodePoint ( codePoint ).
+
+- For each code unit codeUnit of codeUnits , do
+- Set escaped to the string-concatenation of escaped and UnicodeEscape ( codeUnit ).
+
+- Return escaped .
+
+- Return UTF16EncodeCodePoint ( codePoint ).
+
+22.2.5.2 RegExp.prototype
+
+The initial value of RegExp.prototype is the RegExp prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+22.2.5.3 get RegExp [ %Symbol.species% ]
+
+RegExp[%Symbol.species%] is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "get [Symbol.species]" .
+
+Note
+RegExp prototype methods normally use their this value's constructor to create a derived object. However, a subclass constructor may over-ride that default behaviour by redefining its %Symbol.species% property.
+
+22.2.6 Properties of the RegExp Prototype Object
+
+The RegExp prototype object :
+
+- is %RegExp.prototype% .
+
+- is an ordinary object .
+
+- is not a RegExp instance and does not have a [[RegExpMatcher]] internal slot or any of the other internal slots of RegExp instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+Note
+The RegExp prototype object does not have a "valueOf" property of its own; however, it inherits the "valueOf" property from the Object prototype object .
+
+22.2.6.1 RegExp.prototype.constructor
+
+The initial value of RegExp.prototype.constructor is %RegExp% .
+
+22.2.6.2 RegExp.prototype.exec ( string )
+
+This method searches string for an occurrence of the regular expression pattern and returns an Array containing the results of the match, or null if string did not match.
+
+It performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Perform ? RequireInternalSlot ( regexp , [[RegExpMatcher]] ).
+
+- Set string to ? ToString ( string ).
+
+- Return ? RegExpBuiltinExec ( regexp , string ).
+
+22.2.6.3 get RegExp.prototype.dotAll
+
+RegExp.prototype.dotAll is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0073 (LATIN SMALL LETTER S).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.4 get RegExp.prototype.flags
+
+RegExp.prototype.flags is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Let codeUnits be a new empty List .
+
+- Let hasIndices be ToBoolean (? Get ( regexp , "hasIndices" )).
+
+- If hasIndices is true , append the code unit 0x0064 (LATIN SMALL LETTER D) to codeUnits .
+
+- Let global be ToBoolean (? Get ( regexp , "global" )).
+
+- If global is true , append the code unit 0x0067 (LATIN SMALL LETTER G) to codeUnits .
+
+- Let ignoreCase be ToBoolean (? Get ( regexp , "ignoreCase" )).
+
+- If ignoreCase is true , append the code unit 0x0069 (LATIN SMALL LETTER I) to codeUnits .
+
+- Let multiline be ToBoolean (? Get ( regexp , "multiline" )).
+
+- If multiline is true , append the code unit 0x006D (LATIN SMALL LETTER M) to codeUnits .
+
+- Let dotAll be ToBoolean (? Get ( regexp , "dotAll" )).
+
+- If dotAll is true , append the code unit 0x0073 (LATIN SMALL LETTER S) to codeUnits .
+
+- Let unicode be ToBoolean (? Get ( regexp , "unicode" )).
+
+- If unicode is true , append the code unit 0x0075 (LATIN SMALL LETTER U) to codeUnits .
+
+- Let unicodeSets be ToBoolean (? Get ( regexp , "unicodeSets" )).
+
+- If unicodeSets is true , append the code unit 0x0076 (LATIN SMALL LETTER V) to codeUnits .
+
+- Let sticky be ToBoolean (? Get ( regexp , "sticky" )).
+
+- If sticky is true , append the code unit 0x0079 (LATIN SMALL LETTER Y) to codeUnits .
+
+- Return the String value whose code units are the elements of the List codeUnits . If codeUnits has no elements, the empty String is returned.
+
+22.2.6.4.1 RegExpHasFlag ( regexp , codeUnit )
+
+The abstract operation RegExpHasFlag takes arguments regexp (an ECMAScript language value ) and codeUnit (a code unit) and returns either a normal completion containing either a Boolean or undefined , or a throw completion . It performs the following steps when called:
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- If regexp does not have an [[OriginalFlags]] internal slot, then
+- If SameValue ( regexp , %RegExp.prototype% ) is true , return undefined .
+
+- Throw a TypeError exception.
+
+- Let flags be regexp . [[OriginalFlags]] .
+
+- If flags contains codeUnit , return true .
+
+- Return false .
+
+22.2.6.5 get RegExp.prototype.global
+
+RegExp.prototype.global is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0067 (LATIN SMALL LETTER G).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.6 get RegExp.prototype.hasIndices
+
+RegExp.prototype.hasIndices is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0064 (LATIN SMALL LETTER D).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.7 get RegExp.prototype.ignoreCase
+
+RegExp.prototype.ignoreCase is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0069 (LATIN SMALL LETTER I).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.8 RegExp.prototype [ %Symbol.match% ] ( string )
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let flags be ? ToString (? Get ( regexp , "flags" )).
+
+- If flags does not contain "g" , return ? RegExpExec ( regexp , string ).
+
+- If flags contains "u" or flags contains "v" , let fullUnicode be true ; else let fullUnicode be false .
+
+- Perform ? Set ( regexp , "lastIndex" , +0 𝔽 , true ).
+
+- Let array be ! ArrayCreate (0).
+
+- Let matchCount be 0.
+
+- Repeat,
+- Let result be ? RegExpExec ( regexp , string ).
+
+- If result is null , then
+- If matchCount = 0, return null .
+
+- Return array .
+
+- Let matchString be ? ToString (? Get ( result , "0" )).
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( matchCount )), matchString ).
+
+- If matchString is the empty String, then
+- Let thisIndex be ℝ (? ToLength (? Get ( regexp , "lastIndex" ))).
+
+- Let nextIndex be AdvanceStringIndex ( string , thisIndex , fullUnicode ).
+
+- Perform ? Set ( regexp , "lastIndex" , 𝔽 ( nextIndex ), true ).
+
+- Set matchCount to matchCount + 1.
+
+The value of the "name" property of this method is "[Symbol.match]" .
+
+Note
+The %Symbol.match% property is used by the IsRegExp abstract operation to identify objects that have the basic behaviour of regular expressions. The absence of a %Symbol.match% property or the existence of such a property whose value does not Boolean coerce to true indicates that the object is not intended to be used as a regular expression object.
+
+22.2.6.9 RegExp.prototype [ %Symbol.matchAll% ] ( string )
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let speciesCtor be ? SpeciesConstructor ( regexp , %RegExp% ).
+
+- Let flags be ? ToString (? Get ( regexp , "flags" )).
+
+- Let matcher be ? Construct ( speciesCtor , « regexp , flags »).
+
+- Let lastIndex be ? ToLength (? Get ( regexp , "lastIndex" )).
+
+- Perform ? Set ( matcher , "lastIndex" , lastIndex , true ).
+
+- If flags contains "g" , let global be true .
+
+- Else, let global be false .
+
+- If flags contains "u" or flags contains "v" , let fullUnicode be true .
+
+- Else, let fullUnicode be false .
+
+- Return CreateRegExpStringIterator ( matcher , string , global , fullUnicode ).
+
+The value of the "name" property of this method is "[Symbol.matchAll]" .
+
+22.2.6.10 get RegExp.prototype.multiline
+
+RegExp.prototype.multiline is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x006D (LATIN SMALL LETTER M).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.11 RegExp.prototype [ %Symbol.replace% ] ( string , replaceValue )
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let stringLength be the length of string .
+
+- Let functionalReplace be IsCallable ( replaceValue ).
+
+- If functionalReplace is false , then
+- Set replaceValue to ? ToString ( replaceValue ).
+
+- Let flags be ? ToString (? Get ( regexp , "flags" )).
+
+- If flags contains "g" , let global be true ; else let global be false .
+
+- If global is true , then
+- Perform ? Set ( regexp , "lastIndex" , +0 𝔽 , true ).
+
+- Let results be a new empty List .
+
+- Let done be false .
+
+- Repeat, while done is false ,
+- Let result be ? RegExpExec ( regexp , string ).
+
+- If result is null , then
+- Set done to true .
+
+- Else,
+- Append result to results .
+
+- If global is false , then
+- Set done to true .
+
+- Else,
+- Let matchString be ? ToString (? Get ( result , "0" )).
+
+- If matchString is the empty String, then
+- Let thisIndex be ℝ (? ToLength (? Get ( regexp , "lastIndex" ))).
+
+- If flags contains "u" or flags contains "v" , let fullUnicode be true ; else let fullUnicode be false .
+
+- Let nextIndex be AdvanceStringIndex ( string , thisIndex , fullUnicode ).
+
+- Perform ? Set ( regexp , "lastIndex" , 𝔽 ( nextIndex ), true ).
+
+- Let accumulatedResult be the empty String.
+
+- Let nextSourcePosition be 0.
+
+- For each element result of results , do
+- Let resultLength be ? LengthOfArrayLike ( result ).
+
+- Let capturesCount be max ( resultLength - 1, 0).
+
+- Let matched be ? ToString (? Get ( result , "0" )).
+
+- Let matchLength be the length of matched .
+
+- Let position be ? ToIntegerOrInfinity (? Get ( result , "index" )).
+
+- Set position to the result of clamping position between 0 and stringLength .
+
+- Let captures be a new empty List .
+
+- Let captureNumber be 1.
+
+- Repeat, while captureNumber ≤ capturesCount ,
+- Let capture be ? Get ( result , ! ToString ( 𝔽 ( captureNumber ))).
+
+- If capture is not undefined , then
+- Set capture to ? ToString ( capture ).
+
+- Append capture to captures .
+
+- NOTE : When captureNumber = 1, the preceding step puts the first element into captures (at index 0). More generally, the captureNumber th capture (the characters captured by the captureNumber th set of capturing parentheses) is at captures [ captureNumber - 1].
+
+- Set captureNumber to captureNumber + 1.
+
+- Let namedCaptures be ? Get ( result , "groups" ).
+
+- If functionalReplace is true , then
+- Let replacerArgs be the list-concatenation of « matched », captures , and « 𝔽 ( position ), string ».
+
+- If namedCaptures is not undefined , then
+- Append namedCaptures to replacerArgs .
+
+- Let replacementValue be ? Call ( replaceValue , undefined , replacerArgs ).
+
+- Let replacementString be ? ToString ( replacementValue ).
+
+- Else,
+- If namedCaptures is not undefined , then
+- Set namedCaptures to ? ToObject ( namedCaptures ).
+
+- Let replacementString be ? GetSubstitution ( matched , string , position , captures , namedCaptures , replaceValue ).
+
+- If position ≥ nextSourcePosition , then
+- NOTE : position should not normally move backwards. If it does, it is an indication of an ill-behaving RegExp subclass or use of an access triggered side-effect to change the global flag or other characteristics of regexp . In such cases, the corresponding substitution is ignored.
+
+- Set accumulatedResult to the string-concatenation of accumulatedResult , the substring of string from nextSourcePosition to position , and replacementString .
+
+- Set nextSourcePosition to position + matchLength .
+
+- If nextSourcePosition ≥ stringLength , return accumulatedResult .
+
+- Return the string-concatenation of accumulatedResult and the substring of string from nextSourcePosition .
+
+The value of the "name" property of this method is "[Symbol.replace]" .
+
+22.2.6.12 RegExp.prototype [ %Symbol.search% ] ( string )
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let previousLastIndex be ? Get ( regexp , "lastIndex" ).
+
+- If previousLastIndex is not +0 𝔽 , then
+- Perform ? Set ( regexp , "lastIndex" , +0 𝔽 , true ).
+
+- Let result be ? RegExpExec ( regexp , string ).
+
+- Let currentLastIndex be ? Get ( regexp , "lastIndex" ).
+
+- If SameValue ( currentLastIndex , previousLastIndex ) is false , then
+- Perform ? Set ( regexp , "lastIndex" , previousLastIndex , true ).
+
+- If result is null , return -1 𝔽 .
+
+- Return ? Get ( result , "index" ).
+
+The value of the "name" property of this method is "[Symbol.search]" .
+
+Note
+The "lastIndex" and "global" properties of this RegExp object are ignored when performing the search. The "lastIndex" property is left unchanged.
+
+22.2.6.13 get RegExp.prototype.source
+
+RegExp.prototype.source is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- If regexp does not have an [[OriginalSource]] internal slot, then
+- If SameValue ( regexp , %RegExp.prototype% ) is true , return "(?:)" .
+
+- Throw a TypeError exception.
+
+- Assert : regexp has an [[OriginalFlags]] internal slot.
+
+- Let source be regexp . [[OriginalSource]] .
+
+- Let flags be regexp . [[OriginalFlags]] .
+
+- Return EscapeRegExpPattern ( source , flags ).
+
+22.2.6.13.1 EscapeRegExpPattern ( pattern , flags )
+
+The abstract operation EscapeRegExpPattern takes arguments pattern (a String) and flags (a String) and returns a String. It performs the following steps when called:
+
+- If flags contains "v" , then
+- Let patternSymbol be Pattern [+UnicodeMode, +UnicodeSetsMode] .
+
+- Else if flags contains "u" , then
+- Let patternSymbol be Pattern [+UnicodeMode, ~UnicodeSetsMode] .
+
+- Else,
+- Let patternSymbol be Pattern [~UnicodeMode, ~UnicodeSetsMode] .
+
+- Let escapedPattern be a String in the form of a patternSymbol equivalent to pattern interpreted as UTF-16 encoded Unicode code points ( 6.1.4 ), in which certain code points are escaped as described below. escapedPattern may or may not differ from pattern ; however, the Abstract Closure that would result from evaluating escapedPattern as a patternSymbol must behave identically to the Abstract Closure given by the constructed object's [[RegExpMatcher]] internal slot. Multiple calls to this abstract operation using the same values for pattern and flags must produce identical results.
+
+- The code points / or any LineTerminator occurring in the pattern shall be escaped in escapedPattern as necessary to ensure that the string-concatenation of "/" , escapedPattern , "/" , and flags can be parsed (in an appropriate lexical context) as a RegularExpressionLiteral that behaves identically to the constructed regular expression. For example, if pattern is "/" , then escapedPattern could be "\/" or "\u002F" , among other possibilities, but not "/" , because /// followed by flags would be parsed as a SingleLineComment rather than a RegularExpressionLiteral . If pattern is the empty String, this specification can be met by letting escapedPattern be "(?:)" .
+
+- Return escapedPattern .
+
+Note
+Despite having similar names, RegExp.escape and EscapeRegExpPattern do not perform similar actions. The former escapes a string for representation inside a pattern, while this function escapes a pattern for representation as a string.
+
+22.2.6.14 RegExp.prototype [ %Symbol.split% ] ( string , limit )
+
+Note 1
+This method returns an Array into which substrings of the result of converting string to a String have been stored. The substrings are determined by searching from left to right for matches of the this value regular expression; these occurrences are not part of any String in the returned array, but serve to divide up the String value.
+
+The this value may be an empty regular expression or a regular expression that can match an empty String. In this case, the regular expression does not match the empty substring at the beginning or end of the input String, nor does it match the empty substring at the end of the previous separator match. (For example, if the regular expression matches the empty String, the String is split up into individual code unit elements; the length of the result array equals the length of the String, and each substring contains one code unit.) Only the first match at a given index of the String is considered, even if backtracking could yield a non-empty substring match at that index. (For example, /a*?/[Symbol.split]("ab") evaluates to the array ["a", "b"] , while /a*/[Symbol.split]("ab") evaluates to the array ["","b"] .)
+
+If string is (or converts to) the empty String, the result depends on whether the regular expression can match the empty String. If it can, the result array contains no elements. Otherwise, the result array contains one element, which is the empty String.
+
+If the regular expression contains capturing parentheses, then each time separator is matched the results (including any undefined results) of the capturing parentheses are spliced into the output array. For example,
+
+/<(\/)?([^ <> ]+)>/[Symbol.split]("A < B > bold </ B > and < CODE > coded </ CODE > ")
+evaluates to the array
+
+[ "A" , undefined , "B" , "bold" , "/" , "B" , "and" , undefined , "CODE" , "coded" , "/" , "CODE" , "" ]
+If limit is not undefined , then the output array is truncated so that it contains no more than limit elements.
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let speciesCtor be ? SpeciesConstructor ( regexp , %RegExp% ).
+
+- Let flags be ? ToString (? Get ( regexp , "flags" )).
+
+- If flags contains "u" or flags contains "v" , let unicodeMatching be true .
+
+- Else, let unicodeMatching be false .
+
+- If flags contains "y" , let newFlags be flags .
+
+- Else, let newFlags be the string-concatenation of flags and "y" .
+
+- Let splitter be ? Construct ( speciesCtor , « regexp , newFlags »).
+
+- Let array be ! ArrayCreate (0).
+
+- Let lengthA be 0.
+
+- If limit is undefined , let lim be 2 32 - 1; else let lim be ℝ (? ToUint32 ( limit )).
+
+- If lim = 0, return array .
+
+- If string is the empty String, then
+- Let matchResult be ? RegExpExec ( splitter , string ).
+
+- If matchResult is not null , return array .
+
+- Perform ! CreateDataPropertyOrThrow ( array , "0" , string ).
+
+- Return array .
+
+- Let size be the length of string .
+
+- Let lastMatchEnd be 0.
+
+- Let searchIndex be lastMatchEnd .
+
+- Repeat, while searchIndex < size ,
+- Perform ? Set ( splitter , "lastIndex" , 𝔽 ( searchIndex ), true ).
+
+- Let matchResult be ? RegExpExec ( splitter , string ).
+
+- If matchResult is null , then
+- Set searchIndex to AdvanceStringIndex ( string , searchIndex , unicodeMatching ).
+
+- Else,
+- Let matchEnd be ℝ (? ToLength (? Get ( splitter , "lastIndex" ))).
+
+- Set matchEnd to min ( matchEnd , size ).
+
+- If matchEnd = lastMatchEnd , then
+- Set searchIndex to AdvanceStringIndex ( string , searchIndex , unicodeMatching ).
+
+- Else,
+- Let substring be the substring of string from lastMatchEnd to searchIndex .
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( lengthA )), substring ).
+
+- Set lengthA to lengthA + 1.
+
+- If lengthA = lim , return array .
+
+- Set lastMatchEnd to matchEnd .
+
+- Let numberOfCaptures be ? LengthOfArrayLike ( matchResult ).
+
+- Set numberOfCaptures to max ( numberOfCaptures - 1, 0).
+
+- Let captureIndex be 1.
+
+- Repeat, while captureIndex ≤ numberOfCaptures ,
+- Let nextCapture be ? Get ( matchResult , ! ToString ( 𝔽 ( captureIndex ))).
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( lengthA )), nextCapture ).
+
+- Set captureIndex to captureIndex + 1.
+
+- Set lengthA to lengthA + 1.
+
+- If lengthA = lim , return array .
+
+- Set searchIndex to lastMatchEnd .
+
+- Let substring be the substring of string from lastMatchEnd to size .
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( lengthA )), substring ).
+
+- Return array .
+
+The value of the "name" property of this method is "[Symbol.split]" .
+
+Note 2
+This method ignores the value of the "global" and "sticky" properties of this RegExp object.
+
+22.2.6.15 get RegExp.prototype.sticky
+
+RegExp.prototype.sticky is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0079 (LATIN SMALL LETTER Y).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.16 RegExp.prototype.test ( string )
+
+This method performs the following steps when called:
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Set string to ? ToString ( string ).
+
+- Let match be ? RegExpExec ( regexp , string ).
+
+- If match is null , return false .
+
+- Return true .
+
+22.2.6.17 RegExp.prototype.toString ( )
+
+- Let regexp be the this value.
+
+- If regexp is not an Object , throw a TypeError exception.
+
+- Let pattern be ? ToString (? Get ( regexp , "source" )).
+
+- Let flags be ? ToString (? Get ( regexp , "flags" )).
+
+- Let result be the string-concatenation of "/" , pattern , "/" , and flags .
+
+- Return result .
+
+Note
+The returned String has the form of a RegularExpressionLiteral that evaluates to another RegExp object with the same behaviour as this object.
+
+22.2.6.18 get RegExp.prototype.unicode
+
+RegExp.prototype.unicode is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0075 (LATIN SMALL LETTER U).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.6.19 get RegExp.prototype.unicodeSets
+
+RegExp.prototype.unicodeSets is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let regexp be the this value.
+
+- Let codeUnit be the code unit 0x0076 (LATIN SMALL LETTER V).
+
+- Return ? RegExpHasFlag ( regexp , codeUnit ).
+
+22.2.7 Abstract Operations for RegExp Matching
+
+22.2.7.1 RegExpExec ( regexp , string )
+
+The abstract operation RegExpExec takes arguments regexp (an Object) and string (a String) and returns either a normal completion containing either an Object or null , or a throw completion . It performs the following steps when called:
+
+- Let exec be ? Get ( regexp , "exec" ).
+
+- If IsCallable ( exec ) is true , then
+- Let result be ? Call ( exec , regexp , « string »).
+
+- If result is not an Object and result is not null , throw a TypeError exception.
+
+- Return result .
+
+- Perform ? RequireInternalSlot ( regexp , [[RegExpMatcher]] ).
+
+- Return ? RegExpBuiltinExec ( regexp , string ).
+
+Note
+If a callable "exec" property is not found this algorithm falls back to attempting to use the built-in RegExp matching algorithm. This provides compatible behaviour for code written for prior editions where most built-in algorithms that use regular expressions did not perform a dynamic property lookup of "exec" .
+
+22.2.7.2 RegExpBuiltinExec ( regexp , string )
+
+The abstract operation RegExpBuiltinExec takes arguments regexp (an initialized RegExp instance) and string (a String) and returns either a normal completion containing either an Array exotic object or null , or a throw completion . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Let lastIndex be ℝ (? ToLength (! Get ( regexp , "lastIndex" ))).
+
+- Let flags be regexp . [[OriginalFlags]] .
+
+- If flags contains "g" , let global be true ; else let global be false .
+
+- If flags contains "y" , let sticky be true ; else let sticky be false .
+
+- If flags contains "d" , let hasIndices be true ; else let hasIndices be false .
+
+- If global is false and sticky is false , set lastIndex to 0.
+
+- Let matcher be regexp . [[RegExpMatcher]] .
+
+- If flags contains "u" or flags contains "v" , let fullUnicode be true ; else let fullUnicode be false .
+
+- Let matchSucceeded be false .
+
+- If fullUnicode is true , let input be StringToCodePoints ( string ); else let input be a List whose elements are the code units that are the elements of string .
+
+- NOTE : Each element of input is considered to be a character.
+
+- Repeat, while matchSucceeded is false ,
+- If lastIndex > length , then
+- If global is true or sticky is true , then
+- Perform ? Set ( regexp , "lastIndex" , +0 𝔽 , true ).
+
+- Return null .
+
+- Let inputIndex be the index into input of the character that was obtained from element lastIndex of string .
+
+- Let result be matcher ( input , inputIndex ).
+
+- If result is failure , then
+- If sticky is true , then
+- Perform ? Set ( regexp , "lastIndex" , +0 𝔽 , true ).
+
+- Return null .
+
+- Set lastIndex to AdvanceStringIndex ( string , lastIndex , fullUnicode ).
+
+- Else,
+- Assert : result is a MatchState .
+
+- Set matchSucceeded to true .
+
+- Let endIndex be result . [[EndIndex]] .
+
+- If fullUnicode is true , set endIndex to GetStringIndex ( string , endIndex ).
+
+- If global is true or sticky is true , then
+- Perform ? Set ( regexp , "lastIndex" , 𝔽 ( endIndex ), true ).
+
+- Let capturingGroupsCount be the number of elements in result . [[Captures]] .
+
+- Assert : capturingGroupsCount = regexp . [[RegExpRecord]] . [[CapturingGroupsCount]] .
+
+- Assert : capturingGroupsCount < 2 32 - 1.
+
+- Let array be ! ArrayCreate ( capturingGroupsCount + 1).
+
+- Assert : The mathematical value of array 's "length" property is capturingGroupsCount + 1.
+
+- Perform ! CreateDataPropertyOrThrow ( array , "index" , 𝔽 ( lastIndex )).
+
+- Perform ! CreateDataPropertyOrThrow ( array , "input" , string ).
+
+- Let match be the Match Record { [[StartIndex]] : lastIndex , [[EndIndex]] : endIndex }.
+
+- Let indices be a new empty List .
+
+- Let groupNames be a new empty List .
+
+- Append match to indices .
+
+- Let matchedSubstring be GetMatchString ( string , match ).
+
+- Perform ! CreateDataPropertyOrThrow ( array , "0" , matchedSubstring ).
+
+- If regexp contains any GroupName , then
+- Let groups be OrdinaryObjectCreate ( null ).
+
+- Let hasGroups be true .
+
+- Else,
+- Let groups be undefined .
+
+- Let hasGroups be false .
+
+- Perform ! CreateDataPropertyOrThrow ( array , "groups" , groups ).
+
+- Let matchedGroupNames be a new empty List .
+
+- For each integer i such that 1 ≤ i ≤ capturingGroupsCount , in ascending order, do
+- Let capture be i th element of result . [[Captures]] .
+
+- If capture is undefined , then
+- Let capturedValue be undefined .
+
+- Append undefined to indices .
+
+- Else,
+- Let captureStart be capture . [[StartIndex]] .
+
+- Let captureEnd be capture . [[EndIndex]] .
+
+- If fullUnicode is true , then
+- Set captureStart to GetStringIndex ( string , captureStart ).
+
+- Set captureEnd to GetStringIndex ( string , captureEnd ).
+
+- Let captureRecord be the Match Record { [[StartIndex]] : captureStart , [[EndIndex]] : captureEnd }.
+
+- Let capturedValue be GetMatchString ( string , captureRecord ).
+
+- Append captureRecord to indices .
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( i )), capturedValue ).
+
+- If the i th capture of regexp was defined with a GroupName , then
+- Let groupName be the CapturingGroupName of that GroupName .
+
+- If matchedGroupNames contains groupName , then
+- Assert : capturedValue is undefined .
+
+- Append undefined to groupNames .
+
+- Else,
+- If capturedValue is not undefined , append groupName to matchedGroupNames .
+
+- NOTE : If there are multiple groups named groupName , groups may already have an groupName property at this point. However, because groups is an ordinary object whose properties are all writable data properties , the call to CreateDataPropertyOrThrow is nevertheless guaranteed to succeed.
+
+- Perform ! CreateDataPropertyOrThrow ( groups , groupName , capturedValue ).
+
+- Append groupName to groupNames .
+
+- Else,
+- Append undefined to groupNames .
+
+- If hasIndices is true , then
+- Let indicesArray be MakeMatchIndicesIndexPairArray ( string , indices , groupNames , hasGroups ).
+
+- Perform ! CreateDataPropertyOrThrow ( array , "indices" , indicesArray ).
+
+- Return array .
+
+22.2.7.3 AdvanceStringIndex ( string , index , unicode )
+
+The abstract operation AdvanceStringIndex takes arguments string (a String), index (a non-negative integer ), and unicode (a Boolean) and returns a non-negative integer . It performs the following steps when called:
+
+- Assert : index ≤ 2 53 - 1.
+
+- If unicode is false , return index + 1.
+
+- Let length be the length of string .
+
+- If index + 1 ≥ length , return index + 1.
+
+- Let codePoint be CodePointAt ( string , index ).
+
+- Return index + codePoint . [[CodeUnitCount]] .
+
+22.2.7.4 GetStringIndex ( string , codePointIndex )
+
+The abstract operation GetStringIndex takes arguments string (a String) and codePointIndex (a non-negative integer ) and returns a non-negative integer . It interprets string as a sequence of UTF-16 encoded code points, as described in 6.1.4 , and returns the code unit index corresponding to code point index codePointIndex when such an index exists. Otherwise, it returns the length of string . It performs the following steps when called:
+
+- If string is the empty String, return 0.
+
+- Let length be the length of string .
+
+- Let codeUnitCount be 0.
+
+- Let codePointCount be 0.
+
+- Repeat, while codeUnitCount < length ,
+- If codePointCount = codePointIndex , return codeUnitCount .
+
+- Let codePoint be CodePointAt ( string , codeUnitCount ).
+
+- Set codeUnitCount to codeUnitCount + codePoint . [[CodeUnitCount]] .
+
+- Set codePointCount to codePointCount + 1.
+
+- Return length .
+
+22.2.7.5 Match Records
+
+A Match Record is a Record used to encapsulate the start and end indices of a regular expression match or capture.
+
+Match Records have the fields listed in Table 68 .
+
+Table 68: Match Record Fields
+
+Field Name
+Value
+Meaning
+
+[[StartIndex]]
+a non-negative integer
+The number of code units from the start of a string at which the match begins (inclusive).
+
+[[EndIndex]]
+an integer ≥ [[StartIndex]]
+The number of code units from the start of a string at which the match ends (exclusive).
+
+22.2.7.6 GetMatchString ( string , match )
+
+The abstract operation GetMatchString takes arguments string (a String) and match (a Match Record ) and returns a String. It performs the following steps when called:
+
+- Assert : match . [[StartIndex]] ≤ match . [[EndIndex]] ≤ the length of string .
+
+- Return the substring of string from match . [[StartIndex]] to match . [[EndIndex]] .
+
+22.2.7.7 GetMatchIndexPair ( string , match )
+
+The abstract operation GetMatchIndexPair takes arguments string (a String) and match (a Match Record ) and returns an Array. It performs the following steps when called:
+
+- Assert : match . [[StartIndex]] ≤ match . [[EndIndex]] ≤ the length of string .
+
+- Return CreateArrayFromList (« 𝔽 ( match . [[StartIndex]] ), 𝔽 ( match . [[EndIndex]] ) »).
+
+22.2.7.8 MakeMatchIndicesIndexPairArray ( string , indices , groupNames , hasGroups )
+
+The abstract operation MakeMatchIndicesIndexPairArray takes arguments string (a String), indices (a List of either Match Records or undefined ), groupNames (a List of either Strings or undefined ), and hasGroups (a Boolean) and returns an Array. It performs the following steps when called:
+
+- Let n be the number of elements in indices .
+
+- Assert : n < 2 32 - 1.
+
+- Assert : groupNames has n - 1 elements.
+
+- NOTE : The groupNames List contains elements aligned with the indices List starting at indices [1].
+
+- Let array be ! ArrayCreate ( n ).
+
+- If hasGroups is true , then
+- Let groups be OrdinaryObjectCreate ( null ).
+
+- Else,
+- Let groups be undefined .
+
+- Perform ! CreateDataPropertyOrThrow ( array , "groups" , groups ).
+
+- For each integer i such that 0 ≤ i < n , in ascending order, do
+- Let matchIndices be indices [ i ].
+
+- If matchIndices is not undefined , then
+- Let matchIndexPair be GetMatchIndexPair ( string , matchIndices ).
+
+- Else,
+- Let matchIndexPair be undefined .
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( i )), matchIndexPair ).
+
+- If i > 0, then
+- Let name be groupNames [ i - 1].
+
+- If name is not undefined , then
+- Assert : groups is not undefined .
+
+- NOTE : If there are multiple groups named name , groups may already have an name property at this point. However, because groups is an ordinary object whose properties are all writable data properties , the call to CreateDataPropertyOrThrow is nevertheless guaranteed to succeed.
+
+- Perform ! CreateDataPropertyOrThrow ( groups , name , matchIndexPair ).
+
+- Return array .
+
+22.2.8 Properties of RegExp Instances
+
+RegExp instances are ordinary objects that inherit properties from the RegExp prototype object . RegExp instances have internal slots [[OriginalSource]] , [[OriginalFlags]] , [[RegExpRecord]] , and [[RegExpMatcher]] . The value of the [[RegExpMatcher]] internal slot is an Abstract Closure representation of the Pattern of the RegExp object.
+
+Note
+Prior to ECMAScript 2015, RegExp instances were specified as having the own data properties "source" , "global" , "ignoreCase" , and "multiline" . Those properties are now specified as accessor properties of RegExp.prototype .
+
+RegExp instances also have the following property:
+
+22.2.8.1 lastIndex
+
+The value of the "lastIndex" property specifies the String index at which to start the next match. It is coerced to an integral Number when used (see 22.2.7.2 ). This property shall have the attributes { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }.
+
+22.2.9 RegExp String Iterator Objects
+
+A RegExp String Iterator is an object that represents a specific iteration over some specific String instance object, matching against some specific RegExp instance object. There is not a named constructor for RegExp String Iterator objects. Instead, RegExp String Iterator objects are created by calling certain methods of RegExp instance objects.
+
+22.2.9.1 CreateRegExpStringIterator ( regexp , string , global , fullUnicode )
+
+The abstract operation CreateRegExpStringIterator takes arguments regexp (an Object), string (a String), global (a Boolean), and fullUnicode (a Boolean) and returns an Object. It performs the following steps when called:
+
+- Let iterator be OrdinaryObjectCreate ( %RegExpStringIteratorPrototype% , « [[IteratingRegExp]] , [[IteratedString]] , [[Global]] , [[Unicode]] , [[Done]] »).
+
+- Set iterator . [[IteratingRegExp]] to regexp .
+
+- Set iterator . [[IteratedString]] to string .
+
+- Set iterator . [[Global]] to global .
+
+- Set iterator . [[Unicode]] to fullUnicode .
+
+- Set iterator . [[Done]] to false .
+
+- Return iterator .
+
+22.2.9.2 The %RegExpStringIteratorPrototype% Object
+
+The %RegExpStringIteratorPrototype% object:
+
+- has properties that are inherited by all RegExp String Iterator objects .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- has the following properties:
+
+22.2.9.2.1 %RegExpStringIteratorPrototype%.next ( )
+
+- Let iteratorObj be the this value.
+
+- If iteratorObj is not an Object , throw a TypeError exception.
+
+- If iteratorObj does not have all of the internal slots of a RegExp String Iterator Object Instance (see 22.2.9.3 ), throw a TypeError exception.
+
+- If iteratorObj . [[Done]] is true , then
+- Return CreateIteratorResultObject ( undefined , true ).
+
+- Let regexp be iteratorObj . [[IteratingRegExp]] .
+
+- Let string be iteratorObj . [[IteratedString]] .
+
+- Let global be iteratorObj . [[Global]] .
+
+- Let fullUnicode be iteratorObj . [[Unicode]] .
+
+- Let match be ? RegExpExec ( regexp , string ).
+
+- If match is null , then
+- Set iteratorObj . [[Done]] to true .
+
+- Return CreateIteratorResultObject ( undefined , true ).
+
+- If global is false , then
+- Set iteratorObj . [[Done]] to true .
+
+- Return CreateIteratorResultObject ( match , false ).
+
+- Let matchString be ? ToString (? Get ( match , "0" )).
+
+- If matchString is the empty String, then
+- Let thisIndex be ℝ (? ToLength (? Get ( regexp , "lastIndex" ))).
+
+- Let nextIndex be AdvanceStringIndex ( string , thisIndex , fullUnicode ).
+
+- Perform ? Set ( regexp , "lastIndex" , 𝔽 ( nextIndex ), true ).
+
+- Return CreateIteratorResultObject ( match , false ).
+
+22.2.9.2.2 %RegExpStringIteratorPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "RegExp String Iterator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+22.2.9.3 Properties of RegExp String Iterator Instances
+
+RegExp String Iterator instances are ordinary objects that inherit properties from the %RegExpStringIteratorPrototype% intrinsic object. RegExp String Iterator instances are initially created with the internal slots listed in Table 69 .
+
+Table 69: Internal Slots of RegExp String Iterator Instances
+
+Internal Slot
+Type
+Description
+
+[[IteratingRegExp]]
+an Object
+The regular expression used for iteration. IsRegExp ( [[IteratingRegExp]] ) is initially true .
+
+[[IteratedString]]
+a String
+The String value being iterated upon.
+
+[[Global]]
+a Boolean
+Indicates whether the [[IteratingRegExp]] is global or not.
+
+[[Unicode]]
+a Boolean
+Indicates whether the [[IteratingRegExp]] is in Unicode mode or not.
+
+[[Done]]
+a Boolean
+Indicates whether the iteration is complete or not.

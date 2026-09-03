@@ -1,0 +1,1782 @@
+# 20 Fundamental Objects
+# джерело: https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-fundamental-objects
+# отримано: 2026-09-01
+
+20 Fundamental Objects
+
+20.1 Object Objects
+
+20.1.1 The Object Constructor
+
+The Object constructor :
+
+- is %Object% .
+
+- is the initial value of the "Object" property of the global object .
+
+- creates a new ordinary object when called as a constructor .
+
+- performs a type conversion when called as a function rather than as a constructor .
+
+- may be used as the value of an extends clause of a class definition.
+
+20.1.1.1 Object ( value )
+
+This function performs the following steps when called:
+
+- If NewTarget is neither undefined nor the active function object , then
+- Return ? OrdinaryCreateFromConstructor (NewTarget, "%Object.prototype%" ).
+
+- If value is either undefined or null , return OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Return ! ToObject ( value ).
+
+20.1.2 Properties of the Object Constructor
+
+The Object constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following additional properties:
+
+20.1.2.1 Object.assign ( target , ... sources )
+
+This function copies the values of all of the enumerable own properties from one or more source objects to a target object.
+
+It performs the following steps when called:
+
+- Let targetObj be ? ToObject ( target ).
+
+- If only one argument was passed, return targetObj .
+
+- For each element nextSource of sources , do
+- If nextSource is neither undefined nor null , then
+- Let from be ! ToObject ( nextSource ).
+
+- Let keys be ? from . [[OwnPropertyKeys]] () .
+
+- For each element nextKey of keys , do
+- Let propertyDesc be ? from . [[GetOwnProperty]] ( nextKey ) .
+
+- If propertyDesc is not undefined and propertyDesc . [[Enumerable]] is true , then
+- Let propertyValue be ? Get ( from , nextKey ).
+
+- Perform ? Set ( targetObj , nextKey , propertyValue , true ).
+
+- Return targetObj .
+
+The "length" property of this function is 2 𝔽 .
+
+20.1.2.2 Object.create ( proto , properties )
+
+This function creates a new object with a specified prototype.
+
+It performs the following steps when called:
+
+- If proto is not an Object and proto is not null , throw a TypeError exception.
+
+- Let obj be OrdinaryObjectCreate ( proto ).
+
+- If properties is not undefined , then
+- Return ? ObjectDefineProperties ( obj , properties ).
+
+- Return obj .
+
+20.1.2.3 Object.defineProperties ( obj , properties )
+
+This function adds own properties and/or updates the attributes of existing own properties of an object.
+
+It performs the following steps when called:
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Return ? ObjectDefineProperties ( obj , properties ).
+
+20.1.2.3.1 ObjectDefineProperties ( obj , properties )
+
+The abstract operation ObjectDefineProperties takes arguments obj (an Object) and properties (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Set properties to ? ToObject ( properties ).
+
+- Let keys be ? properties . [[OwnPropertyKeys]] () .
+
+- Let propertyDescs be a new empty List .
+
+- For each element nextKey of keys , do
+- Let currentPropertyDesc be ? properties . [[GetOwnProperty]] ( nextKey ) .
+
+- If currentPropertyDesc is not undefined and currentPropertyDesc . [[Enumerable]] is true , then
+- Let propertyDescObj be ? Get ( properties , nextKey ).
+
+- Let propertyDesc be ? ToPropertyDescriptor ( propertyDescObj ).
+
+- Append the Record { [[Key]] : nextKey , [[Descriptor]] : propertyDesc } to propertyDescs .
+
+- For each element property of propertyDescs , do
+- Perform ? DefinePropertyOrThrow ( obj , property . [[Key]] , property . [[Descriptor]] ).
+
+- Return obj .
+
+20.1.2.4 Object.defineProperty ( obj , key , attrs )
+
+This function adds an own property and/or updates the attributes of an existing own property of an object.
+
+It performs the following steps when called:
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Let propertyDesc be ? ToPropertyDescriptor ( attrs ).
+
+- Perform ? DefinePropertyOrThrow ( obj , propertyKey , propertyDesc ).
+
+- Return obj .
+
+20.1.2.5 Object.entries ( obj )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let entryList be ? EnumerableOwnProperties ( coerced , key+value ).
+
+- Return CreateArrayFromList ( entryList ).
+
+20.1.2.6 Object.freeze ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return obj .
+
+- Let status be ? SetIntegrityLevel ( obj , frozen ).
+
+- If status is false , throw a TypeError exception.
+
+- Return obj .
+
+20.1.2.7 Object.fromEntries ( iterable )
+
+This function performs the following steps when called:
+
+- Perform ? RequireObjectCoercible ( iterable ).
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Assert : obj is an extensible ordinary object with no own properties.
+
+- Let closure be a new Abstract Closure with parameters ( key , value ) that captures obj and performs the following steps when called:
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , propertyKey , value ).
+
+- Return NormalCompletion ( undefined ).
+
+- Let adder be CreateBuiltinFunction ( closure , 2, "" , « »).
+
+- Return ? AddEntriesFromIterable ( obj , iterable , adder ).
+
+Note
+The function created for adder is never directly accessible to ECMAScript code.
+
+20.1.2.8 Object.getOwnPropertyDescriptor ( obj , key )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Let propertyDesc be ? coerced . [[GetOwnProperty]] ( propertyKey ) .
+
+- Return FromPropertyDescriptor ( propertyDesc ).
+
+20.1.2.9 Object.getOwnPropertyDescriptors ( obj )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let ownKeys be ? coerced . [[OwnPropertyKeys]] () .
+
+- Let descs be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each element key of ownKeys , do
+- Let propertyDesc be ? coerced . [[GetOwnProperty]] ( key ) .
+
+- Let propertyDescObj be FromPropertyDescriptor ( propertyDesc ).
+
+- If propertyDescObj is not undefined , perform ! CreateDataPropertyOrThrow ( descs , key , propertyDescObj ).
+
+- Return descs .
+
+20.1.2.10 Object.getOwnPropertyNames ( obj )
+
+This function performs the following steps when called:
+
+- Return CreateArrayFromList (? GetOwnPropertyKeys ( obj , string )).
+
+20.1.2.11 Object.getOwnPropertySymbols ( obj )
+
+This function performs the following steps when called:
+
+- Return CreateArrayFromList (? GetOwnPropertyKeys ( obj , symbol )).
+
+20.1.2.11.1 GetOwnPropertyKeys ( value , type )
+
+The abstract operation GetOwnPropertyKeys takes arguments value (an ECMAScript language value ) and type ( string or symbol ) and returns either a normal completion containing a List of property keys or a throw completion . It performs the following steps when called:
+
+- Let obj be ? ToObject ( value ).
+
+- Let keys be ? obj . [[OwnPropertyKeys]] () .
+
+- Let nameList be a new empty List .
+
+- For each element nextKey of keys , do
+- If nextKey is a Symbol and type is symbol , or if nextKey is a String and type is string , then
+- Append nextKey to nameList .
+
+- Return nameList .
+
+20.1.2.12 Object.getPrototypeOf ( obj )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Return ? coerced . [[GetPrototypeOf]] () .
+
+20.1.2.13 Object.groupBy ( items , callback )
+
+Note
+callback should be a function that accepts two arguments. groupBy calls callback once for each element in items , in ascending order, and constructs a new object. Each value returned by callback is coerced to a property key . For each such property key , the result object has a property whose key is that property key and whose value is an array containing all the elements for which the callback return value coerced to that key.
+
+callback is called with two arguments: the value of the element and the index of the element.
+
+The return value of groupBy is an object that does not inherit from %Object.prototype% .
+
+This function performs the following steps when called:
+
+- Let groups be ? GroupBy ( items , callback , property ).
+
+- Let obj be OrdinaryObjectCreate ( null ).
+
+- For each Record { [[Key]] , [[Elements]] } group of groups , do
+- Let elements be CreateArrayFromList ( group . [[Elements]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , group . [[Key]] , elements ).
+
+- Return obj .
+
+20.1.2.14 Object.hasOwn ( obj , key )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Return ? HasOwnProperty ( coerced , propertyKey ).
+
+20.1.2.15 Object.is ( value1 , value2 )
+
+This function performs the following steps when called:
+
+- Return SameValue ( value1 , value2 ).
+
+20.1.2.16 Object.isExtensible ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return false .
+
+- Return ? IsExtensible ( obj ).
+
+20.1.2.17 Object.isFrozen ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return true .
+
+- Return ? TestIntegrityLevel ( obj , frozen ).
+
+20.1.2.18 Object.isSealed ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return true .
+
+- Return ? TestIntegrityLevel ( obj , sealed ).
+
+20.1.2.19 Object.keys ( obj )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let keyList be ? EnumerableOwnProperties ( coerced , key ).
+
+- Return CreateArrayFromList ( keyList ).
+
+20.1.2.20 Object.preventExtensions ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return obj .
+
+- Let status be ? obj . [[PreventExtensions]] () .
+
+- If status is false , throw a TypeError exception.
+
+- Return obj .
+
+20.1.2.21 Object.prototype
+
+The initial value of Object.prototype is the Object prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.1.2.22 Object.seal ( obj )
+
+This function performs the following steps when called:
+
+- If obj is not an Object , return obj .
+
+- Let status be ? SetIntegrityLevel ( obj , sealed ).
+
+- If status is false , throw a TypeError exception.
+
+- Return obj .
+
+20.1.2.23 Object.setPrototypeOf ( obj , proto )
+
+This function performs the following steps when called:
+
+- Perform ? RequireObjectCoercible ( obj ).
+
+- If proto is not an Object and proto is not null , throw a TypeError exception.
+
+- If obj is not an Object , return obj .
+
+- Let status be ? obj . [[SetPrototypeOf]] ( proto ) .
+
+- If status is false , throw a TypeError exception.
+
+- Return obj .
+
+20.1.2.24 Object.values ( obj )
+
+This function performs the following steps when called:
+
+- Let coerced be ? ToObject ( obj ).
+
+- Let valueList be ? EnumerableOwnProperties ( coerced , value ).
+
+- Return CreateArrayFromList ( valueList ).
+
+20.1.3 Properties of the Object Prototype Object
+
+The Object prototype object :
+
+- is %Object.prototype% .
+
+- has an [[Extensible]] internal slot whose value is true .
+
+- has the internal methods defined for ordinary objects , except for the [[SetPrototypeOf]] method, which is as defined in 10.4.7.1 . (Thus, it is an immutable prototype exotic object .)
+
+- has a [[Prototype]] internal slot whose value is null .
+
+20.1.3.1 Object.prototype.constructor
+
+The initial value of Object.prototype.constructor is %Object% .
+
+20.1.3.2 Object.prototype.hasOwnProperty ( value )
+
+This method performs the following steps when called:
+
+- Let propertyKey be ? ToPropertyKey ( value ).
+
+- Let obj be ? ToObject ( this value).
+
+- Return ? HasOwnProperty ( obj , propertyKey ).
+
+Note
+The ordering of steps 1 and 2 is chosen to ensure that any exception that would have been thrown by step 1 in previous editions of this specification will continue to be thrown even if the this value is undefined or null .
+
+20.1.3.3 Object.prototype.isPrototypeOf ( value )
+
+This method performs the following steps when called:
+
+- If value is not an Object , return false .
+
+- Let obj be ? ToObject ( this value).
+
+- Repeat,
+- Set value to ? value . [[GetPrototypeOf]] () .
+
+- If value is null , return false .
+
+- If SameValue ( obj , value ) is true , return true .
+
+Note
+The ordering of steps 1 and 2 preserves the behaviour specified by previous editions of this specification for the case where value is not an object and the this value is undefined or null .
+
+20.1.3.4 Object.prototype.propertyIsEnumerable ( value )
+
+This method performs the following steps when called:
+
+- Let propertyKey be ? ToPropertyKey ( value ).
+
+- Let obj be ? ToObject ( this value).
+
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is undefined , return false .
+
+- Return propertyDesc . [[Enumerable]] .
+
+Note 1
+This method does not consider objects in the prototype chain.
+
+Note 2
+The ordering of steps 1 and 2 is chosen to ensure that any exception that would have been thrown by step 1 in previous editions of this specification will continue to be thrown even if the this value is undefined or null .
+
+20.1.3.5 Object.prototype.toLocaleString ( [ reserved1 [ , reserved2 ] ] )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Return ? Invoke ( thisValue , "toString" ).
+
+The optional parameters to this method are not used but are intended to correspond to the parameter pattern used by ECMA-402 toLocaleString methods. Implementations that do not include ECMA-402 support must not use those parameter positions for other purposes.
+
+Note 1
+This method provides a generic toLocaleString implementation for objects that have no locale-sensitive toString behaviour. Array , Number , Date , and %TypedArray% provide their own locale-sensitive toLocaleString methods.
+
+Note 2
+ECMA-402 intentionally does not provide an alternative to this default implementation.
+
+20.1.3.6 Object.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- If the this value is undefined , return "[object Undefined]" .
+
+- If the this value is null , return "[object Null]" .
+
+- Let obj be ! ToObject ( this value).
+
+- Let isArray be ? IsArray ( obj ).
+
+- If isArray is true , let builtinTag be "Array" .
+
+- Else if obj has a [[ParameterMap]] internal slot, let builtinTag be "Arguments" .
+
+- Else if obj has a [[Call]] internal method, let builtinTag be "Function" .
+
+- Else if obj has an [[ErrorData]] internal slot, let builtinTag be "Error" .
+
+- Else if obj has a [[BooleanData]] internal slot, let builtinTag be "Boolean" .
+
+- Else if obj has a [[NumberData]] internal slot, let builtinTag be "Number" .
+
+- Else if obj has a [[StringData]] internal slot, let builtinTag be "String" .
+
+- Else if obj has a [[DateValue]] internal slot, let builtinTag be "Date" .
+
+- Else if obj has a [[RegExpMatcher]] internal slot, let builtinTag be "RegExp" .
+
+- Else, let builtinTag be "Object" .
+
+- Let tag be ? Get ( obj , %Symbol.toStringTag% ).
+
+- If tag is not a String , set tag to builtinTag .
+
+- Return the string-concatenation of "[object " , tag , and "]" .
+
+Note
+Historically, this method was occasionally used to access the String value of the [[Class]] internal slot that was used in previous editions of this specification as a nominal type tag for various built-in objects. The above definition of toString preserves compatibility for legacy code that uses toString as a test for those specific kinds of built-in objects. It does not provide a reliable type testing mechanism for other kinds of built-in or program defined objects. In addition, programs can use %Symbol.toStringTag% in ways that will invalidate the reliability of such legacy type tests.
+
+20.1.3.7 Object.prototype.valueOf ( )
+
+This method performs the following steps when called:
+
+- Return ? ToObject ( this value).
+
+Normative Optional , Legacy
+
+20.1.3.8 Object.prototype.__proto__
+
+Object.prototype.__proto__ is an accessor property with attributes { [[Enumerable]] : false , [[Configurable]] : true }. The [[Getter]] and [[Setter]] attributes are defined as follows:
+
+20.1.3.8.1 get Object.prototype.__proto__
+
+The value of the [[Getter]] attribute is a built-in function that requires no arguments. It performs the following steps when called:
+
+- Let obj be ? ToObject ( this value).
+
+- Return ? obj . [[GetPrototypeOf]] () .
+
+20.1.3.8.2 set Object.prototype.__proto__
+
+The value of the [[Setter]] attribute is a built-in function that takes an argument proto . It performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Perform ? RequireObjectCoercible ( thisValue ).
+
+- If proto is not an Object and proto is not null , return undefined .
+
+- If thisValue is not an Object , return undefined .
+
+- Let status be ? thisValue . [[SetPrototypeOf]] ( proto ) .
+
+- If status is false , throw a TypeError exception.
+
+- Return undefined .
+
+Normative Optional , Legacy
+
+20.1.3.9 Legacy Object.prototype Accessor Methods
+
+20.1.3.9.1 Object.prototype.__defineGetter__ ( key , getter )
+
+This method performs the following steps when called:
+
+- Let obj be ? ToObject ( this value).
+
+- If IsCallable ( getter ) is false , throw a TypeError exception.
+
+- Let propertyDesc be PropertyDescriptor { [[Getter]] : getter , [[Enumerable]] : true , [[Configurable]] : true }.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Perform ? DefinePropertyOrThrow ( obj , propertyKey , propertyDesc ).
+
+- Return undefined .
+
+20.1.3.9.2 Object.prototype.__defineSetter__ ( key , setter )
+
+This method performs the following steps when called:
+
+- Let obj be ? ToObject ( this value).
+
+- If IsCallable ( setter ) is false , throw a TypeError exception.
+
+- Let propertyDesc be PropertyDescriptor { [[Setter]] : setter , [[Enumerable]] : true , [[Configurable]] : true }.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Perform ? DefinePropertyOrThrow ( obj , propertyKey , propertyDesc ).
+
+- Return undefined .
+
+20.1.3.9.3 Object.prototype.__lookupGetter__ ( key )
+
+This method performs the following steps when called:
+
+- Let obj be ? ToObject ( this value).
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Repeat,
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is not undefined , then
+- If IsAccessorDescriptor ( propertyDesc ) is true , return propertyDesc . [[Getter]] .
+
+- Return undefined .
+
+- Set obj to ? obj . [[GetPrototypeOf]] () .
+
+- If obj is null , return undefined .
+
+20.1.3.9.4 Object.prototype.__lookupSetter__ ( key )
+
+This method performs the following steps when called:
+
+- Let obj be ? ToObject ( this value).
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Repeat,
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is not undefined , then
+- If IsAccessorDescriptor ( propertyDesc ) is true , return propertyDesc . [[Setter]] .
+
+- Return undefined .
+
+- Set obj to ? obj . [[GetPrototypeOf]] () .
+
+- If obj is null , return undefined .
+
+20.1.4 Properties of Object Instances
+
+Object instances have no special properties beyond those inherited from the Object prototype object .
+
+20.2 Function Objects
+
+20.2.1 The Function Constructor
+
+The Function constructor :
+
+- is %Function% .
+
+- is the initial value of the "Function" property of the global object .
+
+- creates and initializes a new function object when called as a function rather than as a constructor . Thus the function call Function(…) is equivalent to the object creation expression new Function(…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified Function behaviour must include a super call to the Function constructor to create and initialize a subclass instance with the internal slots necessary for built-in function behaviour. All ECMAScript syntactic forms for defining function objects create instances of Function. There is no syntactic means to create instances of Function subclasses except for the built-in GeneratorFunction, AsyncFunction, and AsyncGeneratorFunction subclasses.
+
+20.2.1.1 Function ( ... paramArgs , bodyArg )
+
+The last argument (if any) specifies the body (executable code) of a function; any preceding arguments specify formal parameters.
+
+This function performs the following steps when called:
+
+- Let ctor be the active function object .
+
+- If bodyArg is not present, set bodyArg to the empty String.
+
+- Return ? CreateDynamicFunction ( ctor , NewTarget, normal , paramArgs , bodyArg ).
+
+Note
+It is permissible but not necessary to have one argument for each formal parameter to be specified. For example, all three of the following expressions produce the same result:
+
+new Function ( "a" , "b" , "c" , "return a+b+c" )
+new Function ( "a, b, c" , "return a+b+c" )
+new Function ( "a,b" , "c" , "return a+b+c" )
+
+20.2.1.1.1 CreateDynamicFunction ( ctor , newTarget , kind , paramArgs , bodyArg )
+
+The abstract operation CreateDynamicFunction takes arguments ctor (a constructor ), newTarget (a constructor or undefined ), kind ( normal , generator , async , or async-generator ), paramArgs (a List of ECMAScript language values ), and bodyArg (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript function object or a throw completion . ctor is the constructor function that is performing this action. newTarget is the constructor that new was initially applied to. paramArgs and bodyArg reflect the argument values that were passed to ctor . It performs the following steps when called:
+
+- If newTarget is undefined , set newTarget to ctor .
+
+- If kind is normal , then
+- Let prefix be "function" .
+
+- Let exprGrammar be the grammar symbol FunctionExpression .
+
+- Let bodyGrammar be the grammar symbol FunctionBody [~Yield, ~Await] .
+
+- Let paramGrammar be the grammar symbol FormalParameters [~Yield, ~Await] .
+
+- Let fallbackProto be "%Function.prototype%" .
+
+- Else if kind is generator , then
+- Let prefix be "function*" .
+
+- Let exprGrammar be the grammar symbol GeneratorExpression .
+
+- Let bodyGrammar be the grammar symbol GeneratorBody .
+
+- Let paramGrammar be the grammar symbol FormalParameters [+Yield, ~Await] .
+
+- Let fallbackProto be "%GeneratorFunction.prototype%" .
+
+- Else if kind is async , then
+- Let prefix be "async function" .
+
+- Let exprGrammar be the grammar symbol AsyncFunctionExpression .
+
+- Let bodyGrammar be the grammar symbol AsyncFunctionBody .
+
+- Let paramGrammar be the grammar symbol FormalParameters [~Yield, +Await] .
+
+- Let fallbackProto be "%AsyncFunction.prototype%" .
+
+- Else,
+- Assert : kind is async-generator .
+
+- Let prefix be "async function*" .
+
+- Let exprGrammar be the grammar symbol AsyncGeneratorExpression .
+
+- Let bodyGrammar be the grammar symbol AsyncGeneratorBody .
+
+- Let paramGrammar be the grammar symbol FormalParameters [+Yield, +Await] .
+
+- Let fallbackProto be "%AsyncGeneratorFunction.prototype%" .
+
+- Let argCount be the number of elements in paramArgs .
+
+- Let paramStrings be a new empty List .
+
+- For each element arg of paramArgs , do
+- Append ? ToString ( arg ) to paramStrings .
+
+- Let bodyString be ? ToString ( bodyArg ).
+
+- Let currentRealm be the current Realm Record .
+
+- Perform ? HostEnsureCanCompileStrings ( currentRealm , paramStrings , bodyString , false ).
+
+- Let paramString be the empty String.
+
+- If argCount > 0, then
+- Set paramString to paramStrings [0].
+
+- Let k be 1.
+
+- Repeat, while k < argCount ,
+- Let nextArgString be paramStrings [ k ].
+
+- Set paramString to the string-concatenation of paramString , "," (a comma), and nextArgString .
+
+- Set k to k + 1.
+
+- Let bodyParseString be the string-concatenation of 0x000A (LINE FEED), bodyString , and 0x000A (LINE FEED).
+
+- Let sourceString be the string-concatenation of prefix , " anonymous(" , paramString , 0x000A (LINE FEED), ") {" , bodyParseString , and "}" .
+
+- Let sourceText be StringToCodePoints ( sourceString ).
+
+- Let params be ParseText ( paramString , paramGrammar ).
+
+- If params is a List of errors, throw a SyntaxError exception.
+
+- Let body be ParseText ( bodyParseString , bodyGrammar ).
+
+- If body is a List of errors, throw a SyntaxError exception.
+
+- NOTE : The parameters and body are parsed separately to ensure that each is valid alone. For example, new Function("/*", "*/ ) {") does not evaluate to a function.
+
+- NOTE : If this step is reached, sourceText must have the syntax of exprGrammar (although the reverse implication does not hold). The purpose of the next two steps is to enforce any Early Error rules which apply to exprGrammar directly.
+
+- Let expr be ParseText ( sourceText , exprGrammar ).
+
+- If expr is a List of errors, throw a SyntaxError exception.
+
+- Let funcProto be ? GetPrototypeFromConstructor ( newTarget , fallbackProto ).
+
+- Let envRecord be currentRealm . [[GlobalEnv]] .
+
+- Let privateEnv be null .
+
+- Let func be OrdinaryFunctionCreate ( funcProto , sourceText , params , body , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( func , "anonymous" ).
+
+- If kind is generator , then
+- Let protoProto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( func , "prototype" , PropertyDescriptor { [[Value]] : protoProto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Else if kind is async-generator , then
+- Let protoProto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( func , "prototype" , PropertyDescriptor { [[Value]] : protoProto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Else if kind is normal , then
+- Perform MakeConstructor ( func ).
+
+- NOTE : Functions whose kind is async are not constructable and do not have a [[Construct]] internal method or a "prototype" property.
+
+- Return func .
+
+Note
+CreateDynamicFunction defines a "prototype" property on any function it creates whose kind is not async to provide for the possibility that the function will be used as a constructor .
+
+20.2.2 Properties of the Function Constructor
+
+The Function constructor :
+
+- is itself a built-in function object .
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has a "length" property whose value is 1 𝔽 .
+
+- has the following properties:
+
+20.2.2.1 Function.prototype
+
+The value of Function.prototype is the Function prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.2.3 Properties of the Function Prototype Object
+
+The Function prototype object :
+
+- is %Function.prototype% .
+
+- is itself a built-in function object .
+
+- accepts any arguments and returns undefined when invoked.
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- does not have a "prototype" property.
+
+- has a "length" property whose value is +0 𝔽 .
+
+- has a "name" property whose value is the empty String.
+
+Note
+The Function prototype object is specified to be a function object to ensure compatibility with ECMAScript code that was created prior to the ECMAScript 2015 specification.
+
+20.2.3.1 Function.prototype.apply ( thisArg , argArray )
+
+This method performs the following steps when called:
+
+- Let func be the this value.
+
+- If IsCallable ( func ) is false , throw a TypeError exception.
+
+- If argArray is either undefined or null , then
+- Perform PrepareForTailCall ().
+
+- Return ? Call ( func , thisArg ).
+
+- Let argList be ? CreateListFromArrayLike ( argArray ).
+
+- Perform PrepareForTailCall ().
+
+- Return ? Call ( func , thisArg , argList ).
+
+Note 1
+The thisArg value is passed without modification as the this value. This is a change from Edition 3, where an undefined or null thisArg is replaced with the global object and ToObject is applied to all other values and that result is passed as the this value. Even though the thisArg is passed without modification, non-strict functions still perform these transformations upon entry to the function.
+
+Note 2
+If func is either an arrow function or a bound function exotic object , then the thisArg will be ignored by the function [[Call]] in step 6 .
+
+20.2.3.2 Function.prototype.bind ( thisArg , ... args )
+
+This method performs the following steps when called:
+
+- Let target be the this value.
+
+- If IsCallable ( target ) is false , throw a TypeError exception.
+
+- Let boundFunc be ? BoundFunctionCreate ( target , thisArg , args ).
+
+- Let length be 0.
+
+- Let targetHasLength be ? HasOwnProperty ( target , "length" ).
+
+- If targetHasLength is true , then
+- Let targetLength be ? Get ( target , "length" ).
+
+- If targetLength is a Number , then
+- Let targetLengthAsInt be ! ToIntegerOrInfinity ( targetLength ).
+
+- If targetLengthAsInt = +∞, then
+- Set length to +∞.
+
+- Else if targetLengthAsInt = -∞, then
+- Set length to 0.
+
+- Else,
+- Let argCount be the number of elements in args .
+
+- Set length to max ( targetLengthAsInt - argCount , 0).
+
+- Perform SetFunctionLength ( boundFunc , length ).
+
+- Let targetName be ? Get ( target , "name" ).
+
+- If targetName is not a String , set targetName to the empty String.
+
+- Perform SetFunctionName ( boundFunc , targetName , "bound" ).
+
+- Return boundFunc .
+
+Note 1
+Function objects created using Function.prototype.bind are exotic objects . They also do not have a "prototype" property.
+
+Note 2
+If target is either an arrow function or a bound function exotic object , then the thisArg passed to this method will not be used by subsequent calls to func .
+
+20.2.3.3 Function.prototype.call ( thisArg , ... args )
+
+This method performs the following steps when called:
+
+- Let func be the this value.
+
+- If IsCallable ( func ) is false , throw a TypeError exception.
+
+- Perform PrepareForTailCall ().
+
+- Return ? Call ( func , thisArg , args ).
+
+Note 1
+The thisArg value is passed without modification as the this value. This is a change from Edition 3, where an undefined or null thisArg is replaced with the global object and ToObject is applied to all other values and that result is passed as the this value. Even though the thisArg is passed without modification, non-strict functions still perform these transformations upon entry to the function.
+
+Note 2
+If func is either an arrow function or a bound function exotic object , then the thisArg will be ignored by the function [[Call]] in step 4 .
+
+20.2.3.4 Function.prototype.constructor
+
+The initial value of Function.prototype.constructor is %Function% .
+
+20.2.3.5 Function.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- Let func be the this value.
+
+- If func is an Object , func has a [[SourceText]] internal slot, func . [[SourceText]] is a sequence of Unicode code points, and HostHasSourceTextAvailable ( func ) is true , then
+- Return CodePointsToString ( func . [[SourceText]] ).
+
+- If func is a built-in function object , return an implementation-defined String source code representation of func . The representation must have the syntax of a NativeFunction . Additionally, if func has an [[InitialName]] internal slot and func . [[InitialName]] is a String , the portion of the returned String that would be matched by NativeFunctionAccessor opt PropertyName must be func . [[InitialName]] .
+
+- If func is an Object and IsCallable ( func ) is true , return an implementation-defined String source code representation of func . The representation must have the syntax of a NativeFunction .
+
+- Throw a TypeError exception.
+
+NativeFunction :
+function
+NativeFunctionAccessor opt
+PropertyName [~Yield, ~Await] opt
+(
+FormalParameters [~Yield, ~Await]
+)
+{
+[
+native
+code
+]
+}
+
+NativeFunctionAccessor :
+get
+
+set
+
+20.2.3.6 Function.prototype [ %Symbol.hasInstance% ] ( value )
+
+This method performs the following steps when called:
+
+- Let thisValue be the this value.
+
+- Return ? OrdinaryHasInstance ( thisValue , value ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+Note
+This is the default implementation of %Symbol.hasInstance% that most functions inherit. %Symbol.hasInstance% is called by the instanceof operator to determine whether a value is an instance of a specific constructor . An expression such as
+
+v instanceof F
+evaluates as
+
+F[% Symbol . hasInstance %](v)
+A constructor function can control which objects are recognized as its instances by instanceof by exposing a different %Symbol.hasInstance% method on the function.
+
+This property is non-writable and non-configurable to prevent tampering that could be used to globally expose the target function of a bound function.
+
+The value of the "name" property of this method is "[Symbol.hasInstance]" .
+
+20.2.4 Function Instances
+
+Every Function instance is an ECMAScript function object and has the internal slots listed in Table 26 . Function objects created using the Function.prototype.bind method ( 20.2.3.2 ) have the internal slots listed in Table 27 .
+
+Function instances have the following properties:
+
+20.2.4.1 length
+
+The value of the "length" property is an integral Number that indicates the typical number of arguments expected by the function. However, the language permits the function to be invoked with some other number of arguments. The behaviour of a function when invoked on a number of arguments other than the number specified by its "length" property depends on the function. This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+20.2.4.2 name
+
+The value of the "name" property is a String that is descriptive of the function. The name has no semantic significance but is typically a variable or property name that is used to refer to the function at its point of definition in ECMAScript source text . This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+Anonymous function objects that do not have a contextual name associated with them by this specification use the empty String as the value of the "name" property.
+
+20.2.4.3 prototype
+
+Function instances that can be used as a constructor have a "prototype" property. Whenever such a Function instance is created another ordinary object is also created and is the initial value of the function's "prototype" property. Unless otherwise specified, the value of the "prototype" property is used to initialize the [[Prototype]] internal slot of the object created when that function is invoked as a constructor .
+
+This property has the attributes { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }.
+
+Note
+Function objects created using Function.prototype.bind , or by evaluating a MethodDefinition (that is not a GeneratorMethod or AsyncGeneratorMethod ) or an ArrowFunction do not have a "prototype" property.
+
+20.2.5 HostHasSourceTextAvailable ( func )
+
+The host-defined abstract operation HostHasSourceTextAvailable takes argument func (a function object ) and returns a Boolean. It allows host environments to prevent the source text from being provided for func .
+
+An implementation of HostHasSourceTextAvailable must conform to the following requirements:
+
+- It must be deterministic with respect to its parameters. Each time it is called with a specific func as its argument, it must return the same result.
+
+The default implementation of HostHasSourceTextAvailable is to return true .
+
+20.3 Boolean Objects
+
+20.3.1 The Boolean Constructor
+
+The Boolean constructor :
+
+- is %Boolean% .
+
+- is the initial value of the "Boolean" property of the global object .
+
+- creates and initializes a new Boolean object when called as a constructor .
+
+- performs a type conversion when called as a function rather than as a constructor .
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified Boolean behaviour must include a super call to the Boolean constructor to create and initialize the subclass instance with a [[BooleanData]] internal slot.
+
+20.3.1.1 Boolean ( value )
+
+This function performs the following steps when called:
+
+- Let bool be ToBoolean ( value ).
+
+- If NewTarget is undefined , return bool .
+
+- Let obj be ? OrdinaryCreateFromConstructor (NewTarget, "%Boolean.prototype%" , « [[BooleanData]] »).
+
+- Set obj . [[BooleanData]] to bool .
+
+- Return obj .
+
+20.3.2 Properties of the Boolean Constructor
+
+The Boolean constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+20.3.2.1 Boolean.prototype
+
+The initial value of Boolean.prototype is the Boolean prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.3.3 Properties of the Boolean Prototype Object
+
+The Boolean prototype object :
+
+- is %Boolean.prototype% .
+
+- is an ordinary object .
+
+- is itself a Boolean object; it has a [[BooleanData]] internal slot with the value false .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+20.3.3.1 Boolean.prototype.constructor
+
+The initial value of Boolean.prototype.constructor is %Boolean% .
+
+20.3.3.2 Boolean.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- Let bool be ? ThisBooleanValue ( this value).
+
+- If bool is true , return "true" .
+
+- Return "false" .
+
+20.3.3.3 Boolean.prototype.valueOf ( )
+
+This method performs the following steps when called:
+
+- Return ? ThisBooleanValue ( this value).
+
+20.3.3.3.1 ThisBooleanValue ( arg )
+
+The abstract operation ThisBooleanValue takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If arg is a Boolean , return arg .
+
+- If arg is an Object and arg has a [[BooleanData]] internal slot, then
+- Let bool be arg . [[BooleanData]] .
+
+- Assert : bool is a Boolean .
+
+- Return bool .
+
+- Throw a TypeError exception.
+
+20.3.4 Properties of Boolean Instances
+
+Boolean instances are ordinary objects that inherit properties from the Boolean prototype object . Boolean instances have a [[BooleanData]] internal slot. The [[BooleanData]] internal slot is the Boolean value represented by this Boolean object.
+
+20.4 Symbol Objects
+
+20.4.1 The Symbol Constructor
+
+The Symbol constructor :
+
+- is %Symbol% .
+
+- is the initial value of the "Symbol" property of the global object .
+
+- returns a new Symbol value when called as a function.
+
+- is not intended to be used with the new operator.
+
+- is not intended to be subclassed.
+
+- may be used as the value of an extends clause of a class definition but a super call to it will cause an exception.
+
+20.4.1.1 Symbol ( [ description ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is not undefined , throw a TypeError exception.
+
+- If description is undefined , let descString be undefined .
+
+- Else, let descString be ? ToString ( description ).
+
+- Return a new Symbol whose [[Description]] is descString .
+
+20.4.2 Properties of the Symbol Constructor
+
+The Symbol constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+20.4.2.1 Symbol.asyncDispose
+
+The initial value of Symbol.asyncDispose is the well-known symbol %Symbol.asyncDispose% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.2 Symbol.asyncIterator
+
+The initial value of Symbol.asyncIterator is the well-known symbol %Symbol.asyncIterator% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.3 Symbol.dispose
+
+The initial value of Symbol.dispose is the well-known symbol %Symbol.dispose% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.4 Symbol.for ( key )
+
+This function performs the following steps when called:
+
+- Let stringKey be ? ToString ( key ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let globalSymbolRegistry be agentRecord . [[GlobalSymbolRegistry]] .
+
+- For each element element of globalSymbolRegistry , do
+- If element . [[Key]] is stringKey , return element . [[Symbol]] .
+
+- Assert : globalSymbolRegistry does not currently contain an entry for stringKey .
+
+- Let newSymbol be a new Symbol whose [[Description]] is stringKey .
+
+- Append the GlobalSymbolRegistry Record { [[Key]] : stringKey , [[Symbol]] : newSymbol } to globalSymbolRegistry .
+
+- Return newSymbol .
+
+20.4.2.5 Symbol.hasInstance
+
+The initial value of Symbol.hasInstance is the well-known symbol %Symbol.hasInstance% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.6 Symbol.isConcatSpreadable
+
+The initial value of Symbol.isConcatSpreadable is the well-known symbol %Symbol.isConcatSpreadable% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.7 Symbol.iterator
+
+The initial value of Symbol.iterator is the well-known symbol %Symbol.iterator% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.8 Symbol.keyFor ( symbol )
+
+This function performs the following steps when called:
+
+- If symbol is not a Symbol , throw a TypeError exception.
+
+- Return KeyForSymbol ( symbol ).
+
+20.4.2.9 Symbol.match
+
+The initial value of Symbol.match is the well-known symbol %Symbol.match% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.10 Symbol.matchAll
+
+The initial value of Symbol.matchAll is the well-known symbol %Symbol.matchAll% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.11 Symbol.prototype
+
+The initial value of Symbol.prototype is the Symbol prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.12 Symbol.replace
+
+The initial value of Symbol.replace is the well-known symbol %Symbol.replace% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.13 Symbol.search
+
+The initial value of Symbol.search is the well-known symbol %Symbol.search% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.14 Symbol.species
+
+The initial value of Symbol.species is the well-known symbol %Symbol.species% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.15 Symbol.split
+
+The initial value of Symbol.split is the well-known symbol %Symbol.split% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.16 Symbol.toPrimitive
+
+The initial value of Symbol.toPrimitive is the well-known symbol %Symbol.toPrimitive% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.17 Symbol.toStringTag
+
+The initial value of Symbol.toStringTag is the well-known symbol %Symbol.toStringTag% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.2.18 Symbol.unscopables
+
+The initial value of Symbol.unscopables is the well-known symbol %Symbol.unscopables% ( Table 1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.4.3 Properties of the Symbol Prototype Object
+
+The Symbol prototype object :
+
+- is %Symbol.prototype% .
+
+- is an ordinary object .
+
+- is not a Symbol instance and does not have a [[SymbolData]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+20.4.3.1 Symbol.prototype.constructor
+
+The initial value of Symbol.prototype.constructor is %Symbol% .
+
+20.4.3.2 get Symbol.prototype.description
+
+Symbol.prototype.description is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let symbol be ? ThisSymbolValue ( this value).
+
+- Return symbol . [[Description]] .
+
+20.4.3.3 Symbol.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- Let symbol be ? ThisSymbolValue ( this value).
+
+- Return SymbolDescriptiveString ( symbol ).
+
+20.4.3.3.1 SymbolDescriptiveString ( symbol )
+
+The abstract operation SymbolDescriptiveString takes argument symbol (a Symbol) and returns a String. It performs the following steps when called:
+
+- Let description be symbol . [[Description]] .
+
+- If description is undefined , set description to the empty String.
+
+- Assert : description is a String .
+
+- Return the string-concatenation of "Symbol(" , description , and ")" .
+
+20.4.3.4 Symbol.prototype.valueOf ( )
+
+This method performs the following steps when called:
+
+- Return ? ThisSymbolValue ( this value).
+
+20.4.3.4.1 ThisSymbolValue ( arg )
+
+The abstract operation ThisSymbolValue takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a Symbol or a throw completion . It performs the following steps when called:
+
+- If arg is a Symbol , return arg .
+
+- If arg is an Object and arg has a [[SymbolData]] internal slot, then
+- Let symbol be arg . [[SymbolData]] .
+
+- Assert : symbol is a Symbol .
+
+- Return symbol .
+
+- Throw a TypeError exception.
+
+20.4.3.5 Symbol.prototype [ %Symbol.toPrimitive% ] ( hint )
+
+This method is called by ECMAScript language operators to convert a Symbol object to a primitive value.
+
+It performs the following steps when called:
+
+- Return ? ThisSymbolValue ( this value).
+
+Note
+The argument is ignored.
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+The value of the "name" property of this method is "[Symbol.toPrimitive]" .
+
+20.4.3.6 Symbol.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Symbol" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+20.4.4 Properties of Symbol Instances
+
+Symbol instances are ordinary objects that inherit properties from the Symbol prototype object . Symbol instances have a [[SymbolData]] internal slot. The [[SymbolData]] internal slot is the Symbol value represented by this Symbol object.
+
+20.4.5 Abstract Operations for Symbols
+
+20.4.5.1 GlobalSymbolRegistry Records
+
+A GlobalSymbolRegistry Record is a Record used to associate a String key with a Symbol value registered through Symbol.for .
+
+GlobalSymbolRegistry Records have the fields listed in Table 59 .
+
+Table 59: GlobalSymbolRegistry Record Fields
+
+Field Name
+Value
+Usage
+
+[[Key]]
+a String
+A string key used to globally identify a Symbol.
+
+[[Symbol]]
+a Symbol
+A symbol that can be retrieved from any realm .
+
+20.4.5.2 KeyForSymbol ( symbol )
+
+The abstract operation KeyForSymbol takes argument symbol (a Symbol) and returns a String or undefined . If symbol is in the surrounding agent 's [[GlobalSymbolRegistry]] List , the String used to register symbol will be returned. It performs the following steps when called:
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let globalSymbolRegistry be agentRecord . [[GlobalSymbolRegistry]] .
+
+- For each element element of globalSymbolRegistry , do
+- If SameValue ( element . [[Symbol]] , symbol ) is true , return element . [[Key]] .
+
+- Assert : globalSymbolRegistry does not currently contain an entry for symbol .
+
+- Return undefined .
+
+20.5 Error Objects
+
+Instances of Error objects are thrown as exceptions when runtime errors occur. The Error objects may also serve as base objects for user-defined exception classes.
+
+When an ECMAScript implementation detects a runtime error, it throws a new instance of one of the NativeError objects defined in 20.5.5 or a new instance of either the AggregateError object defined in 20.5.7 , or the SuppressedError object defined in 20.5.8 . Each of these objects has the structure described below, differing only in the name used as the constructor name instead of NativeError , in the "name" property of the prototype object, in the implementation-defined "message" property of the prototype object, and in the presence of the %AggregateError% -specific "errors" property or the %SuppressedError% -specific "error" and "suppressed" properties.
+
+20.5.1 The Error Constructor
+
+The Error constructor :
+
+- is %Error% .
+
+- is the initial value of the "Error" property of the global object .
+
+- creates and initializes a new Error object when called as a function rather than as a constructor . Thus the function call Error(…) is equivalent to the object creation expression new Error(…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified Error behaviour must include a super call to the Error constructor to create and initialize subclass instances with an [[ErrorData]] internal slot.
+
+20.5.1.1 Error ( message [ , options ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , let newTarget be the active function object ; else let newTarget be NewTarget.
+
+- Let obj be ? OrdinaryCreateFromConstructor ( newTarget , "%Error.prototype%" , « [[ErrorData]] »).
+
+- If message is not undefined , then
+- Let messageString be ? ToString ( message ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "message" , messageString ).
+
+- Perform ? InstallErrorCause ( obj , options ).
+
+- Return obj .
+
+20.5.2 Properties of the Error Constructor
+
+The Error constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+20.5.2.1 Error.isError ( arg )
+
+This function performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg does not have an [[ErrorData]] internal slot, return false .
+
+- Return true .
+
+20.5.2.2 Error.prototype
+
+The initial value of Error.prototype is the Error prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.5.3 Properties of the Error Prototype Object
+
+The Error prototype object :
+
+- is %Error.prototype% .
+
+- is an ordinary object .
+
+- is not an Error instance and does not have an [[ErrorData]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+20.5.3.1 Error.prototype.constructor
+
+The initial value of Error.prototype.constructor is %Error% .
+
+20.5.3.2 Error.prototype.message
+
+The initial value of Error.prototype.message is the empty String.
+
+20.5.3.3 Error.prototype.name
+
+The initial value of Error.prototype.name is "Error" .
+
+20.5.3.4 Error.prototype.toString ( )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let name be ? Get ( obj , "name" ).
+
+- If name is undefined , set name to "Error" ; else set name to ? ToString ( name ).
+
+- Let message be ? Get ( obj , "message" ).
+
+- If message is undefined , set message to the empty String; else set message to ? ToString ( message ).
+
+- If name is the empty String, return message .
+
+- If message is the empty String, return name .
+
+- Return the string-concatenation of name , the code unit 0x003A (COLON), the code unit 0x0020 (SPACE), and message .
+
+20.5.4 Properties of Error Instances
+
+Error instances are ordinary objects that inherit properties from the Error prototype object and have an [[ErrorData]] internal slot whose value is undefined . The only specified use of [[ErrorData]] is to identify Error, AggregateError, SuppressedError, and NativeError instances as Error objects within Object.prototype.toString and Error.isError .
+
+20.5.5 Native Error Types Used in This Standard
+
+A new instance of one of the NativeError objects below or of either the AggregateError object or SuppressedError object is thrown when a runtime error is detected. All NativeError objects share the same structure, as described in 20.5.6 .
+
+20.5.5.1 EvalError
+
+The EvalError constructor is %EvalError% .
+
+This exception is not currently used within this specification. This object remains for compatibility with previous editions of this specification.
+
+20.5.5.2 RangeError
+
+The RangeError constructor is %RangeError% .
+
+Indicates a value that is not in the set or range of allowable values.
+
+20.5.5.3 ReferenceError
+
+The ReferenceError constructor is %ReferenceError% .
+
+Indicate that an invalid reference has been detected.
+
+20.5.5.4 SyntaxError
+
+The SyntaxError constructor is %SyntaxError% .
+
+Indicates that a parsing error has occurred.
+
+20.5.5.5 TypeError
+
+The TypeError constructor is %TypeError% .
+
+TypeError is used to indicate an unsuccessful operation when none of the other NativeError objects are an appropriate indication of the failure cause.
+
+20.5.5.6 URIError
+
+The URIError constructor is %URIError% .
+
+Indicates that one of the global URI handling functions was used in a way that is incompatible with its definition.
+
+20.5.6 NativeError Object Structure
+
+Each of these objects has the structure described below, differing only in the name used as the constructor name and in the "name" property of the prototype object.
+
+For each error object, references to NativeError in the definition should be replaced with the appropriate error object name from 20.5.5 .
+
+20.5.6.1 The NativeError Constructors
+
+Each NativeError constructor :
+
+- creates and initializes a new NativeError object when called as a function rather than as a constructor . A call of the object as a function is equivalent to calling it as a constructor with the same arguments. Thus the function call NativeError (…) is equivalent to the object creation expression new NativeError (…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified NativeError behaviour must include a super call to the NativeError constructor to create and initialize subclass instances with an [[ErrorData]] internal slot.
+
+20.5.6.1.1 NativeError ( message [ , options ] )
+
+Each NativeError function performs the following steps when called:
+
+- If NewTarget is undefined , let newTarget be the active function object ; else let newTarget be NewTarget.
+
+- Let obj be ? OrdinaryCreateFromConstructor ( newTarget , "% NativeError .prototype%" , « [[ErrorData]] »).
+
+- If message is not undefined , then
+- Let messageString be ? ToString ( message ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "message" , messageString ).
+
+- Perform ? InstallErrorCause ( obj , options ).
+
+- Return obj .
+
+The actual value of the string passed in step 2 is either "%EvalError.prototype%" , "%RangeError.prototype%" , "%ReferenceError.prototype%" , "%SyntaxError.prototype%" , "%TypeError.prototype%" , or "%URIError.prototype%" corresponding to which NativeError constructor is being defined.
+
+20.5.6.2 Properties of the NativeError Constructors
+
+Each NativeError constructor :
+
+- has a [[Prototype]] internal slot whose value is %Error% .
+
+- has a "name" property whose value is the String value " NativeError " .
+
+- has the following properties:
+
+20.5.6.2.1 NativeError .prototype
+
+The initial value of NativeError .prototype is a NativeError prototype object ( 20.5.6.3 ). Each NativeError constructor has a distinct prototype object.
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.5.6.3 Properties of the NativeError Prototype Objects
+
+Each NativeError prototype object :
+
+- is an ordinary object .
+
+- is not an Error instance and does not have an [[ErrorData]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Error.prototype% .
+
+20.5.6.3.1 NativeError .prototype.constructor
+
+The initial value of the "constructor" property of the prototype for a given NativeError constructor is the constructor itself.
+
+20.5.6.3.2 NativeError .prototype.message
+
+The initial value of the "message" property of the prototype for a given NativeError constructor is the empty String.
+
+20.5.6.3.3 NativeError .prototype.name
+
+The initial value of the "name" property of the prototype for a given NativeError constructor is the String value consisting of the name of the constructor (the name used instead of NativeError ).
+
+20.5.6.4 Properties of NativeError Instances
+
+NativeError instances are ordinary objects that inherit properties from their NativeError prototype object and have an [[ErrorData]] internal slot whose value is undefined . The only specified use of [[ErrorData]] is by Object.prototype.toString ( 20.1.3.6 ) and Error.isError ( 20.5.2.1 ) to identify Error, AggregateError, SuppressedError, or NativeError instances.
+
+20.5.7 AggregateError Objects
+
+20.5.7.1 The AggregateError Constructor
+
+The AggregateError constructor :
+
+- is %AggregateError% .
+
+- is the initial value of the "AggregateError" property of the global object .
+
+- creates and initializes a new AggregateError object when called as a function rather than as a constructor . Thus the function call AggregateError(…) is equivalent to the object creation expression new AggregateError(…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified AggregateError behaviour must include a super call to the AggregateError constructor to create and initialize subclass instances with an [[ErrorData]] internal slot.
+
+20.5.7.1.1 AggregateError ( errors , message [ , options ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , let newTarget be the active function object ; else let newTarget be NewTarget.
+
+- Let obj be ? OrdinaryCreateFromConstructor ( newTarget , "%AggregateError.prototype%" , « [[ErrorData]] »).
+
+- If message is not undefined , then
+- Let messageString be ? ToString ( message ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "message" , messageString ).
+
+- Perform ? InstallErrorCause ( obj , options ).
+
+- Let errorsList be ? IteratorToList (? GetIterator ( errors , sync )).
+
+- Perform ! DefinePropertyOrThrow ( obj , "errors" , PropertyDescriptor { [[Configurable]] : true , [[Enumerable]] : false , [[Writable]] : true , [[Value]] : CreateArrayFromList ( errorsList ) }).
+
+- Return obj .
+
+20.5.7.2 Properties of the AggregateError Constructor
+
+The AggregateError constructor :
+
+- has a [[Prototype]] internal slot whose value is %Error% .
+
+- has the following properties:
+
+20.5.7.2.1 AggregateError.prototype
+
+The initial value of AggregateError.prototype is %AggregateError.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.5.7.3 Properties of the AggregateError Prototype Object
+
+The AggregateError prototype object :
+
+- is %AggregateError.prototype% .
+
+- is an ordinary object .
+
+- is not an Error instance or an AggregateError instance and does not have an [[ErrorData]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Error.prototype% .
+
+20.5.7.3.1 AggregateError.prototype.constructor
+
+The initial value of AggregateError.prototype.constructor is %AggregateError% .
+
+20.5.7.3.2 AggregateError.prototype.message
+
+The initial value of AggregateError.prototype.message is the empty String.
+
+20.5.7.3.3 AggregateError.prototype.name
+
+The initial value of AggregateError.prototype.name is "AggregateError" .
+
+20.5.7.4 Properties of AggregateError Instances
+
+AggregateError instances are ordinary objects that inherit properties from their AggregateError prototype object and have an [[ErrorData]] internal slot whose value is undefined . The only specified use of [[ErrorData]] is by Object.prototype.toString ( 20.1.3.6 ) and Error.isError ( 20.5.2.1 ) to identify Error, AggregateError, SuppressedError, or NativeError instances.
+
+20.5.8 SuppressedError Objects
+
+20.5.8.1 The SuppressedError Constructor
+
+The SuppressedError constructor :
+
+- is %SuppressedError% .
+
+- is the initial value of the "SuppressedError" property of the global object .
+
+- creates and initializes a new SuppressedError object when called as a function rather than as a constructor . Thus the function call SuppressedError(…) is equivalent to the object creation expression new SuppressedError(…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified SuppressedError behaviour must include a super call to the SuppressedError constructor to create and initialize subclass instances with an [[ErrorData]] internal slot.
+
+20.5.8.1.1 SuppressedError ( error , suppressed , message )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , let newTarget be the active function object ; else let newTarget be NewTarget.
+
+- Let obj be ? OrdinaryCreateFromConstructor ( newTarget , "%SuppressedError.prototype%" , « [[ErrorData]] »).
+
+- If message is not undefined , then
+- Let messageString be ? ToString ( message ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "message" , messageString ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "error" , error ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "suppressed" , suppressed ).
+
+- Return obj .
+
+20.5.8.2 Properties of the SuppressedError Constructor
+
+The SuppressedError constructor :
+
+- has a [[Prototype]] internal slot whose value is %Error% .
+
+- has the following properties:
+
+20.5.8.2.1 SuppressedError.prototype
+
+The initial value of SuppressedError.prototype is the SuppressedError prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+20.5.8.3 Properties of the SuppressedError Prototype Object
+
+The SuppressedError prototype object :
+
+- is %SuppressedError.prototype% .
+
+- is an ordinary object .
+
+- is not an Error instance or a SuppressedError instance and does not have an [[ErrorData]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Error.prototype% .
+
+20.5.8.3.1 SuppressedError.prototype.constructor
+
+The initial value of SuppressedError.prototype.constructor is %SuppressedError% .
+
+20.5.8.3.2 SuppressedError.prototype.message
+
+The initial value of SuppressedError.prototype.message is the empty String.
+
+20.5.8.3.3 SuppressedError.prototype.name
+
+The initial value of SuppressedError.prototype.name is "SuppressedError" .
+
+20.5.8.4 Properties of SuppressedError Instances
+
+SuppressedError instances are ordinary objects that inherit properties from their SuppressedError prototype object and have an [[ErrorData]] internal slot whose value is undefined . The only specified use of [[ErrorData]] is to identify Error, AggregateError, SuppressedError, and NativeError instances as Error objects within Object.prototype.toString and Error.isError .
+
+20.5.9 Abstract Operations for Error Objects
+
+20.5.9.1 InstallErrorCause ( obj , options )
+
+The abstract operation InstallErrorCause takes arguments obj (an Object) and options (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It is used to create a "cause" property on obj when a "cause" property is present on options . It performs the following steps when called:
+
+- If options is an Object and ? HasProperty ( options , "cause" ) is true , then
+- Let cause be ? Get ( options , "cause" ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( obj , "cause" , cause ).
+
+- Return unused .

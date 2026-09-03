@@ -1,0 +1,58 @@
+# Bibliography
+# джерело: https://tc39.es/ecma262/multipage/bibliography.html
+# отримано: 2026-09-01
+
+Bibliography
+
+-
+IEEE 754-2019 : IEEE Standard for Floating-Point Arithmetic . Institute of Electrical and Electronic Engineers, New York (2019)
+Note
+There are no normative changes between IEEE 754-2008 and IEEE 754-2019 that affect the ECMA-262 specification.
+
+-
+The Unicode Standard , available at < https://unicode.org/versions/latest >
+
+-
+Unicode Technical Note #5: Canonical Equivalence in Applications , available at < https://unicode.org/notes/tn5/ >
+
+-
+Unicode Technical Standard #10: Unicode Collation Algorithm , available at < https://unicode.org/reports/tr10/ >
+
+-
+Unicode Standard Annex #15, Unicode Normalization Forms , available at < https://unicode.org/reports/tr15/ >
+
+-
+Unicode Standard Annex #18: Unicode Regular Expressions , available at < https://unicode.org/reports/tr18/ >
+
+-
+Unicode Standard Annex #24: Unicode Script Property , available at < https://unicode.org/reports/tr24/ >
+
+-
+Unicode Standard Annex #31, Unicode Identifiers and Pattern Syntax , available at < https://unicode.org/reports/tr31/ >
+
+-
+Unicode Standard Annex #44: Unicode Character Database , available at < https://unicode.org/reports/tr44/ >
+
+-
+Unicode Technical Standard #51: Unicode Emoji , available at < https://unicode.org/reports/tr51/ >
+
+-
+IANA Time Zone Database , available at < https://www.iana.org/time-zones >
+
+-
+ISO 8601-1:2019(E) Date and time — Representations for information interchange — Part 1: Basic rules plus Amendment 1:2022.
+
+-
+RFC 1738 “Uniform Resource Locators (URL)” , available at < https://rfc-editor.org/info/rfc1738 >
+
+-
+RFC 2396 “Uniform Resource Identifiers (URI): Generic Syntax” , available at < https://rfc-editor.org/info/rfc2396 >
+
+-
+RFC 3629 “UTF-8, a transformation format of ISO 10646” , available at < https://rfc-editor.org/info/rfc3629 >
+
+-
+RFC 7231 “Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content” , available at < https://rfc-editor.org/info/rfc7231 >
+
+-
+RFC 9557 “Date and Time on the Internet: Timestamps with Additional Information” , available at < https://rfc-editor.org/info/rfc9557 >

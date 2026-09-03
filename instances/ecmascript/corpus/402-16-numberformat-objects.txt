@@ -1,0 +1,1947 @@
+# 16 NumberFormat Objects
+# джерело: https://tc39.es/ecma402/#numberformat-objects
+# отримано: 2026-09-01
+
+16 NumberFormat Objects
+
+16.1 The Intl.NumberFormat Constructor
+
+The Intl.NumberFormat constructor :
+
+- is %Intl.NumberFormat% .
+
+- is the initial value of the "NumberFormat" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+16.1.1 Intl.NumberFormat ( [ locales [ , options ] ] )
+
+When the Intl.NumberFormat function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , let newTarget be the active function object , else let newTarget be NewTarget.
+
+- Let numberFormat be ? OrdinaryCreateFromConstructor ( newTarget , "%Intl.NumberFormat.prototype%" , « [[InitializedNumberFormat]] , [[Locale]] , [[LocaleData]] , [[NumberingSystem]] , [[Style]] , [[Unit]] , [[UnitDisplay]] , [[Currency]] , [[CurrencyDisplay]] , [[CurrencySign]] , [[MinimumIntegerDigits]] , [[MinimumFractionDigits]] , [[MaximumFractionDigits]] , [[MinimumSignificantDigits]] , [[MaximumSignificantDigits]] , [[RoundingType]] , [[Notation]] , [[CompactDisplay]] , [[UseGrouping]] , [[SignDisplay]] , [[RoundingIncrement]] , [[RoundingMode]] , [[ComputedRoundingPriority]] , [[TrailingZeroDisplay]] , [[BoundFormat]] »).
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.NumberFormat% , %Intl.NumberFormat% . [[LocaleData]] , locales , options , « coerce-options »).
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set numberFormat . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Set numberFormat . [[LocaleData]] to resolvedLocale . [[LocaleData]] .
+
+- Set numberFormat . [[NumberingSystem]] to resolvedLocale . [[nu]] .
+
+- Perform ? SetNumberFormatUnitOptions ( numberFormat , options ).
+
+- Let style be numberFormat . [[Style]] .
+
+- Let notation be ? GetOption ( options , "notation" , string , « "standard" , "scientific" , "engineering" , "compact" », "standard" ).
+
+- Set numberFormat . [[Notation]] to notation .
+
+- If style is "currency" and notation is "standard" , then
+- Let currency be numberFormat . [[Currency]] .
+
+- Let cDigits be CurrencyDigits ( currency ).
+
+- Let mnfdDefault be cDigits .
+
+- Let mxfdDefault be cDigits .
+
+- Else,
+- Let mnfdDefault be 0.
+
+- If style is "percent" , then
+- Let mxfdDefault be 0.
+
+- Else,
+- Let mxfdDefault be 3.
+
+- Perform ? SetNumberFormatDigitOptions ( numberFormat , options , mnfdDefault , mxfdDefault , notation ).
+
+- Let compactDisplay be ? GetOption ( options , "compactDisplay" , string , « "short" , "long" », "short" ).
+
+- Let defaultUseGrouping be "auto" .
+
+- If notation is "compact" , then
+- Set numberFormat . [[CompactDisplay]] to compactDisplay .
+
+- Set defaultUseGrouping to "min2" .
+
+- NOTE: For historical reasons, the strings "true" and "false" are accepted and replaced with the default value.
+
+- Let useGrouping be ? GetBooleanOrStringNumberFormatOption ( options , "useGrouping" , « "min2" , "auto" , "always" , "true" , "false" », defaultUseGrouping ).
+
+- If useGrouping is "true" or useGrouping is "false" , set useGrouping to defaultUseGrouping .
+
+- If useGrouping is true , set useGrouping to "always" .
+
+- Set numberFormat . [[UseGrouping]] to useGrouping .
+
+- Let signDisplay be ? GetOption ( options , "signDisplay" , string , « "auto" , "never" , "always" , "exceptZero" , "negative" », "auto" ).
+
+- Set numberFormat . [[SignDisplay]] to signDisplay .
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Let this be the this value.
+
+- Return ? ChainNumberFormat ( numberFormat , NewTarget, this ).
+
+- Return numberFormat .
+
+Normative Optional
+
+16.1.1.1 ChainNumberFormat ( numberFormat , newTarget , this )
+
+The abstract operation ChainNumberFormat takes arguments numberFormat (an Intl.NumberFormat), newTarget (an ECMAScript language value ), and this (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- If newTarget is undefined and ? OrdinaryHasInstance ( %Intl.NumberFormat% , this ) is true , then
+- Perform ? DefinePropertyOrThrow ( this , %Intl% . [[FallbackSymbol]] , PropertyDescriptor { [[Value]] : numberFormat , [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return this .
+
+- Return numberFormat .
+
+16.1.2 SetNumberFormatDigitOptions ( intlObj , options , mnfdDefault , mxfdDefault , notation )
+
+The abstract operation SetNumberFormatDigitOptions takes arguments intlObj (an Object), options (an Object), mnfdDefault (an integer ), mxfdDefault (an integer ), and notation (a String) and returns either a normal completion containing unused or a throw completion . It populates the internal slots of intlObj that affect locale-independent number rounding (see 16.5.3 ). It performs the following steps when called:
+
+- Let mnid be ? GetNumberOption ( options , "minimumIntegerDigits" , 1, 21, 1).
+
+- Let mnfd be ? Get ( options , "minimumFractionDigits" ).
+
+- Let mxfd be ? Get ( options , "maximumFractionDigits" ).
+
+- Let mnsd be ? Get ( options , "minimumSignificantDigits" ).
+
+- Let mxsd be ? Get ( options , "maximumSignificantDigits" ).
+
+- Set intlObj . [[MinimumIntegerDigits]] to mnid .
+
+- Let roundingIncrement be ? GetNumberOption ( options , "roundingIncrement" , 1, 5000, 1).
+
+- If roundingIncrement is not in « 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000 », throw a RangeError exception.
+
+- Let roundingMode be ? GetOption ( options , "roundingMode" , string , « "ceil" , "floor" , "expand" , "trunc" , "halfCeil" , "halfFloor" , "halfExpand" , "halfTrunc" , "halfEven" », "halfExpand" ).
+
+- Let roundingPriority be ? GetOption ( options , "roundingPriority" , string , « "auto" , "morePrecision" , "lessPrecision" », "auto" ).
+
+- Let trailingZeroDisplay be ? GetOption ( options , "trailingZeroDisplay" , string , « "auto" , "stripIfInteger" », "auto" ).
+
+- NOTE: All fields required by SetNumberFormatDigitOptions have now been read from options . The remainder of this AO interprets the options and may throw exceptions.
+
+- If roundingIncrement is not 1, set mxfdDefault to mnfdDefault .
+
+- Set intlObj . [[RoundingIncrement]] to roundingIncrement .
+
+- Set intlObj . [[RoundingMode]] to roundingMode .
+
+- Set intlObj . [[TrailingZeroDisplay]] to trailingZeroDisplay .
+
+- If mnsd is undefined and mxsd is undefined , let hasSd be false . Otherwise, let hasSd be true .
+
+- If mnfd is undefined and mxfd is undefined , let hasFd be false . Otherwise, let hasFd be true .
+
+- Let needSd be true .
+
+- Let needFd be true .
+
+- If roundingPriority is "auto" , then
+- Set needSd to hasSd .
+
+- If needSd is true , or hasFd is false and notation is "compact" , then
+- Set needFd to false .
+
+- If needSd is true , then
+- If hasSd is true , then
+- Set intlObj . [[MinimumSignificantDigits]] to ? DefaultNumberOption ( mnsd , 1, 21, 1).
+
+- Set intlObj . [[MaximumSignificantDigits]] to ? DefaultNumberOption ( mxsd , intlObj . [[MinimumSignificantDigits]] , 21, 21).
+
+- Else,
+- Set intlObj . [[MinimumSignificantDigits]] to 1.
+
+- Set intlObj . [[MaximumSignificantDigits]] to 21.
+
+- If needFd is true , then
+- If hasFd is true , then
+- Set mnfd to ? DefaultNumberOption ( mnfd , 0, 100, undefined ).
+
+- Set mxfd to ? DefaultNumberOption ( mxfd , 0, 100, undefined ).
+
+- If mnfd is undefined , set mnfd to min ( mnfdDefault , mxfd ).
+
+- Else if mxfd is undefined , set mxfd to max ( mxfdDefault , mnfd ).
+
+- Else if mnfd is greater than mxfd , throw a RangeError exception.
+
+- Set intlObj . [[MinimumFractionDigits]] to mnfd .
+
+- Set intlObj . [[MaximumFractionDigits]] to mxfd .
+
+- Else,
+- Set intlObj . [[MinimumFractionDigits]] to mnfdDefault .
+
+- Set intlObj . [[MaximumFractionDigits]] to mxfdDefault .
+
+- If needSd is false and needFd is false , then
+- Set intlObj . [[MinimumFractionDigits]] to 0.
+
+- Set intlObj . [[MaximumFractionDigits]] to 0.
+
+- Set intlObj . [[MinimumSignificantDigits]] to 1.
+
+- Set intlObj . [[MaximumSignificantDigits]] to 2.
+
+- Set intlObj . [[RoundingType]] to more-precision .
+
+- Set intlObj . [[ComputedRoundingPriority]] to "morePrecision" .
+
+- Else if roundingPriority is "morePrecision" , then
+- Set intlObj . [[RoundingType]] to more-precision .
+
+- Set intlObj . [[ComputedRoundingPriority]] to "morePrecision" .
+
+- Else if roundingPriority is "lessPrecision" , then
+- Set intlObj . [[RoundingType]] to less-precision .
+
+- Set intlObj . [[ComputedRoundingPriority]] to "lessPrecision" .
+
+- Else if hasSd is true , then
+- Set intlObj . [[RoundingType]] to significant-digits .
+
+- Set intlObj . [[ComputedRoundingPriority]] to "auto" .
+
+- Else,
+- Set intlObj . [[RoundingType]] to fraction-digits .
+
+- Set intlObj . [[ComputedRoundingPriority]] to "auto" .
+
+- If roundingIncrement is not 1, then
+- If intlObj . [[RoundingType]] is not fraction-digits , throw a TypeError exception.
+
+- If intlObj . [[MaximumFractionDigits]] is not intlObj . [[MinimumFractionDigits]] , throw a RangeError exception.
+
+- Return unused .
+
+16.1.3 SetNumberFormatUnitOptions ( intlObj , options )
+
+The abstract operation SetNumberFormatUnitOptions takes arguments intlObj (an Intl.NumberFormat) and options (an Object) and returns either a normal completion containing unused or a throw completion . It resolves the user-specified options relating to units onto intlObj . It performs the following steps when called:
+
+- Let style be ? GetOption ( options , "style" , string , « "decimal" , "percent" , "currency" , "unit" », "decimal" ).
+
+- Set intlObj . [[Style]] to style .
+
+- Let currency be ? GetOption ( options , "currency" , string , empty , undefined ).
+
+- If currency is undefined , then
+- If style is "currency" , throw a TypeError exception.
+
+- Else,
+- If IsWellFormedCurrencyCode ( currency ) is false , throw a RangeError exception.
+
+- Let currencyDisplay be ? GetOption ( options , "currencyDisplay" , string , « "code" , "symbol" , "narrowSymbol" , "name" », "symbol" ).
+
+- Let currencySign be ? GetOption ( options , "currencySign" , string , « "standard" , "accounting" », "standard" ).
+
+- Let unit be ? GetOption ( options , "unit" , string , empty , undefined ).
+
+- If unit is undefined , then
+- If style is "unit" , throw a TypeError exception.
+
+- Else,
+- If IsWellFormedUnitIdentifier ( unit ) is false , throw a RangeError exception.
+
+- Let unitDisplay be ? GetOption ( options , "unitDisplay" , string , « "short" , "narrow" , "long" », "short" ).
+
+- If style is "currency" , then
+- Set intlObj . [[Currency]] to the ASCII-uppercase of currency .
+
+- Set intlObj . [[CurrencyDisplay]] to currencyDisplay .
+
+- Set intlObj . [[CurrencySign]] to currencySign .
+
+- If style is "unit" , then
+- Set intlObj . [[Unit]] to unit .
+
+- Set intlObj . [[UnitDisplay]] to unitDisplay .
+
+- Return unused .
+
+16.2 Properties of the Intl.NumberFormat Constructor
+
+The Intl.NumberFormat constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+16.2.1 Intl.NumberFormat.prototype
+
+The value of Intl.NumberFormat.prototype is %Intl.NumberFormat.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+16.2.2 Intl.NumberFormat.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.NumberFormat% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+16.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « "nu" ».
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « { [[Key]] : "nu" , [[Property]] : "numberingSystem" } ».
+
+Note 1
+Unicode Technical Standard #35 Part 1 Core, Section 3.6.1 Key and Type Definitions describes three locale extension keys that are relevant to number formatting: "cu" for currency, "cf" for currency format style, and "nu" for numbering system. Intl.NumberFormat, however, requires that the currency of a currency format is specified through the currency property in the options objects, and the currency format style of a currency format is specified through the currencySign property in the options objects.
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 and the following additional constraints:
+
+- The List that is the value of the "nu" field of any locale field of [[LocaleData]] must not include the values "native" , "traditio" , or "finance" .
+
+- [[LocaleData]] .[[< locale >]] must have a [[patterns]] field for all locale values locale . The value of this field must be a Record , which must have fields with the names of the four number format styles: "decimal" , "percent" , "currency" , and "unit" .
+
+-
+The two fields "currency" and "unit" noted above must be Records with at least one field, "fallback" .
+The "currency" may have additional fields with keys corresponding to currency codes according to 6.3 .
+Each field of "currency" must be a Record with fields corresponding to the possible currencyDisplay values: "code" , "symbol" , "narrowSymbol" , and "name" .
+Each of those fields must contain a Record with fields corresponding to the possible currencySign values: "standard" or "accounting" . The "unit" field (of [[LocaleData]] .[[< locale >]]) may have additional fields beyond the required field "fallback" with keys corresponding to core measurement unit identifiers corresponding to 6.6 .
+Each field of "unit" must be a Record with fields corresponding to the possible unitDisplay values: "narrow" , "short" , and "long" .
+
+- All of the leaf fields so far described for the patterns tree ( "decimal" , "percent" , great-grandchildren of "currency" , and grandchildren of "unit" ) must be Records with the keys "positivePattern" , "zeroPattern" , and "negativePattern" .
+
+-
+The value of the aforementioned fields (the sign-dependent pattern fields) must be string values that must contain the substring "{number}" .
+"positivePattern" must contain the substring "{plusSign}" but not "{minusSign}" ; "negativePattern" must contain the substring "{minusSign}" but not "{plusSign}" ; and "zeroPattern" must not contain either "{plusSign}" or "{minusSign}" .
+Additionally, the values within the "percent" field must also contain the substring "{percentSign}" ; the values within the "currency" field must also contain one or more of the following substrings: "{currencyCode}" , "{currencyPrefix}" , or "{currencySuffix}" ; and the values within the "unit" field must also contain one or more of the following substrings: "{unitPrefix}" or "{unitSuffix}" .
+The pattern strings, when interpreted as a sequence of UTF-16 encoded code points as described in ECMA-262 , 6.1.4 , must not contain any code points in the General Category "Number, decimal digit" as specified by the Unicode Standard.
+
+- [[LocaleData]] .[[< locale >]] must also have a [[notationSubPatterns]] field for all locale values locale . The value of this field must be a Record , which must have two fields: [[scientific]] and [[compact]] . The [[scientific]] field must be a string value containing the substrings "{number}" , "{scientificSeparator}" , and "{scientificExponent}" . The [[compact]] field must be a Record with two fields: "short" and "long" . Each of these fields must be a Record with integer keys corresponding to all discrete magnitudes the implementation supports for compact notation. Each of these fields must be a string value which may contain the substring "{number}" . Strings descended from "short" must contain the substring "{compactSymbol}" , and strings descended from "long" must contain the substring "{compactName}" .
+
+Note 2
+It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+16.3 Properties of the Intl.NumberFormat Prototype Object
+
+The Intl.NumberFormat prototype object :
+
+- is %Intl.NumberFormat.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.NumberFormat instance and does not have an [[InitializedNumberFormat]] internal slot or any of the other internal slots of Intl.NumberFormat instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+16.3.1 Intl.NumberFormat.prototype.constructor
+
+The initial value of Intl.NumberFormat.prototype.constructor is %Intl.NumberFormat% .
+
+16.3.2 Intl.NumberFormat.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let nf be the this value.
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Set nf to ? UnwrapNumberFormat ( nf ).
+
+- Perform ? RequireInternalSlot ( nf , [[InitializedNumberFormat]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 28 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of nf 's internal slot whose name is the Internal Slot value of the current row.
+
+- If value is not undefined , then
+- If there is a Conversion value in the current row, then
+- Assert : The Conversion value of the current row is number .
+
+- Set value to 𝔽 ( value ).
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 28: Resolved Options of NumberFormat Instances
+
+Internal Slot
+Property
+Conversion
+
+[[Locale]]
+"locale"
+
+[[NumberingSystem]]
+"numberingSystem"
+
+[[Style]]
+"style"
+
+[[Currency]]
+"currency"
+
+[[CurrencyDisplay]]
+"currencyDisplay"
+
+[[CurrencySign]]
+"currencySign"
+
+[[Unit]]
+"unit"
+
+[[UnitDisplay]]
+"unitDisplay"
+
+[[MinimumIntegerDigits]]
+"minimumIntegerDigits"
+number
+
+[[MinimumFractionDigits]]
+"minimumFractionDigits"
+number
+
+[[MaximumFractionDigits]]
+"maximumFractionDigits"
+number
+
+[[MinimumSignificantDigits]]
+"minimumSignificantDigits"
+number
+
+[[MaximumSignificantDigits]]
+"maximumSignificantDigits"
+number
+
+[[UseGrouping]]
+"useGrouping"
+
+[[Notation]]
+"notation"
+
+[[CompactDisplay]]
+"compactDisplay"
+
+[[SignDisplay]]
+"signDisplay"
+
+[[RoundingIncrement]]
+"roundingIncrement"
+number
+
+[[RoundingMode]]
+"roundingMode"
+
+[[ComputedRoundingPriority]]
+"roundingPriority"
+
+[[TrailingZeroDisplay]]
+"trailingZeroDisplay"
+
+16.3.3 get Intl.NumberFormat.prototype.format
+
+Intl.NumberFormat.prototype.format is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let nf be the this value.
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Set nf to ? UnwrapNumberFormat ( nf ).
+
+- Perform ? RequireInternalSlot ( nf , [[InitializedNumberFormat]] ).
+
+- If nf . [[BoundFormat]] is undefined , then
+- Let func be a new built-in function object as defined in Number Format Functions ( 16.5.2 ).
+
+- Set func . [[NumberFormat]] to nf .
+
+- Set nf . [[BoundFormat]] to func .
+
+- Return nf . [[BoundFormat]] .
+
+Note
+The returned function is bound to nf so that it can be passed directly to Array.prototype.map or other functions.
+This is considered a historical artefact, as part of a convention which is no longer followed for new features, but is preserved to maintain compatibility with existing programs.
+
+16.3.4 Intl.NumberFormat.prototype.formatRange ( start , end )
+
+When the formatRange method is called with arguments start and end , the following steps are taken:
+
+- Let nf be the this value.
+
+- Perform ? RequireInternalSlot ( nf , [[InitializedNumberFormat]] ).
+
+- If start is undefined or end is undefined , throw a TypeError exception.
+
+- Let x be ? ToIntlMathematicalValue ( start ).
+
+- Let y be ? ToIntlMathematicalValue ( end ).
+
+- Return ? FormatNumericRange ( nf , x , y ).
+
+16.3.5 Intl.NumberFormat.prototype.formatRangeToParts ( start , end )
+
+When the formatRangeToParts method is called with arguments start and end , the following steps are taken:
+
+- Let nf be the this value.
+
+- Perform ? RequireInternalSlot ( nf , [[InitializedNumberFormat]] ).
+
+- If start is undefined or end is undefined , throw a TypeError exception.
+
+- Let x be ? ToIntlMathematicalValue ( start ).
+
+- Let y be ? ToIntlMathematicalValue ( end ).
+
+- Return ? FormatNumericRangeToParts ( nf , x , y ).
+
+16.3.6 Intl.NumberFormat.prototype.formatToParts ( value )
+
+When the formatToParts method is called with an optional argument value , the following steps are taken:
+
+- Let nf be the this value.
+
+- Perform ? RequireInternalSlot ( nf , [[InitializedNumberFormat]] ).
+
+- Let x be ? ToIntlMathematicalValue ( value ).
+
+- Return FormatNumericToParts ( nf , x ).
+
+16.3.7 Intl.NumberFormat.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.NumberFormat" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+16.4 Properties of Intl.NumberFormat Instances
+
+Intl.NumberFormat instances are ordinary objects that inherit properties from %Intl.NumberFormat.prototype% .
+
+Intl.NumberFormat instances have an [[InitializedNumberFormat]] internal slot.
+
+Intl.NumberFormat instances also have several internal slots that are computed by The Intl.NumberFormat Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for formatting.
+
+- [[LocaleData]] is a Record representing the data available to the implementation for formatting. It is the value of an entry in %Intl.NumberFormat% . [[LocaleData]] associated with either the value of [[Locale]] or a prefix thereof.
+
+- [[NumberingSystem]] is a String value representing the Unicode Number System Identifier used for formatting.
+
+- [[Style]] is one of the String values "decimal" , "currency" , "percent" , or "unit" , identifying the type of quantity being measured.
+
+- [[Currency]] is a String value with the currency code identifying the currency to be used if formatting with the "currency" unit type. It is only used when [[Style]] has the value "currency" .
+
+- [[CurrencyDisplay]] is one of the String values "code" , "symbol" , "narrowSymbol" , or "name" , specifying whether to display the currency as an ISO 4217 alphabetic currency code, a localized currency symbol, or a localized currency name if formatting with the "currency" style. It is only used when [[Style]] has the value "currency" .
+
+- [[CurrencySign]] is one of the String values "standard" or "accounting" , specifying whether to render negative numbers in accounting format, often signified by parenthesis. It is only used when [[Style]] has the value "currency" and when [[SignDisplay]] is not "never" .
+
+- [[Unit]] is a core unit identifier . It is only used when [[Style]] has the value "unit" .
+
+- [[UnitDisplay]] is one of the String values "short" , "narrow" , or "long" , specifying whether to display the unit as a symbol, narrow symbol, or localized long name if formatting with the "unit" style. It is only used when [[Style]] has the value "unit" .
+
+- [[MinimumIntegerDigits]] is a non-negative integer indicating the minimum integer digits to be used. Numbers will be padded with leading zeroes if necessary.
+
+- [[MinimumFractionDigits]] and [[MaximumFractionDigits]] are non-negative integers indicating the minimum and maximum fraction digits to be used. Numbers will be rounded or padded with trailing zeroes if necessary. These properties are only used when [[RoundingType]] is fraction-digits , more-precision , or less-precision .
+
+- [[MinimumSignificantDigits]] and [[MaximumSignificantDigits]] are positive integers indicating the minimum and maximum fraction digits to be shown. If present, the formatter uses however many fraction digits are required to display the specified number of significant digits. These properties are only used when [[RoundingType]] is significant-digits , more-precision , or less-precision .
+
+- [[UseGrouping]] is a Boolean or String value indicating the conditions under which a grouping separator should be used. The positions of grouping separators, and whether to display grouping separators for a formatted number, is implementation-defined . A value "always" hints the implementation to display grouping separators if possible; "min2" , if there are at least 2 digits in a group; "auto" , if the locale prefers to use grouping separators for the formatted number. A value false disables grouping separators.
+
+- [[RoundingType]] is one of the values fraction-digits , significant-digits , more-precision , or less-precision , indicating which rounding strategy to use. If fraction-digits , formatted numbers are rounded according to [[MinimumFractionDigits]] and [[MaximumFractionDigits]] , as described above. If significant-digits , formatted numbers are rounded according to [[MinimumSignificantDigits]] and [[MaximumSignificantDigits]] as described above. If more-precision or less-precision , all four of those settings are used, with specific rules for disambiguating when to use one set versus the other. [[RoundingType]] is derived from the "roundingPriority" option.
+
+- [[ComputedRoundingPriority]] is one of the String values "auto" , "morePrecision" , or "lessPrecision" . It is only used in 16.3.2 to convert [[RoundingType]] back to a valid "roundingPriority" option.
+
+- [[Notation]] is one of the String values "standard" , "scientific" , "engineering" , or "compact" , specifying whether the formatted number should be displayed without scaling, scaled to the units place with the power of ten in scientific notation, scaled to the nearest thousand with the power of ten in scientific notation, or scaled to the nearest ILD compact decimal notation power of ten with the corresponding compact decimal notation affix.
+
+- [[CompactDisplay]] is one of "short" , "long" , or undefined , specifying whether to display compact notation affixes in short form ("5K") or long form ("5 thousand"). It is undefined if and only if [[Notation]] has a value other than "compact" .
+
+-
+[[SignDisplay]] is one of the String values "auto" , "always" , "never" , "exceptZero" , or "negative" , specifying when to include a sign (with non- "auto" options respectively corresponding with inclusion always, never, only for non-zero numbers, or only for non-zero negative numbers).
+In scientific notation, this slot affects the sign display of the mantissa but not the exponent.
+
+- [[RoundingIncrement]] is an integer that evenly divides 10, 100, 1000, or 10000 into tenths, fifths, quarters, or halves. It indicates the increment at which rounding should take place relative to the calculated rounding magnitude. For example, if [[MaximumFractionDigits]] is 2 and [[RoundingIncrement]] is 5, then formatted numbers are rounded to the nearest 0.05 ("nickel rounding").
+
+- [[RoundingMode]] is a rounding mode , one of the String values in the Identifier column of Table 29 .
+
+- [[TrailingZeroDisplay]] is one of the String values "auto" or "stripIfInteger" , indicating whether to strip trailing zeros if the formatted number is an integer (i.e., has no non-zero fraction digit).
+
+Table 29: Rounding modes in Intl.NumberFormat
+
+Identifier
+Description
+Examples: Round to 0 fraction digits
+
+-1.5
+0.4
+0.5
+0.6
+1.5
+
+"ceil"
+Toward positive infinity
+⬆️ [-1]
+⬆️ [1]
+⬆️ [1]
+⬆️ [1]
+⬆️ [2]
+
+"floor"
+Toward negative infinity
+⬇️ [-2]
+⬇️ [0]
+⬇️ [0]
+⬇️ [0]
+⬇️ [1]
+
+"expand"
+Away from zero
+⬇️ [-2]
+⬆️ [1]
+⬆️ [1]
+⬆️ [1]
+⬆️ [2]
+
+"trunc"
+Toward zero
+⬆️ [-1]
+⬇️ [0]
+⬇️ [0]
+⬇️ [0]
+⬇️ [1]
+
+"halfCeil"
+Ties toward positive infinity
+⬆️ [-1]
+⬇️ [0]
+⬆️ [1]
+⬆️ [1]
+⬆️ [2]
+
+"halfFloor"
+Ties toward negative infinity
+⬇️ [-2]
+⬇️ [0]
+⬇️ [0]
+⬆️ [1]
+⬇️ [1]
+
+"halfExpand"
+Ties away from zero
+⬇️ [-2]
+⬇️ [0]
+⬆️ [1]
+⬆️ [1]
+⬆️ [2]
+
+"halfTrunc"
+Ties toward zero
+⬆️ [-1]
+⬇️ [0]
+⬇️ [0]
+⬆️ [1]
+⬇️ [1]
+
+"halfEven"
+Ties toward an even rounding increment multiple
+⬇️ [-2]
+⬇️ [0]
+⬇️ [0]
+⬆️ [1]
+⬆️ [2]
+
+Note The examples are illustrative of the unique behaviour of each option. ⬆️ means "resolves toward positive infinity"; ⬇️ means "resolves toward negative infinity".
+
+Finally, Intl.NumberFormat instances have a [[BoundFormat]] internal slot that caches the function returned by the format accessor ( 16.3.3 ).
+
+16.5 Abstract Operations for NumberFormat Objects
+
+16.5.1 CurrencyDigits ( currency )
+
+The implementation-defined abstract operation CurrencyDigits takes argument currency (a String) and returns a non-negative integer . It performs the following steps when called:
+
+- Assert : IsWellFormedCurrencyCode ( currency ) is true .
+
+- Return a non-negative integer indicating the number of fractional digits used when formatting quantities of the currency corresponding to currency . If there is no available information on the number of digits to be used, return 2.
+
+16.5.2 Number Format Functions
+
+A Number format function is an anonymous built-in function that has a [[NumberFormat]] internal slot.
+
+When a Number format function func is called with optional argument value , the following steps are taken:
+
+- Let nf be func . [[NumberFormat]] .
+
+- Assert : nf is an Object and nf has an [[InitializedNumberFormat]] internal slot.
+
+- If value is not provided, let value be undefined .
+
+- Let x be ? ToIntlMathematicalValue ( value ).
+
+- Return FormatNumeric ( nf , x ).
+
+The "length" property of a Number format function is 1 𝔽 .
+
+16.5.3 FormatNumericToString ( intlObj , x )
+
+The abstract operation FormatNumericToString takes arguments intlObj (an Object) and x (a mathematical value or negative-zero ) and returns a Record with fields [[RoundedNumber]] (a mathematical value or negative-zero ) and [[FormattedString]] (a String). It rounds x to an Intl mathematical value according to the internal slots of intlObj . The [[RoundedNumber]] field contains the rounded result value and the [[FormattedString]] field contains a String value representation of that result formatted according to the internal slots of intlObj . It performs the following steps when called:
+
+- Assert : intlObj has [[RoundingMode]] , [[RoundingType]] , [[MinimumSignificantDigits]] , [[MaximumSignificantDigits]] , [[MinimumIntegerDigits]] , [[MinimumFractionDigits]] , [[MaximumFractionDigits]] , [[RoundingIncrement]] , and [[TrailingZeroDisplay]] internal slots.
+
+- If x is negative-zero , then
+- Let sign be negative .
+
+- Set x to 0.
+
+- Else,
+- Assert : x is a mathematical value .
+
+- If x < 0, let sign be negative ; else let sign be positive .
+
+- If sign is negative , then
+- Set x to - x .
+
+- Let unsignedRoundingMode be GetUnsignedRoundingMode ( intlObj . [[RoundingMode]] , sign ).
+
+- If intlObj . [[RoundingType]] is significant-digits , then
+- Let result be ToRawPrecision ( x , intlObj . [[MinimumSignificantDigits]] , intlObj . [[MaximumSignificantDigits]] , unsignedRoundingMode ).
+
+- Else if intlObj . [[RoundingType]] is fraction-digits , then
+- Let result be ToRawFixed ( x , intlObj . [[MinimumFractionDigits]] , intlObj . [[MaximumFractionDigits]] , intlObj . [[RoundingIncrement]] , unsignedRoundingMode ).
+
+- Else,
+- Let significantResult be ToRawPrecision ( x , intlObj . [[MinimumSignificantDigits]] , intlObj . [[MaximumSignificantDigits]] , unsignedRoundingMode ).
+
+- Let fractionResult be ToRawFixed ( x , intlObj . [[MinimumFractionDigits]] , intlObj . [[MaximumFractionDigits]] , intlObj . [[RoundingIncrement]] , unsignedRoundingMode ).
+
+- If fractionResult . [[RoundingMagnitude]] < significantResult . [[RoundingMagnitude]] , let fixedIsMorePrecise be true ; else let fixedIsMorePrecise be false .
+
+- If intlObj . [[RoundingType]] is more-precision and fixedIsMorePrecise is true , then
+- Let result be fractionResult .
+
+- Else if intlObj . [[RoundingType]] is less-precision and fixedIsMorePrecise is false , then
+- Let result be fractionResult .
+
+- Else,
+- Let result be significantResult .
+
+- Set x to result . [[RoundedNumber]] .
+
+- Let string be result . [[FormattedString]] .
+
+- If intlObj . [[TrailingZeroDisplay]] is "stripIfInteger" and x modulo 1 = 0 , then
+- Let i be StringIndexOf ( string , "." , 0).
+
+- If i is not not-found , set string to the substring of string from 0 to i .
+
+- Let int be result . [[IntegerDigitsCount]] .
+
+- Let minIntDigits be intlObj . [[MinimumIntegerDigits]] .
+
+- If int < minIntDigits , then
+- Let forwardZeros be the String consisting of minIntDigits - int occurrences of the code unit 0x0030 (DIGIT ZERO).
+
+- Set string to the string-concatenation of forwardZeros and string .
+
+- If sign is negative , then
+- If x is 0, set x to negative-zero . Otherwise, set x to - x .
+
+- Return the Record { [[RoundedNumber]] : x , [[FormattedString]] : string }.
+
+16.5.4 PartitionNumberPattern ( numberFormat , x )
+
+The abstract operation PartitionNumberPattern takes arguments numberFormat (an object initialized as a NumberFormat) and x (an Intl mathematical value ) and returns a List of Records with fields [[Type]] (a String) and [[Value]] (a String). It creates the parts representing the mathematical value of x according to the effective locale and the formatting options of numberFormat . It performs the following steps when called:
+
+- Let exponent be 0.
+
+- If x is not-a-number , then
+- Let formattedString be an ILD String value indicating the NaN value.
+
+- Else if x is positive-infinity , then
+- Let formattedString be an ILD String value indicating positive infinity.
+
+- Else if x is negative-infinity , then
+- Let formattedString be an ILD String value indicating negative infinity.
+
+- Else,
+- If x is not negative-zero , then
+- Assert : x is a mathematical value .
+
+- If numberFormat . [[Style]] is "percent" , set x be 100 × x .
+
+- Set exponent to ComputeExponent ( numberFormat , x ).
+
+- Set x to x × 10 - exponent .
+
+- Let formatNumberResult be FormatNumericToString ( numberFormat , x ).
+
+- Let formattedString be formatNumberResult . [[FormattedString]] .
+
+- Set x to formatNumberResult . [[RoundedNumber]] .
+
+- Let pattern be GetNumberFormatPattern ( numberFormat , x ).
+
+- Let result be a new empty List .
+
+- Let patternParts be PartitionPattern ( pattern ).
+
+- For each Record { [[Type]] , [[Value]] } patternPart of patternParts , do
+- Let partType be patternPart . [[Type]] .
+
+- If partType is "literal" , then
+- Append the Record { [[Type]] : "literal" , [[Value]] : patternPart . [[Value]] } to result .
+
+- Else if partType is "number" , then
+- Let notationSubParts be PartitionNotationSubPattern ( numberFormat , x , formattedString , exponent ).
+
+- Set result to the list-concatenation of result and notationSubParts .
+
+- Else if partType is "plusSign" , then
+- Let plusSignSymbol be the ILND String representing the plus sign.
+
+- Append the Record { [[Type]] : "plusSign" , [[Value]] : plusSignSymbol } to result .
+
+- Else if partType is "minusSign" , then
+- Let minusSignSymbol be the ILND String representing the minus sign.
+
+- Append the Record { [[Type]] : "minusSign" , [[Value]] : minusSignSymbol } to result .
+
+- Else if partType is "percentSign" and numberFormat . [[Style]] is "percent" , then
+- Let percentSignSymbol be the ILND String representing the percent sign.
+
+- Append the Record { [[Type]] : "percentSign" , [[Value]] : percentSignSymbol } to result .
+
+- Else if partType is "unitPrefix" and numberFormat . [[Style]] is "unit" , then
+- Let unit be numberFormat . [[Unit]] .
+
+- Let unitDisplay be numberFormat . [[UnitDisplay]] .
+
+- Let unitString be an ILD String value representing unit before x in unitDisplay form, which may depend on x in languages having different plural forms.
+
+- Append the Record { [[Type]] : "unit" , [[Value]] : unitString } to result .
+
+- Else if partType is "unitSuffix" and numberFormat . [[Style]] is "unit" , then
+- Let unit be numberFormat . [[Unit]] .
+
+- Let unitDisplay be numberFormat . [[UnitDisplay]] .
+
+- Let unitString be an ILD String value representing unit after x in unitDisplay form, which may depend on x in languages having different plural forms.
+
+- Append the Record { [[Type]] : "unit" , [[Value]] : unitString } to result .
+
+- Else if partType is "currencyCode" and numberFormat . [[Style]] is "currency" , then
+- Let currency be numberFormat . [[Currency]] .
+
+- Append the Record { [[Type]] : "currency" , [[Value]] : currency } to result .
+
+- Else if partType is "currencyPrefix" and numberFormat . [[Style]] is "currency" , then
+- Let currency be numberFormat . [[Currency]] .
+
+- Let currencyDisplay be numberFormat . [[CurrencyDisplay]] .
+
+- Let currencyString be an ILD String value representing currency before x in currencyDisplay form, which may depend on x in languages having different plural forms.
+
+- Append the Record { [[Type]] : "currency" , [[Value]] : currencyString } to result .
+
+- Else if partType is "currencySuffix" and numberFormat . [[Style]] is "currency" , then
+- Let currency be numberFormat . [[Currency]] .
+
+- Let currencyDisplay be numberFormat . [[CurrencyDisplay]] .
+
+- Let currencyString be an ILD String value representing currency after x in currencyDisplay form, which may depend on x in languages having different plural forms. If the implementation does not have such a representation of currency , use currency itself.
+
+- Append the Record { [[Type]] : "currency" , [[Value]] : currencyString } to result .
+
+- Else,
+- Let unknown be an ILND String based on x and partType .
+
+- Append the Record { [[Type]] : "unknown" , [[Value]] : unknown } to result .
+
+- Return result .
+
+16.5.5 PartitionNotationSubPattern ( numberFormat , x , formattedString , exponent )
+
+The abstract operation PartitionNotationSubPattern takes arguments numberFormat (an Intl.NumberFormat), x (an Intl mathematical value ), formattedString (a String), and exponent (an integer ) and returns a List of Records with fields [[Type]] (a String) and [[Value]] (a String).
+x is an Intl mathematical value after rounding is applied and formattedString is an intermediate formatted string.
+It creates the corresponding parts for the number and notation according to the effective locale and the formatting options of numberFormat .
+It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- If x is not-a-number , then
+- Append the Record { [[Type]] : "nan" , [[Value]] : formattedString } to result .
+
+- Else if x is positive-infinity or negative-infinity , then
+- Append the Record { [[Type]] : "infinity" , [[Value]] : formattedString } to result .
+
+- Else,
+- Let notationSubPattern be GetNotationSubPattern ( numberFormat , exponent ).
+
+- Let patternParts be PartitionPattern ( notationSubPattern ).
+
+- For each Record { [[Type]] , [[Value]] } patternPart of patternParts , do
+- Let partType be patternPart . [[Type]] .
+
+- If partType is "literal" , then
+- Append the Record { [[Type]] : "literal" , [[Value]] : patternPart . [[Value]] } to result .
+
+- Else if partType is "number" , then
+- If the numberFormat . [[NumberingSystem]] matches one of the values in the Numbering System column of Table 30 below, then
+- Let digits be a List whose elements are the code points specified in the Digits column of the matching row in Table 30 .
+
+- Assert : The length of digits is 10.
+
+- Let transliterated be the empty String.
+
+- Let length be the length of formattedString .
+
+- Let position be 0.
+
+- Repeat, while position < length ,
+- Let c be the code unit at index position within formattedString .
+
+- If 0x0030 ≤ c ≤ 0x0039, then
+- NOTE: c is an ASCII digit.
+
+- Let i be c - 0x0030.
+
+- Set c to CodePointsToString (« digits [ i ] »).
+
+- Set transliterated to the string-concatenation of transliterated and c .
+
+- Set position to position + 1.
+
+- Set formattedString to transliterated .
+
+- Else,
+- Use an implementation dependent algorithm to map formattedString to the appropriate representation of formattedString in the given numbering system.
+
+- Let decimalSepIndex be StringIndexOf ( formattedString , "." , 0).
+
+- If decimalSepIndex is not not-found and decimalSepIndex > 0, then
+- Let intDigits be the substring of formattedString from 0 to decimalSepIndex .
+
+- Let fractionDigits be the substring of formattedString from decimalSepIndex + 1.
+
+- Else,
+- Let intDigits be formattedString .
+
+- Let fractionDigits be undefined .
+
+- If the numberFormat . [[UseGrouping]] is false , then
+- Append the Record { [[Type]] : "integer" , [[Value]] : intDigits } to result .
+
+- Else,
+- Let groupSepSymbol be the ILND String representing the grouping separator.
+
+- Let groups be a List whose elements are, in left to right order, the substrings defined by ILND set of locations within intDigits , which may depend on the value of numberFormat . [[UseGrouping]] .
+
+- Assert : The number of elements in groups List is greater than 0.
+
+- Repeat, while groups List is not empty,
+- Remove the first element from groups and let intGroup be the value of that element.
+
+- Append the Record { [[Type]] : "integer" , [[Value]] : intGroup } to result .
+
+- If groups List is not empty, then
+- Append the Record { [[Type]] : "group" , [[Value]] : groupSepSymbol } to result .
+
+- If fractionDigits is not undefined , then
+- Let decimalSepSymbol be the ILND String representing the decimal separator.
+
+- Append the Record { [[Type]] : "decimal" , [[Value]] : decimalSepSymbol } to result .
+
+- Append the Record { [[Type]] : "fraction" , [[Value]] : fractionDigits } to result .
+
+- Else if partType is "compactSymbol" , then
+- Let compactSymbol be an ILD string representing exponent in short form, which may depend on x in languages having different plural forms. The implementation must be able to provide this string, or else the pattern would not have a "{compactSymbol}" placeholder.
+
+- Append the Record { [[Type]] : "compact" , [[Value]] : compactSymbol } to result .
+
+- Else if partType is "compactName" , then
+- Let compactName be an ILD string representing exponent in long form, which may depend on x in languages having different plural forms. The implementation must be able to provide this string, or else the pattern would not have a "{compactName}" placeholder.
+
+- Append the Record { [[Type]] : "compact" , [[Value]] : compactName } to result .
+
+- Else if partType is "scientificSeparator" , then
+- Let scientificSeparator be the ILND String representing the exponent separator.
+
+- Append the Record { [[Type]] : "exponentSeparator" , [[Value]] : scientificSeparator } to result .
+
+- Else if partType is "scientificExponent" , then
+- If exponent < 0, then
+- Let minusSignSymbol be the ILND String representing the minus sign.
+
+- Append the Record { [[Type]] : "exponentMinusSign" , [[Value]] : minusSignSymbol } to result .
+
+- Set exponent to - exponent .
+
+- If exponent = 0, let exponentResult be "0" ; else let exponentResult be the String consisting of the digits of the decimal representation of exponent (in order, with no leading zeroes).
+
+- Append the Record { [[Type]] : "exponentInteger" , [[Value]] : exponentResult } to result .
+
+- Else,
+- Let unknown be an ILND String based on x and partType .
+
+- Append the Record { [[Type]] : "unknown" , [[Value]] : unknown } to result .
+
+- Return result .
+
+Table 30: Numbering systems with simple digit mappings
+
+Numbering System
+Digits
+
+adlm
+U+1E950 to U+1E959
+
+ahom
+U+11730 to U+11739
+
+arab
+U+0660 to U+0669
+
+arabext
+U+06F0 to U+06F9
+
+bali
+U+1B50 to U+1B59
+
+beng
+U+09E6 to U+09EF
+
+bhks
+U+11C50 to U+11C59
+
+brah
+U+11066 to U+1106F
+
+cakm
+U+11136 to U+1113F
+
+cham
+U+AA50 to U+AA59
+
+deva
+U+0966 to U+096F
+
+diak
+U+11950 to U+11959
+
+fullwide
+U+FF10 to U+FF19
+
+gara
+U+10D40 to U+10D49
+
+gong
+U+11DA0 to U+11DA9
+
+gonm
+U+11D50 to U+11D59
+
+gujr
+U+0AE6 to U+0AEF
+
+gukh
+U+16130 to U+16139
+
+guru
+U+0A66 to U+0A6F
+
+hanidec
+U+3007, U+4E00, U+4E8C, U+4E09, U+56DB, U+4E94, U+516D, U+4E03, U+516B, U+4E5D
+
+hmng
+U+16B50 to U+16B59
+
+hmnp
+U+1E140 to U+1E149
+
+java
+U+A9D0 to U+A9D9
+
+kali
+U+A900 to U+A909
+
+kawi
+U+11F50 to U+11F59
+
+khmr
+U+17E0 to U+17E9
+
+knda
+U+0CE6 to U+0CEF
+
+krai
+U+16D70 to U+16D79
+
+lana
+U+1A80 to U+1A89
+
+lanatham
+U+1A90 to U+1A99
+
+laoo
+U+0ED0 to U+0ED9
+
+latn
+U+0030 to U+0039
+
+lepc
+U+1C40 to U+1C49
+
+limb
+U+1946 to U+194F
+
+mathbold
+U+1D7CE to U+1D7D7
+
+mathdbl
+U+1D7D8 to U+1D7E1
+
+mathmono
+U+1D7F6 to U+1D7FF
+
+mathsanb
+U+1D7EC to U+1D7F5
+
+mathsans
+U+1D7E2 to U+1D7EB
+
+mlym
+U+0D66 to U+0D6F
+
+modi
+U+11650 to U+11659
+
+mong
+U+1810 to U+1819
+
+mroo
+U+16A60 to U+16A69
+
+mtei
+U+ABF0 to U+ABF9
+
+mymr
+U+1040 to U+1049
+
+mymrepka
+U+116DA to U+116E3
+
+mymrpao
+U+116D0 to U+116D9
+
+mymrshan
+U+1090 to U+1099
+
+mymrtlng
+U+A9F0 to U+A9F9
+
+nagm
+U+1E4F0 to U+1E4F9
+
+newa
+U+11450 to U+11459
+
+nkoo
+U+07C0 to U+07C9
+
+olck
+U+1C50 to U+1C59
+
+onao
+U+1E5F1 to U+1E5FA
+
+orya
+U+0B66 to U+0B6F
+
+osma
+U+104A0 to U+104A9
+
+outlined
+U+1CCF0 to U+1CCF9
+
+rohg
+U+10D30 to U+10D39
+
+saur
+U+A8D0 to U+A8D9
+
+segment
+U+1FBF0 to U+1FBF9
+
+shrd
+U+111D0 to U+111D9
+
+sind
+U+112F0 to U+112F9
+
+sinh
+U+0DE6 to U+0DEF
+
+sora
+U+110F0 to U+110F9
+
+sund
+U+1BB0 to U+1BB9
+
+sunu
+U+11BF0 to U+11BF9
+
+takr
+U+116C0 to U+116C9
+
+talu
+U+19D0 to U+19D9
+
+tamldec
+U+0BE6 to U+0BEF
+
+telu
+U+0C66 to U+0C6F
+
+thai
+U+0E50 to U+0E59
+
+tibt
+U+0F20 to U+0F29
+
+tirh
+U+114D0 to U+114D9
+
+tnsa
+U+16AC0 to U+16AC9
+
+tols
+U+11DE0 to U+11DE9
+
+vaii
+U+A620 to U+A629
+
+wara
+U+118E0 to U+118E9
+
+wcho
+U+1E2F0 to U+1E2F9
+
+Note 1
+The computations rely on ILD and ILND String values and locations within numeric strings that depend on the effective locale of numberFormat , or upon the effective locale and numbering system of numberFormat . The ILD and ILND String values mentioned, other than those for currency names, must not contain any code points in the General Category "Number, decimal digit" as specified by the Unicode Standard.
+
+Note 2
+It is recommended that implementations use the locale provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+16.5.6 FormatNumeric ( numberFormat , x )
+
+The abstract operation FormatNumeric takes arguments numberFormat (an Intl.NumberFormat) and x (an Intl mathematical value ) and returns a String. It performs the following steps when called:
+
+- Let parts be PartitionNumberPattern ( numberFormat , x ).
+
+- Let result be the empty String.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+16.5.7 FormatNumericToParts ( numberFormat , x )
+
+The abstract operation FormatNumericToParts takes arguments numberFormat (an Intl.NumberFormat) and x (an Intl mathematical value ) and returns an Array. It performs the following steps when called:
+
+- Let parts be PartitionNumberPattern ( numberFormat , x ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Let partObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "value" , part . [[Value]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( 𝔽 ( n )), partObj ).
+
+- Set n to n + 1.
+
+- Return result .
+
+16.5.8 ToRawPrecision ( x , minPrecision , maxPrecision , unsignedRoundingMode )
+
+The abstract operation ToRawPrecision takes arguments x (a non-negative mathematical value ), minPrecision (an integer in the inclusive interval from 1 to 21), maxPrecision (an integer in the inclusive interval from 1 to 21), and unsignedRoundingMode (a specification type from the Unsigned Rounding Mode column of Table 31 ) and returns a Record with fields [[FormattedString]] (a String), [[RoundedNumber]] (a mathematical value ), [[IntegerDigitsCount]] (an integer ), and [[RoundingMagnitude]] (an integer ).
+
+It involves solving the following equation, which returns a valid mathematical value given integer inputs:
+
+ToRawPrecisionFn( n , e , p ) = n × 10 e – p +1
+where 10 p –1 ≤ n < 10 p
+
+It performs the following steps when called:
+
+- Let p be maxPrecision .
+
+- If x = 0, then
+- Let m be the String consisting of p occurrences of the code unit 0x0030 (DIGIT ZERO).
+
+- Let e be 0.
+
+- Let xFinal be 0.
+
+- Else,
+- Let n1 and e1 each be an integer and r1 a mathematical value , with r1 = ToRawPrecisionFn ( n1 , e1 , p ) , such that r1 ≤ x and r1 is maximized.
+
+- Let n2 and e2 each be an integer and r2 a mathematical value , with r2 = ToRawPrecisionFn ( n2 , e2 , p ) , such that r2 ≥ x and r2 is minimized.
+
+- Let xFinal be ApplyUnsignedRoundingMode ( x , r1 , r2 , unsignedRoundingMode ).
+
+- If xFinal is r1 , then
+- Let n be n1 .
+
+- Let e be e1 .
+
+- Else,
+- Let n be n2 .
+
+- Let e be e2 .
+
+- Let m be the String consisting of the digits of the decimal representation of n (in order, with no leading zeroes).
+
+- If e ≥ ( p - 1), then
+- Set m to the string-concatenation of m and e - p + 1 occurrences of the code unit 0x0030 (DIGIT ZERO).
+
+- Let int be e + 1.
+
+- Else if e ≥ 0, then
+- Set m to the string-concatenation of the first e + 1 code units of m , the code unit 0x002E (FULL STOP), and the remaining p - ( e + 1) code units of m .
+
+- Let int be e + 1.
+
+- Else,
+- Assert : e < 0.
+
+- Set m to the string-concatenation of "0." , -( e + 1) occurrences of the code unit 0x0030 (DIGIT ZERO), and m .
+
+- Let int be 1.
+
+- If m contains the code unit 0x002E (FULL STOP) and maxPrecision > minPrecision , then
+- Let cut be maxPrecision - minPrecision .
+
+- Repeat, while cut > 0 and the last code unit of m is 0x0030 (DIGIT ZERO),
+- Remove the last code unit from m .
+
+- Set cut to cut - 1.
+
+- If the last code unit of m is 0x002E (FULL STOP), then
+- Remove the last code unit from m .
+
+- Return the Record { [[FormattedString]] : m , [[RoundedNumber]] : xFinal , [[IntegerDigitsCount]] : int , [[RoundingMagnitude]] : e – p +1 }.
+
+16.5.9 ToRawFixed ( x , minFraction , maxFraction , roundingIncrement , unsignedRoundingMode )
+
+The abstract operation ToRawFixed takes arguments x (a non-negative mathematical value ), minFraction (an integer in the inclusive interval from 0 to 100), maxFraction (an integer in the inclusive interval from 0 to 100), roundingIncrement (an integer ), and unsignedRoundingMode (a specification type from the Unsigned Rounding Mode column of Table 31 ) and returns a Record with fields [[FormattedString]] (a String), [[RoundedNumber]] (a mathematical value ), [[IntegerDigitsCount]] (an integer ), and [[RoundingMagnitude]] (an integer ).
+
+It involves solving the following equation, which returns a valid mathematical value given integer inputs:
+
+ToRawFixedFn( n , f ) = n × 10 – f
+
+It performs the following steps when called:
+
+- Let f be maxFraction .
+
+- Let n1 be an integer and r1 a mathematical value , with r1 = ToRawFixedFn ( n1 , f ) , such that n1 modulo roundingIncrement = 0 , r1 ≤ x , and r1 is maximized.
+
+- Let n2 be an integer and r2 a mathematical value , with r2 = ToRawFixedFn ( n2 , f ) , such that n2 modulo roundingIncrement = 0 , r2 ≥ x , and r2 is minimized.
+
+- Let xFinal be ApplyUnsignedRoundingMode ( x , r1 , r2 , unsignedRoundingMode ).
+
+- If xFinal is r1 , let n be n1 . Otherwise, let n be n2 .
+
+- If n = 0, let m be "0" . Otherwise, let m be the String consisting of the digits of the decimal representation of n (in order, with no leading zeroes).
+
+- If f ≠ 0, then
+- Let k be the length of m .
+
+- If k ≤ f , then
+- Let z be the String value consisting of f + 1 - k occurrences of the code unit 0x0030 (DIGIT ZERO).
+
+- Set m to the string-concatenation of z and m .
+
+- Set k to f + 1.
+
+- Let a be the first k - f code units of m , and let b be the remaining f code units of m .
+
+- Set m to the string-concatenation of a , "." , and b .
+
+- Let int be the length of a .
+
+- Else,
+- Let int be the length of m .
+
+- Let cut be maxFraction - minFraction .
+
+- Repeat, while cut > 0 and the last code unit of m is 0x0030 (DIGIT ZERO),
+- Remove the last code unit from m .
+
+- Set cut to cut - 1.
+
+- If the last code unit of m is 0x002E (FULL STOP), then
+- Remove the last code unit from m .
+
+- Return the Record { [[FormattedString]] : m , [[RoundedNumber]] : xFinal , [[IntegerDigitsCount]] : int , [[RoundingMagnitude]] : – f }.
+
+Normative Optional
+
+16.5.10 UnwrapNumberFormat ( nf )
+
+The abstract operation UnwrapNumberFormat takes argument nf (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion .
+It returns the NumberFormat instance of its input object, which is either the value itself or a value associated with it by %Intl.NumberFormat% according to the normative optional constructor mode of 4.3 Note 1 .
+It performs the following steps when called:
+
+- If nf is not an Object , throw a TypeError exception.
+
+- If nf does not have an [[InitializedNumberFormat]] internal slot and ? OrdinaryHasInstance ( %Intl.NumberFormat% , nf ) is true , then
+- Return ? Get ( nf , %Intl% . [[FallbackSymbol]] ).
+
+- Return nf .
+
+16.5.11 GetNumberFormatPattern ( numberFormat , x )
+
+The abstract operation GetNumberFormatPattern takes arguments numberFormat (an Intl.NumberFormat) and x (an Intl mathematical value ) and returns a String.
+It considers the resolved unit-related options in the number format object along with the final scaled and rounded number being formatted (an Intl mathematical value ) and returns a pattern, a String value as described in 16.2.3 .
+It performs the following steps when called:
+
+- Let resolvedLocaleData be numberFormat . [[LocaleData]] .
+
+- Let patterns be resolvedLocaleData . [[patterns]] .
+
+- Assert : patterns is a Record (see 16.2.3 ).
+
+- Let style be numberFormat . [[Style]] .
+
+- If style is "percent" , then
+- Set patterns to patterns . [[percent]] .
+
+- Else if style is "unit" , then
+- Let unit be numberFormat . [[Unit]] .
+
+- Let unitDisplay be numberFormat . [[UnitDisplay]] .
+
+- Set patterns to patterns . [[unit]] .
+
+- If patterns doesn't have a field [[< unit >]], then
+- Set unit to "fallback" .
+
+- Set patterns to patterns .[[< unit >]].
+
+- Set patterns to patterns .[[< unitDisplay >]].
+
+- Else if style is "currency" , then
+- Let currency be numberFormat . [[Currency]] .
+
+- Let currencyDisplay be numberFormat . [[CurrencyDisplay]] .
+
+- Let currencySign be numberFormat . [[CurrencySign]] .
+
+- Set patterns to patterns . [[currency]] .
+
+- If patterns doesn't have a field [[< currency >]], then
+- Set currency to "fallback" .
+
+- Set patterns to patterns .[[< currency >]].
+
+- Set patterns to patterns .[[< currencyDisplay >]].
+
+- Set patterns to patterns .[[< currencySign >]].
+
+- Else,
+- Assert : style is "decimal" .
+
+- Set patterns to patterns . [[decimal]] .
+
+- If x is negative-infinity , then
+- Let category be negative-non-zero .
+
+- Else if x is negative-zero , then
+- Let category be negative-zero .
+
+- Else if x is not-a-number , then
+- Let category be positive-zero .
+
+- Else if x is positive-infinity , then
+- Let category be positive-non-zero .
+
+- Else,
+- Assert : x is a mathematical value .
+
+- If x < 0, then
+- Let category be negative-non-zero .
+
+- Else if x > 0, then
+- Let category be positive-non-zero .
+
+- Else,
+- Let category be positive-zero .
+
+- Let signDisplay be numberFormat . [[SignDisplay]] .
+
+- If signDisplay is "never" , then
+- Let pattern be patterns . [[zeroPattern]] .
+
+- Else if signDisplay is "auto" , then
+- If category is positive-non-zero or positive-zero , then
+- Let pattern be patterns . [[zeroPattern]] .
+
+- Else,
+- Let pattern be patterns . [[negativePattern]] .
+
+- Else if signDisplay is "always" , then
+- If category is positive-non-zero or positive-zero , then
+- Let pattern be patterns . [[positivePattern]] .
+
+- Else,
+- Let pattern be patterns . [[negativePattern]] .
+
+- Else if signDisplay is "exceptZero" , then
+- If category is positive-zero or negative-zero , then
+- Let pattern be patterns . [[zeroPattern]] .
+
+- Else if category is positive-non-zero , then
+- Let pattern be patterns . [[positivePattern]] .
+
+- Else,
+- Let pattern be patterns . [[negativePattern]] .
+
+- Else,
+- Assert : signDisplay is "negative" .
+
+- If category is negative-non-zero , then
+- Let pattern be patterns . [[negativePattern]] .
+
+- Else,
+- Let pattern be patterns . [[zeroPattern]] .
+
+- Return pattern .
+
+16.5.12 GetNotationSubPattern ( numberFormat , exponent )
+
+The abstract operation GetNotationSubPattern takes arguments numberFormat (an Intl.NumberFormat) and exponent (an integer ) and returns a String.
+It considers the resolved notation and exponent , and returns a String value for the notation sub pattern as described in 16.2.3 .
+It performs the following steps when called:
+
+- Let resolvedLocaleData be numberFormat . [[LocaleData]] .
+
+- Let notationSubPatterns be resolvedLocaleData . [[notationSubPatterns]] .
+
+- Assert : notationSubPatterns is a Record (see 16.2.3 ).
+
+- Let notation be numberFormat . [[Notation]] .
+
+- If notation is "scientific" or notation is "engineering" , then
+- Return notationSubPatterns . [[scientific]] .
+
+- Else if exponent is not 0, then
+- Assert : notation is "compact" .
+
+- Let compactDisplay be numberFormat . [[CompactDisplay]] .
+
+- Let compactPatterns be notationSubPatterns . [[compact]] .[[< compactDisplay >]].
+
+- Return compactPatterns .[[< exponent >]].
+
+- Else,
+- Return "{number}" .
+
+16.5.13 ComputeExponent ( numberFormat , x )
+
+The abstract operation ComputeExponent takes arguments numberFormat (an Intl.NumberFormat) and x (a mathematical value ) and returns an integer .
+It computes an exponent (power of ten) by which to scale x according to the number formatting settings.
+It handles cases such as 999 rounding up to 1000, requiring a different exponent.
+It performs the following steps when called:
+
+- If x = 0, then
+- Return 0.
+
+- If x < 0, then
+- Let x = - x .
+
+- Let magnitude be floor ( log10 ( x )).
+
+- Let exponent be ComputeExponentForMagnitude ( numberFormat , magnitude ).
+
+- Set x to x × 10 - exponent .
+
+- Let formatNumberResult be FormatNumericToString ( numberFormat , x ).
+
+- If formatNumberResult . [[RoundedNumber]] = 0, then
+- Return exponent .
+
+- Let newMagnitude be floor ( log10 ( formatNumberResult . [[RoundedNumber]] )).
+
+- If newMagnitude is magnitude - exponent , then
+- Return exponent .
+
+- Return ComputeExponentForMagnitude ( numberFormat , magnitude + 1).
+
+16.5.14 ComputeExponentForMagnitude ( numberFormat , magnitude )
+
+The abstract operation ComputeExponentForMagnitude takes arguments numberFormat (an Intl.NumberFormat) and magnitude (an integer ) and returns an integer .
+It computes an exponent by which to scale a number of the given magnitude (power of ten of the most significant digit) according to the locale and the desired notation (scientific, engineering, or compact).
+It performs the following steps when called:
+
+- Let notation be numberFormat . [[Notation]] .
+
+- If notation is "standard" , then
+- Return 0.
+
+- Else if notation is "scientific" , then
+- Return magnitude .
+
+- Else if notation is "engineering" , then
+- Let thousands be the greatest integer that is not greater than magnitude / 3.
+
+- Return thousands × 3.
+
+- Else,
+- Assert : notation is "compact" .
+
+- Let exponent be an ILD integer by which to scale a number of the given magnitude in compact notation for the current locale.
+
+- Return exponent .
+
+16.5.15 Runtime Semantics: StringIntlMV
+
+The syntax-directed operation StringIntlMV takes no arguments.
+
+Note
+The conversion of a StringNumericLiteral to a Number value is similar overall to the determination of the NumericValue of a NumericLiteral (see 12.9.3 ), but some of the details are different.
+
+It is defined piecewise over the following productions:
+
+StringNumericLiteral ::: StrWhiteSpace opt
+
+- Return 0.
+
+StringNumericLiteral :::
+StrWhiteSpace opt
+StrNumericLiteral
+StrWhiteSpace opt
+
+- Return StringIntlMV of StrNumericLiteral .
+
+StrNumericLiteral ::: NonDecimalIntegerLiteral
+
+- Return MV of NonDecimalIntegerLiteral .
+
+StrDecimalLiteral :::
+-
+StrUnsignedDecimalLiteral
+
+- Let a be StringIntlMV of StrUnsignedDecimalLiteral .
+
+- If a is 0, return negative-zero .
+
+- If a is positive-infinity , return negative-infinity .
+
+- Return - a .
+
+StrUnsignedDecimalLiteral ::: Infinity
+
+- Return positive-infinity .
+
+StrUnsignedDecimalLiteral :::
+DecimalDigits
+.
+DecimalDigits opt
+ExponentPart opt
+
+- Let a be MV of the first DecimalDigits .
+
+- If the second DecimalDigits is present, then
+- Let b be MV of the second DecimalDigits .
+
+- Let n be the number of code points in the second DecimalDigits .
+
+- Else,
+- Let b be 0.
+
+- Let n be 0.
+
+- If ExponentPart is present, let e be MV of ExponentPart . Otherwise, let e be 0.
+
+- Return ( a + ( b × 10 - n )) × 10 e .
+
+StrUnsignedDecimalLiteral :::
+.
+DecimalDigits
+ExponentPart opt
+
+- Let b be MV of DecimalDigits .
+
+- If ExponentPart is present, let e be MV of ExponentPart . Otherwise, let e be 0.
+
+- Let n be the number of code points in DecimalDigits .
+
+- Return b × 10 e - n .
+
+StrUnsignedDecimalLiteral :::
+DecimalDigits
+ExponentPart opt
+
+- Let a be MV of DecimalDigits .
+
+- If ExponentPart is present, let e be MV of ExponentPart . Otherwise, let e be 0.
+
+- Return a × 10 e .
+
+16.5.16 ToIntlMathematicalValue ( value )
+
+The abstract operation ToIntlMathematicalValue takes argument value (an ECMAScript language value ) and returns either a normal completion containing an Intl mathematical value or a throw completion .
+It returns value converted to an Intl mathematical value , which is a mathematical value together with positive-infinity , negative-infinity , not-a-number , and negative-zero .
+This abstract operation is similar to 7.1.3 , but a mathematical value can be returned instead of a Number or BigInt, so that exact decimal values can be represented.
+It performs the following steps when called:
+
+- Let primValue be ? ToPrimitive ( value , number ).
+
+- If primValue is a BigInt , return ℝ ( primValue ).
+
+- If primValue is a String , then
+- Let str be primValue .
+
+- Else,
+- Let x be ? ToNumber ( primValue ).
+
+- If x is -0 𝔽 , return negative-zero .
+
+- Let str be Number::toString ( x , 10).
+
+- Let text be StringToCodePoints ( str ).
+
+- Let literal be ParseText ( text , StringNumericLiteral ).
+
+- If literal is a List of errors, return not-a-number .
+
+- Let intlMV be the StringIntlMV of literal .
+
+- If intlMV is a mathematical value , then
+- Let rounded be RoundMVResult ( abs ( intlMV )).
+
+- If rounded is +∞ 𝔽 and intlMV < 0, return negative-infinity .
+
+- If rounded is +∞ 𝔽 , return positive-infinity .
+
+- If rounded is +0 𝔽 and intlMV < 0, return negative-zero .
+
+- If rounded is +0 𝔽 , return 0.
+
+- Return intlMV .
+
+16.5.17 GetUnsignedRoundingMode ( roundingMode , sign )
+
+The abstract operation GetUnsignedRoundingMode takes arguments roundingMode (a rounding mode ) and sign ( negative or positive ) and returns a specification type from the Unsigned Rounding Mode column of Table 31 . It returns the rounding mode that should be applied to the absolute value of a number to produce the same result as if roundingMode were applied to the signed value of the number (negative if sign is negative , or positive otherwise). It performs the following steps when called:
+
+- Return the specification type in the Unsigned Rounding Mode column of Table 31 for the row where the value in the Identifier column is roundingMode and the value in the Sign column is sign .
+
+Table 31: Conversion from rounding mode to unsigned rounding mode
+
+Identifier
+Sign
+Unsigned Rounding Mode
+
+"ceil"
+positive
+infinity
+
+negative
+zero
+
+"floor"
+positive
+zero
+
+negative
+infinity
+
+"expand"
+positive
+infinity
+
+negative
+infinity
+
+"trunc"
+positive
+zero
+
+negative
+zero
+
+"halfCeil"
+positive
+half-infinity
+
+negative
+half-zero
+
+"halfFloor"
+positive
+half-zero
+
+negative
+half-infinity
+
+"halfExpand"
+positive
+half-infinity
+
+negative
+half-infinity
+
+"halfTrunc"
+positive
+half-zero
+
+negative
+half-zero
+
+"halfEven"
+positive
+half-even
+
+negative
+half-even
+
+16.5.18 ApplyUnsignedRoundingMode ( x , r1 , r2 , unsignedRoundingMode )
+
+The abstract operation ApplyUnsignedRoundingMode takes arguments x (a mathematical value ), r1 (a mathematical value ), r2 (a mathematical value ), and unsignedRoundingMode (a specification type from the Unsigned Rounding Mode column of Table 31 ) and returns a mathematical value . It considers x , bracketed below by r1 and above by r2 , and returns either r1 or r2 according to unsignedRoundingMode . It performs the following steps when called:
+
+- If x is r1 , return r1 .
+
+- Assert : r1 < x < r2 .
+
+- If unsignedRoundingMode is zero , return r1 .
+
+- If unsignedRoundingMode is infinity , return r2 .
+
+- Let d1 be x – r1 .
+
+- Let d2 be r2 – x .
+
+- If d1 < d2 , return r1 .
+
+- If d2 < d1 , return r2 .
+
+- Assert : d1 is d2 .
+
+- If unsignedRoundingMode is half-zero , return r1 .
+
+- If unsignedRoundingMode is half-infinity , return r2 .
+
+- Assert : unsignedRoundingMode is half-even .
+
+- Let cardinality be ( r1 / ( r2 – r1 )) modulo 2 .
+
+- If cardinality is 0, return r1 .
+
+- Return r2 .
+
+16.5.19 PartitionNumberRangePattern ( numberFormat , x , y )
+
+The abstract operation PartitionNumberRangePattern takes arguments numberFormat (an Intl.NumberFormat), x (an Intl mathematical value ), and y (an Intl mathematical value ) and returns either a normal completion containing a List of Records with fields [[Type]] (a String), [[Value]] (a String), and [[Source]] (a String), or a throw completion . It creates the parts for a localized number range according to x , y , and the formatting options of numberFormat . It performs the following steps when called:
+
+- If x is not-a-number or y is not-a-number , throw a RangeError exception.
+
+- Let xResult be PartitionNumberPattern ( numberFormat , x ).
+
+- Let yResult be PartitionNumberPattern ( numberFormat , y ).
+
+- If FormatNumeric ( numberFormat , x ) is FormatNumeric ( numberFormat , y ), then
+- Let approximateResult be FormatApproximately ( numberFormat , xResult ).
+
+- For each element part of approximateResult , do
+- Set part . [[Source]] to "shared" .
+
+- Return approximateResult .
+
+- Let result be a new empty List .
+
+- For each element part of xResult , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Source]] : "startRange" } to result .
+
+- Let rangeSeparator be an ILND String value used to separate two numbers.
+
+- Append the Record { [[Type]] : "literal" , [[Value]] : rangeSeparator , [[Source]] : "shared" } to result .
+
+- For each element part of yResult , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Source]] : "endRange" } to result .
+
+- Return CollapseNumberRange ( numberFormat , result ).
+
+16.5.20 FormatApproximately ( numberFormat , result )
+
+The abstract operation FormatApproximately takes arguments numberFormat (an Intl.NumberFormat) and result (a List of Records with fields [[Type]] (a String) and [[Value]] (a String)) and returns a List of Records with fields [[Type]] (a String) and [[Value]] (a String). It modifies result , which must be a List of Record values as described in PartitionNumberPattern , by adding a new Record for the approximately sign, which may depend on numberFormat . It performs the following steps when called:
+
+- Let approximatelySign be an ILND String value used to signify that a number is approximate.
+
+- If approximatelySign is not empty, insert the Record { [[Type]] : "approximatelySign" , [[Value]] : approximatelySign } at an ILND index in result . For example, if numberFormat has [[Locale]] "en-US" and [[NumberingSystem]] "latn" and [[Style]] "decimal" , the new Record might be inserted before the first element of result .
+
+- Return result .
+
+16.5.21 CollapseNumberRange ( numberFormat , result )
+
+The implementation-defined abstract operation CollapseNumberRange takes arguments numberFormat (an Intl.NumberFormat) and result (a List of Records with fields [[Type]] (a String), [[Value]] (a String), and [[Source]] (a String)) and returns a List of Records with fields [[Type]] (a String), [[Value]] (a String), and [[Source]] (a String). It modifies result (which must be a List of Records as constructed within PartitionNumberRangePattern ) according to the effective locale and the formatting options of numberFormat by removing redundant information, resolving internal inconsistency, replacing characters when necessary, and inserting spacing when necessary. It then returns the resulting List . The algorithm is ILND , but must not introduce ambiguity that would cause the result of Intl.NumberFormat.prototype.formatRange ( start , end ) with arguments List « start1 , end1 » to equal the result with arguments List « start2 , end2 » if the results for those same arguments Lists would not be equal with a trivial implementation of CollapseNumberRange that always returns result unmodified.
+
+For example, an implementation may remove the Record representing a currency symbol after a range separator to convert a results List representing "$3–$5" into one representing "$3–5" .
+
+An implementation may also modify Record [[Value]] fields for grammatical correctness; for example, converting a results List representing "0.5 miles–1 mile" into one representing "0.5–1 miles" .
+
+Returning result unmodified is guaranteed to be a correct implementation of CollapseNumberRange.
+
+16.5.22 FormatNumericRange ( numberFormat , x , y )
+
+The abstract operation FormatNumericRange takes arguments numberFormat (an Intl.NumberFormat), x (an Intl mathematical value ), and y (an Intl mathematical value ) and returns either a normal completion containing a String or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionNumberRangePattern ( numberFormat , x , y ).
+
+- Let result be the empty String.
+
+- For each element part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+16.5.23 FormatNumericRangeToParts ( numberFormat , x , y )
+
+The abstract operation FormatNumericRangeToParts takes arguments numberFormat (an Intl.NumberFormat), x (an Intl mathematical value ), and y (an Intl mathematical value ) and returns either a normal completion containing an Array or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionNumberRangePattern ( numberFormat , x , y ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each element part of parts , do
+- Let partObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "value" , part . [[Value]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "source" , part . [[Source]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( 𝔽 ( n )), partObj ).
+
+- Set n to n + 1.
+
+- Return result .

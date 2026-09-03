@@ -1,0 +1,3187 @@
+# 25 Structured Data
+# джерело: https://tc39.es/ecma262/multipage/structured-data.html#sec-structured-data
+# отримано: 2026-09-01
+
+25 Structured Data
+
+25.1 ArrayBuffer Objects
+
+25.1.1 Notation
+
+The descriptions below in this section, 25.4 , and 29 use the read-modify-write modification function internal data structure.
+
+A read-modify-write modification function is a mathematical function that is represented as an Abstract Closure that takes two Lists of byte values as arguments and returns a List of byte values . These Abstract Closures satisfy all of the following properties:
+
+- They perform all their algorithm steps atomically.
+
+- Their individual algorithm steps are not observable.
+
+Note
+To aid verifying that a read-modify-write modification function's algorithm steps constitute a pure, mathematical function, the following editorial conventions are recommended:
+
+- They do not access, directly or transitively via invoked abstract operations and Abstract Closures , any language or specification values except their parameters and captured values.
+
+- They do not invoke, directly or transitively, abstract operations and Abstract Closures that return Completion Records .
+
+- They do not return Completion Records .
+
+25.1.2 Fixed-length and Resizable ArrayBuffer Objects
+
+A fixed-length ArrayBuffer is an ArrayBuffer whose byte length cannot change after creation.
+
+A resizable ArrayBuffer is an ArrayBuffer whose byte length may change after creation via calls to ArrayBuffer.prototype.resize ( newLength ) .
+
+The kind of ArrayBuffer object that is created depends on the arguments passed to ArrayBuffer ( length [ , options ] ) .
+
+25.1.3 Abstract Operations For ArrayBuffer Objects
+
+25.1.3.1 AllocateArrayBuffer ( ctor , byteLength [ , maxByteLength ] )
+
+The abstract operation AllocateArrayBuffer takes arguments ctor (a constructor ) and byteLength (a non-negative integer ) and optional argument maxByteLength (a non-negative integer or empty ) and returns either a normal completion containing an ArrayBuffer or a throw completion . It is used to create an ArrayBuffer. It performs the following steps when called:
+
+- Let slots be « [[ArrayBufferData]] , [[ArrayBufferByteLength]] , [[ArrayBufferDetachKey]] ».
+
+- If maxByteLength is present and maxByteLength is not empty , let allocatingResizableBuffer be true ; else let allocatingResizableBuffer be false .
+
+- If allocatingResizableBuffer is true , then
+- If byteLength > maxByteLength , throw a RangeError exception.
+
+- Append [[ArrayBufferMaxByteLength]] to slots .
+
+- Let obj be ? OrdinaryCreateFromConstructor ( ctor , "%ArrayBuffer.prototype%" , slots ).
+
+- Let block be ? CreateByteDataBlock ( byteLength ).
+
+- Set obj . [[ArrayBufferData]] to block .
+
+- Set obj . [[ArrayBufferByteLength]] to byteLength .
+
+- If allocatingResizableBuffer is true , then
+- If it is not possible to create a Data Block block consisting of maxByteLength bytes, throw a RangeError exception.
+
+- NOTE : Resizable ArrayBuffers are designed to be implementable with in-place growth. Implementations may throw if, for example, virtual memory cannot be reserved up front.
+
+- Set obj . [[ArrayBufferMaxByteLength]] to maxByteLength .
+
+- Return obj .
+
+25.1.3.2 ArrayBufferByteLength ( arrayBuffer , order )
+
+The abstract operation ArrayBufferByteLength takes arguments arrayBuffer (an ArrayBuffer or SharedArrayBuffer) and order ( seq-cst or unordered ) and returns a non-negative integer . It performs the following steps when called:
+
+- If IsGrowableSharedArrayBuffer ( arrayBuffer ) is true , then
+- Let bufferByteLengthBlock be arrayBuffer . [[ArrayBufferByteLengthData]] .
+
+- Let rawLength be GetRawBytesFromSharedBlock ( bufferByteLengthBlock , 0, biguint64 , true , order ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Return ℝ ( RawBytesToNumeric ( biguint64 , rawLength , isLittleEndian )).
+
+- Assert : IsDetachedBuffer ( arrayBuffer ) is false .
+
+- Return arrayBuffer . [[ArrayBufferByteLength]] .
+
+25.1.3.3 ArrayBufferCopyAndDetach ( arrayBuffer , newLength , preserveResizability )
+
+The abstract operation ArrayBufferCopyAndDetach takes arguments arrayBuffer (an ECMAScript language value ), newLength (an ECMAScript language value ), and preserveResizability ( preserve-resizability or fixed-length ) and returns either a normal completion containing an ArrayBuffer or a throw completion . It performs the following steps when called:
+
+- Perform ? RequireInternalSlot ( arrayBuffer , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( arrayBuffer ) is true , throw a TypeError exception.
+
+- If newLength is undefined , then
+- Let newByteLength be arrayBuffer . [[ArrayBufferByteLength]] .
+
+- Else,
+- Let newByteLength be ? ToIndex ( newLength ).
+
+- If IsDetachedBuffer ( arrayBuffer ) is true , throw a TypeError exception.
+
+- If preserveResizability is preserve-resizability and IsFixedLengthArrayBuffer ( arrayBuffer ) is false , then
+- Let newMaxByteLength be arrayBuffer . [[ArrayBufferMaxByteLength]] .
+
+- Else,
+- Let newMaxByteLength be empty .
+
+- If arrayBuffer . [[ArrayBufferDetachKey]] is not undefined , throw a TypeError exception.
+
+- Let newBuffer be ? AllocateArrayBuffer ( %ArrayBuffer% , newByteLength , newMaxByteLength ).
+
+- Let copyLength be min ( newByteLength , arrayBuffer . [[ArrayBufferByteLength]] ).
+
+- Let fromBlock be arrayBuffer . [[ArrayBufferData]] .
+
+- Let toBlock be newBuffer . [[ArrayBufferData]] .
+
+- Perform CopyDataBlockBytes ( toBlock , 0, fromBlock , 0, copyLength ).
+
+- NOTE : Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a realloc .
+
+- Perform ! DetachArrayBuffer ( arrayBuffer ).
+
+- Return newBuffer .
+
+25.1.3.4 IsDetachedBuffer ( arrayBuffer )
+
+The abstract operation IsDetachedBuffer takes argument arrayBuffer (an ArrayBuffer or a SharedArrayBuffer) and returns a Boolean. It performs the following steps when called:
+
+- If arrayBuffer . [[ArrayBufferData]] is null , return true .
+
+- Return false .
+
+25.1.3.5 DetachArrayBuffer ( arrayBuffer [ , key ] )
+
+The abstract operation DetachArrayBuffer takes argument arrayBuffer (an ArrayBuffer) and optional argument key (anything) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Assert : IsSharedArrayBuffer ( arrayBuffer ) is false .
+
+- If key is not present, set key to undefined .
+
+- If arrayBuffer . [[ArrayBufferDetachKey]] is not key , throw a TypeError exception.
+
+- Set arrayBuffer . [[ArrayBufferData]] to null .
+
+- Set arrayBuffer . [[ArrayBufferByteLength]] to 0.
+
+- Return unused .
+
+Note
+Detaching an ArrayBuffer instance disassociates the Data Block used as its backing store from the instance and sets the byte length of the buffer to 0.
+
+25.1.3.6 CloneArrayBuffer ( sourceBuffer , sourceByteOffset , sourceLength )
+
+The abstract operation CloneArrayBuffer takes arguments sourceBuffer (an ArrayBuffer or a SharedArrayBuffer), sourceByteOffset (a non-negative integer ), and sourceLength (a non-negative integer ) and returns either a normal completion containing an ArrayBuffer or a throw completion . It creates a new ArrayBuffer whose data is a copy of sourceBuffer 's data over the range starting at sourceByteOffset and continuing for sourceLength bytes. It performs the following steps when called:
+
+- Assert : IsDetachedBuffer ( sourceBuffer ) is false .
+
+- Let targetBuffer be ? AllocateArrayBuffer ( %ArrayBuffer% , sourceLength ).
+
+- Let sourceBlock be sourceBuffer . [[ArrayBufferData]] .
+
+- Let targetBlock be targetBuffer . [[ArrayBufferData]] .
+
+- Perform CopyDataBlockBytes ( targetBlock , 0, sourceBlock , sourceByteOffset , sourceLength ).
+
+- Return targetBuffer .
+
+25.1.3.7 GetArrayBufferMaxByteLengthOption ( options )
+
+The abstract operation GetArrayBufferMaxByteLengthOption takes argument options (an ECMAScript language value ) and returns either a normal completion containing either a non-negative integer or empty , or a throw completion . It performs the following steps when called:
+
+- If options is not an Object , return empty .
+
+- Let maxByteLength be ? Get ( options , "maxByteLength" ).
+
+- If maxByteLength is undefined , return empty .
+
+- Return ? ToIndex ( maxByteLength ).
+
+25.1.3.8 HostResizeArrayBuffer ( buffer , newByteLength )
+
+The host-defined abstract operation HostResizeArrayBuffer takes arguments buffer (an ArrayBuffer) and newByteLength (a non-negative integer ) and returns either a normal completion containing either handled or unhandled , or a throw completion . It gives the host an opportunity to perform implementation-defined resizing of buffer . If the host chooses not to handle resizing of buffer , it may return unhandled for the default behaviour.
+
+The implementation of HostResizeArrayBuffer must conform to the following requirements:
+
+- The abstract operation does not detach buffer .
+
+- If the abstract operation completes normally with handled , buffer . [[ArrayBufferByteLength]] is newByteLength .
+
+The default implementation of HostResizeArrayBuffer is to return NormalCompletion ( unhandled ).
+
+25.1.3.9 IsFixedLengthArrayBuffer ( arrayBuffer )
+
+The abstract operation IsFixedLengthArrayBuffer takes argument arrayBuffer (an ArrayBuffer or a SharedArrayBuffer) and returns a Boolean. It performs the following steps when called:
+
+- If arrayBuffer has an [[ArrayBufferMaxByteLength]] internal slot, return false .
+
+- Return true .
+
+25.1.3.10 IsUnsignedElementType ( type )
+
+The abstract operation IsUnsignedElementType takes argument type (a TypedArray element type ) and returns a Boolean. It verifies if the argument type is an unsigned TypedArray element type . It performs the following steps when called:
+
+- If type is one of uint8 , uint8clamped , uint16 , uint32 , or biguint64 , return true .
+
+- Return false .
+
+25.1.3.11 IsUnclampedIntegerElementType ( type )
+
+The abstract operation IsUnclampedIntegerElementType takes argument type (a TypedArray element type ) and returns a Boolean. It verifies if the argument type is an Integer TypedArray element type not including uint8clamped . It performs the following steps when called:
+
+- If type is one of int8 , uint8 , int16 , uint16 , int32 , or uint32 , return true .
+
+- Return false .
+
+25.1.3.12 IsBigIntElementType ( type )
+
+The abstract operation IsBigIntElementType takes argument type (a TypedArray element type ) and returns a Boolean. It verifies if the argument type is a BigInt TypedArray element type . It performs the following steps when called:
+
+- If type is either biguint64 or bigint64 , return true .
+
+- Return false .
+
+25.1.3.13 IsNoTearConfiguration ( type , order )
+
+The abstract operation IsNoTearConfiguration takes arguments type (a TypedArray element type ) and order ( seq-cst , unordered , or init ) and returns a Boolean. It performs the following steps when called:
+
+- If IsUnclampedIntegerElementType ( type ) is true , return true .
+
+- If IsBigIntElementType ( type ) is true and order is seq-cst , return true .
+
+- Return false .
+
+25.1.3.14 RawBytesToNumeric ( type , rawBytes , isLittleEndian )
+
+The abstract operation RawBytesToNumeric takes arguments type (a TypedArray element type ), rawBytes (a List of byte values ), and isLittleEndian (a Boolean) and returns a Number or a BigInt. It performs the following steps when called:
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- If isLittleEndian is false , reverse the order of the elements of rawBytes .
+
+- If type is float16 , then
+- Let value be the byte elements of rawBytes concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary16 value.
+
+- If value is a NaN, return NaN .
+
+- Return the Number value that corresponds to value .
+
+- If type is float32 , then
+- Let value be the byte elements of rawBytes concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary32 value.
+
+- If value is a NaN, return NaN .
+
+- Return the Number value that corresponds to value .
+
+- If type is float64 , then
+- Let value be the byte elements of rawBytes concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary64 value.
+
+- If value is a NaN, return NaN .
+
+- Return the Number value that corresponds to value .
+
+- If IsUnsignedElementType ( type ) is true , then
+- Let intValue be the byte elements of rawBytes concatenated and interpreted as a bit string encoding of an unsigned little-endian binary number.
+
+- Else,
+- Let intValue be the byte elements of rawBytes concatenated and interpreted as a bit string encoding of a binary little-endian two's complement number of bit length elementSize × 8.
+
+- If IsBigIntElementType ( type ) is true , return the BigInt value that corresponds to intValue .
+
+- Return the Number value that corresponds to intValue .
+
+25.1.3.15 GetRawBytesFromSharedBlock ( block , byteIndex , type , isTypedArray , order )
+
+The abstract operation GetRawBytesFromSharedBlock takes arguments block (a Shared Data Block ), byteIndex (a non-negative integer ), type (a TypedArray element type ), isTypedArray (a Boolean), and order ( seq-cst or unordered ) and returns a List of byte values . It performs the following steps when called:
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- If isTypedArray is true and IsNoTearConfiguration ( type , order ) is true , let noTear be true ; else let noTear be false .
+
+- Let rawValue be a List of length elementSize whose elements are nondeterministically chosen byte values .
+
+- NOTE : In implementations, rawValue is the result of a non-atomic or atomic read instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency.
+
+- Let readEvent be ReadSharedMemory { [[Order]] : order , [[NoTear]] : noTear , [[Block]] : block , [[ByteIndex]] : byteIndex , [[ElementSize]] : elementSize }.
+
+- Append readEvent to eventsRecord . [[EventList]] .
+
+- Append Chosen Value Record { [[Event]] : readEvent , [[ChosenValue]] : rawValue } to execution . [[ChosenValues]] .
+
+- Return rawValue .
+
+25.1.3.16 GetValueFromBuffer ( arrayBuffer , byteIndex , type , isTypedArray , order [ , isLittleEndian ] )
+
+The abstract operation GetValueFromBuffer takes arguments arrayBuffer (an ArrayBuffer or SharedArrayBuffer), byteIndex (a non-negative integer ), type (a TypedArray element type ), isTypedArray (a Boolean), and order ( seq-cst or unordered ) and optional argument isLittleEndian (a Boolean) and returns a Number or a BigInt. It performs the following steps when called:
+
+- Assert : IsDetachedBuffer ( arrayBuffer ) is false .
+
+- Assert : There are sufficient bytes in arrayBuffer starting at byteIndex to represent a value of type .
+
+- Let block be arrayBuffer . [[ArrayBufferData]] .
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- If IsSharedArrayBuffer ( arrayBuffer ) is true , then
+- Assert : block is a Shared Data Block .
+
+- Let rawValue be GetRawBytesFromSharedBlock ( block , byteIndex , type , isTypedArray , order ).
+
+- Else,
+- Let rawValue be a List whose elements are bytes from block at indices in the interval from byteIndex (inclusive) to byteIndex + elementSize (exclusive).
+
+- Assert : The number of elements in rawValue is elementSize .
+
+- If isLittleEndian is not present, then
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Set isLittleEndian to agentRecord . [[LittleEndian]] .
+
+- Return RawBytesToNumeric ( type , rawValue , isLittleEndian ).
+
+25.1.3.17 NumericToRawBytes ( type , value , isLittleEndian )
+
+The abstract operation NumericToRawBytes takes arguments type (a TypedArray element type ), value (a Number or a BigInt), and isLittleEndian (a Boolean) and returns a List of byte values . It performs the following steps when called:
+
+- If type is float16 , then
+- Let rawBytes be a List whose elements are the 2 bytes that are the result of converting value to IEEE 754-2019 binary16 format using roundTiesToEven mode. The bytes are arranged in little endian order. If value is NaN , rawBytes may be set to any implementation chosen IEEE 754-2019 binary16 format NaN encoding. An implementation must always choose the same encoding for each implementation distinguishable NaN value.
+
+- Else if type is float32 , then
+- Let rawBytes be a List whose elements are the 4 bytes that are the result of converting value to IEEE 754-2019 binary32 format using roundTiesToEven mode. The bytes are arranged in little endian order. If value is NaN , rawBytes may be set to any implementation chosen IEEE 754-2019 binary32 format NaN encoding. An implementation must always choose the same encoding for each implementation distinguishable NaN value.
+
+- Else if type is float64 , then
+- Let rawBytes be a List whose elements are the 8 bytes that are the IEEE 754-2019 binary64 format encoding of value . The bytes are arranged in little endian order. If value is NaN , rawBytes may be set to any implementation chosen IEEE 754-2019 binary64 format NaN encoding. An implementation must always choose the same encoding for each implementation distinguishable NaN value.
+
+- Else,
+- Let n be the Element Size value specified in Table 71 for Element Type type .
+
+- Let conversionOperation be the abstract operation named in the “Conversion Operation” column of Table 71 for Element Type type .
+
+- Let intValue be ℝ (! conversionOperation ( value )).
+
+- If intValue ≥ 0, then
+- Let rawBytes be a List whose elements are the n -byte binary encoding of intValue . The bytes are ordered in little endian order.
+
+- Else,
+- Let rawBytes be a List whose elements are the n -byte binary two's complement encoding of intValue . The bytes are ordered in little endian order.
+
+- If isLittleEndian is false , reverse the order of the elements of rawBytes .
+
+- Return rawBytes .
+
+25.1.3.18 SetValueInBuffer ( arrayBuffer , byteIndex , type , value , isTypedArray , order [ , isLittleEndian ] )
+
+The abstract operation SetValueInBuffer takes arguments arrayBuffer (an ArrayBuffer or SharedArrayBuffer), byteIndex (a non-negative integer ), type (a TypedArray element type ), value (a Number or a BigInt), isTypedArray (a Boolean), and order ( seq-cst , unordered , or init ) and optional argument isLittleEndian (a Boolean) and returns unused . It performs the following steps when called:
+
+- Assert : IsDetachedBuffer ( arrayBuffer ) is false .
+
+- Assert : There are sufficient bytes in arrayBuffer starting at byteIndex to represent a value of type .
+
+- Assert : value is a BigInt if IsBigIntElementType ( type ) is true ; else, value is a Number .
+
+- Let block be arrayBuffer . [[ArrayBufferData]] .
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- If isLittleEndian is not present, then
+- Set isLittleEndian to agentRecord . [[LittleEndian]] .
+
+- Let rawBytes be NumericToRawBytes ( type , value , isLittleEndian ).
+
+- If IsSharedArrayBuffer ( arrayBuffer ) is true , then
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- If isTypedArray is true and IsNoTearConfiguration ( type , order ) is true , let noTear be true ; else let noTear be false .
+
+- Append WriteSharedMemory { [[Order]] : order , [[NoTear]] : noTear , [[Block]] : block , [[ByteIndex]] : byteIndex , [[ElementSize]] : elementSize , [[Payload]] : rawBytes } to eventsRecord . [[EventList]] .
+
+- Else,
+- Store the individual bytes of rawBytes into block , starting at block [ byteIndex ].
+
+- Return unused .
+
+25.1.3.19 GetModifySetValueInBuffer ( arrayBuffer , byteIndex , type , value , op )
+
+The abstract operation GetModifySetValueInBuffer takes arguments arrayBuffer (an ArrayBuffer or a SharedArrayBuffer), byteIndex (a non-negative integer ), type (a TypedArray element type ), value (a Number or a BigInt), and op (a read-modify-write modification function ) and returns a Number or a BigInt. It performs the following steps when called:
+
+- Assert : IsDetachedBuffer ( arrayBuffer ) is false .
+
+- Assert : There are sufficient bytes in arrayBuffer starting at byteIndex to represent a value of type .
+
+- Assert : value is a BigInt if IsBigIntElementType ( type ) is true ; else, value is a Number .
+
+- Let block be arrayBuffer . [[ArrayBufferData]] .
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Let rawBytes be NumericToRawBytes ( type , value , isLittleEndian ).
+
+- If IsSharedArrayBuffer ( arrayBuffer ) is true , then
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let rawBytesRead be a List of length elementSize whose elements are nondeterministically chosen byte values .
+
+- NOTE : In implementations, rawBytesRead is the result of a load-link, of a load-exclusive, or of an operand of a read-modify-write instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency.
+
+- Let rmwEvent be ReadModifyWriteSharedMemory { [[Order]] : seq-cst , [[NoTear]] : true , [[Block]] : block , [[ByteIndex]] : byteIndex , [[ElementSize]] : elementSize , [[Payload]] : rawBytes , [[ModifyOp]] : op }.
+
+- Append rmwEvent to eventsRecord . [[EventList]] .
+
+- Append Chosen Value Record { [[Event]] : rmwEvent , [[ChosenValue]] : rawBytesRead } to execution . [[ChosenValues]] .
+
+- Else,
+- Let rawBytesRead be a List of length elementSize whose elements are the sequence of elementSize bytes starting with block [ byteIndex ].
+
+- Let rawBytesModified be op ( rawBytesRead , rawBytes ).
+
+- Store the individual bytes of rawBytesModified into block , starting at block [ byteIndex ].
+
+- Return RawBytesToNumeric ( type , rawBytesRead , isLittleEndian ).
+
+25.1.4 The ArrayBuffer Constructor
+
+The ArrayBuffer constructor :
+
+- is %ArrayBuffer% .
+
+- is the initial value of the "ArrayBuffer" property of the global object .
+
+- creates and initializes a new ArrayBuffer when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified ArrayBuffer behaviour must include a super call to the ArrayBuffer constructor to create and initialize subclass instances with the internal state necessary to support the built-in methods of ArrayBuffer.prototype .
+
+25.1.4.1 ArrayBuffer ( length [ , options ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let byteLength be ? ToIndex ( length ).
+
+- Let requestedMaxByteLength be ? GetArrayBufferMaxByteLengthOption ( options ).
+
+- Return ? AllocateArrayBuffer (NewTarget, byteLength , requestedMaxByteLength ).
+
+25.1.5 Properties of the ArrayBuffer Constructor
+
+The ArrayBuffer constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+25.1.5.1 ArrayBuffer.isView ( arg )
+
+This function performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg has a [[ViewedArrayBuffer]] internal slot, return true .
+
+- Return false .
+
+25.1.5.2 ArrayBuffer.prototype
+
+The initial value of ArrayBuffer.prototype is the ArrayBuffer prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+25.1.5.3 get ArrayBuffer [ %Symbol.species% ]
+
+ArrayBuffer[%Symbol.species%] is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "get [Symbol.species]" .
+
+Note
+ArrayBuffer.prototype.slice ( start , end ) normally uses its this value's constructor to create a derived object. However, a subclass constructor may over-ride that default behaviour for the ArrayBuffer.prototype.slice ( start , end ) method by redefining its %Symbol.species% property.
+
+25.1.6 Properties of the ArrayBuffer Prototype Object
+
+The ArrayBuffer prototype object :
+
+- is %ArrayBuffer.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have an [[ArrayBufferData]] or [[ArrayBufferByteLength]] internal slot.
+
+25.1.6.1 get ArrayBuffer.prototype.byteLength
+
+ArrayBuffer.prototype.byteLength is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- If IsDetachedBuffer ( obj ) is true , return +0 𝔽 .
+
+- Let length be obj . [[ArrayBufferByteLength]] .
+
+- Return 𝔽 ( length ).
+
+25.1.6.2 ArrayBuffer.prototype.constructor
+
+The initial value of ArrayBuffer.prototype.constructor is %ArrayBuffer% .
+
+25.1.6.3 get ArrayBuffer.prototype.detached
+
+ArrayBuffer.prototype.detached is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- Return IsDetachedBuffer ( obj ).
+
+25.1.6.4 get ArrayBuffer.prototype.maxByteLength
+
+ArrayBuffer.prototype.maxByteLength is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- If IsDetachedBuffer ( obj ) is true , return +0 𝔽 .
+
+- If IsFixedLengthArrayBuffer ( obj ) is true , then
+- Let length be obj . [[ArrayBufferByteLength]] .
+
+- Else,
+- Let length be obj . [[ArrayBufferMaxByteLength]] .
+
+- Return 𝔽 ( length ).
+
+25.1.6.5 get ArrayBuffer.prototype.resizable
+
+ArrayBuffer.prototype.resizable is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- If IsFixedLengthArrayBuffer ( obj ) is false , return true .
+
+- Return false .
+
+25.1.6.6 ArrayBuffer.prototype.resize ( newLength )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferMaxByteLength]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- Let newByteLength be ? ToIndex ( newLength ).
+
+- If IsDetachedBuffer ( obj ) is true , throw a TypeError exception.
+
+- If newByteLength > obj . [[ArrayBufferMaxByteLength]] , throw a RangeError exception.
+
+- Let hostHandled be ? HostResizeArrayBuffer ( obj , newByteLength ).
+
+- If hostHandled is handled , return undefined .
+
+- Let oldBlock be obj . [[ArrayBufferData]] .
+
+- Let newBlock be ? CreateByteDataBlock ( newByteLength ).
+
+- Let copyLength be min ( newByteLength , obj . [[ArrayBufferByteLength]] ).
+
+- Perform CopyDataBlockBytes ( newBlock , 0, oldBlock , 0, copyLength ).
+
+- NOTE : Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as in-place growth or shrinkage.
+
+- Set obj . [[ArrayBufferData]] to newBlock .
+
+- Set obj . [[ArrayBufferByteLength]] to newByteLength .
+
+- Return undefined .
+
+25.1.6.7 ArrayBuffer.prototype.slice ( start , end )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is true , throw a TypeError exception.
+
+- If IsDetachedBuffer ( obj ) is true , throw a TypeError exception.
+
+- Let length be obj . [[ArrayBufferByteLength]] .
+
+- Let first be ? ToClampedIndex ( start , length ).
+
+- If end is undefined , let final be length ; else let final be ? ToClampedIndex ( end , length ).
+
+- Let newLength be max ( final - first , 0).
+
+- Let ctor be ? SpeciesConstructor ( obj , %ArrayBuffer% ).
+
+- Let new be ? Construct ( ctor , « 𝔽 ( newLength ) »).
+
+- Perform ? RequireInternalSlot ( new , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( new ) is true , throw a TypeError exception.
+
+- If IsDetachedBuffer ( new ) is true , throw a TypeError exception.
+
+- If SameValue ( new , obj ) is true , throw a TypeError exception.
+
+- If new . [[ArrayBufferByteLength]] < newLength , throw a TypeError exception.
+
+- NOTE : Side-effects of the above steps may have detached or resized obj .
+
+- If IsDetachedBuffer ( obj ) is true , throw a TypeError exception.
+
+- Let fromBuf be obj . [[ArrayBufferData]] .
+
+- Let toBuf be new . [[ArrayBufferData]] .
+
+- Let currentLength be obj . [[ArrayBufferByteLength]] .
+
+- Let maxCount be currentLength - first .
+
+- If maxCount > 0, then
+- Let count be min ( newLength , maxCount ).
+
+- Perform CopyDataBlockBytes ( toBuf , 0, fromBuf , first , count ).
+
+- Return new .
+
+25.1.6.8 ArrayBuffer.prototype.transfer ( [ newLength ] )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Return ? ArrayBufferCopyAndDetach ( obj , newLength , preserve-resizability ).
+
+25.1.6.9 ArrayBuffer.prototype.transferToFixedLength ( [ newLength ] )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Return ? ArrayBufferCopyAndDetach ( obj , newLength , fixed-length ).
+
+25.1.6.10 ArrayBuffer.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "ArrayBuffer" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+25.1.7 Properties of ArrayBuffer Instances
+
+ArrayBuffer instances inherit properties from the ArrayBuffer prototype object . ArrayBuffer instances each have an [[ArrayBufferData]] internal slot, an [[ArrayBufferByteLength]] internal slot, and an [[ArrayBufferDetachKey]] internal slot. ArrayBuffer instances which are resizable each have an [[ArrayBufferMaxByteLength]] internal slot.
+
+ArrayBuffer instances whose [[ArrayBufferData]] is null are considered to be detached and all operators to access or modify data contained in the ArrayBuffer instance will fail.
+
+ArrayBuffer instances whose [[ArrayBufferDetachKey]] is set to a value other than undefined need to have all DetachArrayBuffer calls passing that same “detach key” as an argument, otherwise a TypeError will result. This internal slot is only ever set by certain embedding environments, not by algorithms in this specification.
+
+25.1.8 Resizable ArrayBuffer Guidelines
+
+Note 1
+The following are guidelines for ECMAScript programmers working with resizable ArrayBuffer .
+
+We recommend that programs be tested in their deployment environments where possible. The amount of available physical memory differs greatly between hardware devices. Similarly, virtual memory subsystems also differ greatly between hardware devices as well as operating systems. An application that runs without out-of-memory errors on a 64-bit desktop web browser could run out of memory on a 32-bit mobile web browser.
+
+When choosing a value for the "maxByteLength" option for resizable ArrayBuffer , we recommend that the smallest possible size for the application be chosen. We recommend that "maxByteLength" does not exceed 1,073,741,824 (2 30 bytes or 1GiB).
+
+Please note that successfully constructing a resizable ArrayBuffer for a particular maximum size does not guarantee that future resizes will succeed.
+
+Note 2
+The following are guidelines for ECMAScript implementers implementing resizable ArrayBuffer .
+
+Resizable ArrayBuffer can be implemented as copying upon resize, as in-place growth via reserving virtual memory up front, or as a combination of both for different values of the constructor 's "maxByteLength" option.
+
+If a host is multi-tenanted (i.e. it runs many ECMAScript applications simultaneously), such as a web browser, and its implementations choose to implement in-place growth by reserving virtual memory, we recommend that both 32-bit and 64-bit implementations throw for values of "maxByteLength" ≥ 1GiB to 1.5GiB. This is to reduce the likelihood a single application can exhaust the virtual memory address space and to reduce interoperability risk.
+
+If a host does not have virtual memory, such as those running on embedded devices without an MMU, or if a host only implements resizing by copying, it may accept any Number value for the "maxByteLength" option. However, we recommend a RangeError be thrown if a memory block of the requested size can never be allocated. For example, if the requested size is greater than the maximum amount of usable memory on the device.
+
+25.2 SharedArrayBuffer Objects
+
+25.2.1 Fixed-length and Growable SharedArrayBuffer Objects
+
+A fixed-length SharedArrayBuffer is a SharedArrayBuffer whose byte length cannot change after creation.
+
+A growable SharedArrayBuffer is a SharedArrayBuffer whose byte length may increase after creation via calls to SharedArrayBuffer.prototype.grow ( newLength ) .
+
+The kind of SharedArrayBuffer object that is created depends on the arguments passed to SharedArrayBuffer ( length [ , options ] ) .
+
+25.2.2 Abstract Operations for SharedArrayBuffer Objects
+
+25.2.2.1 AllocateSharedArrayBuffer ( ctor , byteLength [ , maxByteLength ] )
+
+The abstract operation AllocateSharedArrayBuffer takes arguments ctor (a constructor ) and byteLength (a non-negative integer ) and optional argument maxByteLength (a non-negative integer or empty ) and returns either a normal completion containing a SharedArrayBuffer or a throw completion . It is used to create a SharedArrayBuffer. It performs the following steps when called:
+
+- Let slots be « [[ArrayBufferData]] ».
+
+- If maxByteLength is present and maxByteLength is not empty , let allocatingGrowableBuffer be true ; else let allocatingGrowableBuffer be false .
+
+- If allocatingGrowableBuffer is true , then
+- If byteLength > maxByteLength , throw a RangeError exception.
+
+- Append [[ArrayBufferByteLengthData]] and [[ArrayBufferMaxByteLength]] to slots .
+
+- Else,
+- Append [[ArrayBufferByteLength]] to slots .
+
+- Let obj be ? OrdinaryCreateFromConstructor ( ctor , "%SharedArrayBuffer.prototype%" , slots ).
+
+- If allocatingGrowableBuffer is true , let allocLength be maxByteLength ; else let allocLength be byteLength .
+
+- Let block be ? CreateSharedByteDataBlock ( allocLength ).
+
+- Set obj . [[ArrayBufferData]] to block .
+
+- If allocatingGrowableBuffer is true , then
+- Assert : byteLength ≤ maxByteLength .
+
+- Let byteLengthBlock be ? CreateSharedByteDataBlock (8).
+
+- Perform SetValueInBuffer ( byteLengthBlock , 0, biguint64 , ℤ ( byteLength ), true , seq-cst ).
+
+- Set obj . [[ArrayBufferByteLengthData]] to byteLengthBlock .
+
+- Set obj . [[ArrayBufferMaxByteLength]] to maxByteLength .
+
+- Else,
+- Set obj . [[ArrayBufferByteLength]] to byteLength .
+
+- Return obj .
+
+25.2.2.2 IsSharedArrayBuffer ( obj )
+
+The abstract operation IsSharedArrayBuffer takes argument obj (an ArrayBuffer or a SharedArrayBuffer) and returns a Boolean. It tests whether an object is a SharedArrayBuffer. It performs the following steps when called:
+
+- If obj . [[ArrayBufferData]] is a Shared Data Block , return true .
+
+- Return false .
+
+25.2.2.3 IsGrowableSharedArrayBuffer ( obj )
+
+The abstract operation IsGrowableSharedArrayBuffer takes argument obj (an ArrayBuffer or a SharedArrayBuffer) and returns a Boolean. It tests whether an object is a growable SharedArrayBuffer . It performs the following steps when called:
+
+- If IsSharedArrayBuffer ( obj ) is true and obj has an [[ArrayBufferByteLengthData]] internal slot, return true .
+
+- Return false .
+
+25.2.2.4 HostGrowSharedArrayBuffer ( buffer , newByteLength )
+
+The host-defined abstract operation HostGrowSharedArrayBuffer takes arguments buffer (a SharedArrayBuffer) and newByteLength (a non-negative integer ) and returns either a normal completion containing either handled or unhandled , or a throw completion . It gives the host an opportunity to perform implementation-defined growing of buffer . If the host chooses not to handle growing of buffer , it may return unhandled for the default behaviour.
+
+The implementation of HostGrowSharedArrayBuffer must conform to the following requirements:
+
+- If the abstract operation does not complete normally with unhandled , and newByteLength < the current byte length of the buffer or newByteLength > buffer . [[ArrayBufferMaxByteLength]] , throw a RangeError exception.
+
+- Let agentRecord be the Agent Record of the surrounding agent . Let isLittleEndian be agentRecord . [[LittleEndian]] . If the abstract operation completes normally with handled , a WriteSharedMemory or ReadModifyWriteSharedMemory event whose [[Order]] is seq-cst , [[Payload]] is NumericToRawBytes ( biguint64 , newByteLength , isLittleEndian ), [[Block]] is buffer . [[ArrayBufferByteLengthData]] , [[ByteIndex]] is 0, and [[ElementSize]] is 8 is added to the surrounding agent 's candidate execution such that racing calls to SharedArrayBuffer.prototype.grow ( newLength ) are not “lost”, i.e. silently do nothing.
+
+Note
+The second requirement above is intentionally vague about how or when the current byte length of buffer is read. Because the byte length must be updated via an atomic read-modify-write operation on the underlying hardware, architectures that use load-link/store-conditional or load-exclusive/store-exclusive instruction pairs may wish to keep the paired instructions close in the instruction stream. As such, SharedArrayBuffer.prototype.grow ( newLength ) itself does not perform bounds checking on newByteLength before calling HostGrowSharedArrayBuffer, nor is there a requirement on when the current byte length is read.
+
+This is in contrast with HostResizeArrayBuffer , which is guaranteed that 0 ≤ newByteLength ≤ buffer . [[ArrayBufferMaxByteLength]] .
+
+The default implementation of HostGrowSharedArrayBuffer is to return NormalCompletion ( unhandled ).
+
+25.2.3 The SharedArrayBuffer Constructor
+
+The SharedArrayBuffer constructor :
+
+- is %SharedArrayBuffer% .
+
+- is the initial value of the "SharedArrayBuffer" property of the global object , if that property is present (see below).
+
+- creates and initializes a new SharedArrayBuffer when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified SharedArrayBuffer behaviour must include a super call to the SharedArrayBuffer constructor to create and initialize subclass instances with the internal state necessary to support the built-in methods of SharedArrayBuffer.prototype .
+
+Whenever a host does not provide concurrent access to SharedArrayBuffers it may omit the "SharedArrayBuffer" property of the global object .
+
+Note
+Unlike an ArrayBuffer , a SharedArrayBuffer cannot become detached, and its internal [[ArrayBufferData]] slot is never null .
+
+25.2.3.1 SharedArrayBuffer ( length [ , options ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let byteLength be ? ToIndex ( length ).
+
+- Let requestedMaxByteLength be ? GetArrayBufferMaxByteLengthOption ( options ).
+
+- Return ? AllocateSharedArrayBuffer (NewTarget, byteLength , requestedMaxByteLength ).
+
+25.2.4 Properties of the SharedArrayBuffer Constructor
+
+The SharedArrayBuffer constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+25.2.4.1 SharedArrayBuffer.prototype
+
+The initial value of SharedArrayBuffer.prototype is the SharedArrayBuffer prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+25.2.4.2 get SharedArrayBuffer [ %Symbol.species% ]
+
+SharedArrayBuffer[%Symbol.species%] is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "get [Symbol.species]" .
+
+25.2.5 Properties of the SharedArrayBuffer Prototype Object
+
+The SharedArrayBuffer prototype object :
+
+- is %SharedArrayBuffer.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have an [[ArrayBufferData]] or [[ArrayBufferByteLength]] internal slot.
+
+25.2.5.1 get SharedArrayBuffer.prototype.byteLength
+
+SharedArrayBuffer.prototype.byteLength is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is false , throw a TypeError exception.
+
+- Let length be ArrayBufferByteLength ( obj , seq-cst ).
+
+- Return 𝔽 ( length ).
+
+25.2.5.2 SharedArrayBuffer.prototype.constructor
+
+The initial value of SharedArrayBuffer.prototype.constructor is %SharedArrayBuffer% .
+
+25.2.5.3 SharedArrayBuffer.prototype.grow ( newLength )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferMaxByteLength]] ).
+
+- If IsSharedArrayBuffer ( obj ) is false , throw a TypeError exception.
+
+- Let newByteLength be ? ToIndex ( newLength ).
+
+- Let hostHandled be ? HostGrowSharedArrayBuffer ( obj , newByteLength ).
+
+- If hostHandled is handled , return undefined .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Let byteLengthBlock be obj . [[ArrayBufferByteLengthData]] .
+
+- Let currentByteLengthRawBytes be GetRawBytesFromSharedBlock ( byteLengthBlock , 0, biguint64 , true , seq-cst ).
+
+- Let newByteLengthRawBytes be NumericToRawBytes ( biguint64 , ℤ ( newByteLength ), isLittleEndian ).
+
+- Repeat,
+- NOTE : This is a compare-and-exchange loop to ensure that parallel, racing grows of the same buffer are totally ordered, are not lost, and do not silently do nothing. The loop exits if it was able to attempt to grow uncontended.
+
+- Let currentByteLength be ℝ ( RawBytesToNumeric ( biguint64 , currentByteLengthRawBytes , isLittleEndian )).
+
+- If newByteLength = currentByteLength , return undefined .
+
+- If newByteLength < currentByteLength or newByteLength > obj . [[ArrayBufferMaxByteLength]] , throw a RangeError exception.
+
+- Let byteLengthDelta be newByteLength - currentByteLength .
+
+- If it is impossible to create a new Shared Data Block value consisting of byteLengthDelta bytes, throw a RangeError exception.
+
+- NOTE : No new Shared Data Block is constructed and used here. The observable behaviour of growable SharedArrayBuffers is specified by allocating a max -sized Shared Data Block at construction time, and this step captures the requirement that implementations that run out of memory must throw a RangeError .
+
+- Let readByteLengthRawBytes be AtomicCompareExchangeInSharedBlock ( byteLengthBlock , 0, 8, currentByteLengthRawBytes , newByteLengthRawBytes ).
+
+- If ByteListEqual ( readByteLengthRawBytes , currentByteLengthRawBytes ) is true , return undefined .
+
+- Set currentByteLengthRawBytes to readByteLengthRawBytes .
+
+Note
+Spurious failures of the compare-exchange to update the length are prohibited. If the bounds checking for the new length passes and the implementation is not out of memory, a ReadModifyWriteSharedMemory event (i.e. a successful compare-exchange) is always added into the candidate execution .
+
+Parallel calls to SharedArrayBuffer.prototype.grow are totally ordered. For example, consider two racing calls: sab.grow(10) and sab.grow(20) . One of the two calls is guaranteed to win the race. The call to sab.grow(10) will never shrink sab even if sab.grow(20) happened first; in that case it will instead throw a RangeError.
+
+25.2.5.4 get SharedArrayBuffer.prototype.growable
+
+SharedArrayBuffer.prototype.growable is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is false , throw a TypeError exception.
+
+- If IsFixedLengthArrayBuffer ( obj ) is false , return true .
+
+- Return false .
+
+25.2.5.5 get SharedArrayBuffer.prototype.maxByteLength
+
+SharedArrayBuffer.prototype.maxByteLength is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is false , throw a TypeError exception.
+
+- If IsFixedLengthArrayBuffer ( obj ) is true , then
+- Let length be obj . [[ArrayBufferByteLength]] .
+
+- Else,
+- Let length be obj . [[ArrayBufferMaxByteLength]] .
+
+- Return 𝔽 ( length ).
+
+25.2.5.6 SharedArrayBuffer.prototype.slice ( start , end )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( obj ) is false , throw a TypeError exception.
+
+- Let length be ArrayBufferByteLength ( obj , seq-cst ).
+
+- Let first be ? ToClampedIndex ( start , length ).
+
+- If end is undefined , let final be length ; else let final be ? ToClampedIndex ( end , length ).
+
+- Let newLength be max ( final - first , 0).
+
+- Let ctor be ? SpeciesConstructor ( obj , %SharedArrayBuffer% ).
+
+- Let new be ? Construct ( ctor , « 𝔽 ( newLength ) »).
+
+- Perform ? RequireInternalSlot ( new , [[ArrayBufferData]] ).
+
+- If IsSharedArrayBuffer ( new ) is false , throw a TypeError exception.
+
+- If new . [[ArrayBufferData]] is obj . [[ArrayBufferData]] , throw a TypeError exception.
+
+- If ArrayBufferByteLength ( new , seq-cst ) < newLength , throw a TypeError exception.
+
+- Let fromBuf be obj . [[ArrayBufferData]] .
+
+- Let toBuf be new . [[ArrayBufferData]] .
+
+- Perform CopyDataBlockBytes ( toBuf , 0, fromBuf , first , newLength ).
+
+- Return new .
+
+25.2.5.7 SharedArrayBuffer.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "SharedArrayBuffer" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+25.2.6 Properties of SharedArrayBuffer Instances
+
+SharedArrayBuffer instances inherit properties from the SharedArrayBuffer prototype object . SharedArrayBuffer instances each have an [[ArrayBufferData]] internal slot. SharedArrayBuffer instances which are not growable each have an [[ArrayBufferByteLength]] internal slot. SharedArrayBuffer instances which are growable each have an [[ArrayBufferByteLengthData]] internal slot and an [[ArrayBufferMaxByteLength]] internal slot.
+
+Note
+SharedArrayBuffer instances, unlike ArrayBuffer instances, are never detached.
+
+25.2.7 Growable SharedArrayBuffer Guidelines
+
+Note 1
+The following are guidelines for ECMAScript programmers working with growable SharedArrayBuffer .
+
+We recommend that programs be tested in their deployment environments where possible. The amount of available physical memory differ greatly between hardware devices. Similarly, virtual memory subsystems also differ greatly between hardware devices as well as operating systems. An application that runs without out-of-memory errors on a 64-bit desktop web browser could run out of memory on a 32-bit mobile web browser.
+
+When choosing a value for the "maxByteLength" option for growable SharedArrayBuffer , we recommend that the smallest possible size for the application be chosen. We recommend that "maxByteLength" does not exceed 1073741824, or 1GiB.
+
+Please note that successfully constructing a growable SharedArrayBuffer for a particular maximum size does not guarantee that future grows will succeed.
+
+Not all loads of a growable SharedArrayBuffer 's length are synchronizing seq-cst loads. Loads of the length that are for bounds-checking of an integer-indexed property access, e.g. u8[idx] , are not synchronizing. In general, in the absence of explicit synchronization, one property access being in-bound does not imply a subsequent property access in the same agent is also in-bound. In contrast, explicit loads of the length via the length and byteLength getters on SharedArrayBuffer, %TypedArray% .prototype, and DataView.prototype are synchronizing. Loads of the length that are performed by built-in methods to check if a TypedArray is entirely out-of-bounds are also synchronizing.
+
+Note 2
+The following are guidelines for ECMAScript implementers implementing growable SharedArrayBuffer .
+
+We recommend growable SharedArrayBuffer be implemented as in-place growth via reserving virtual memory up front.
+
+Because grow operations can happen in parallel with memory accesses on a growable SharedArrayBuffer , the constraints of the memory model require that even unordered accesses do not “tear” (bits of their values will not be mixed). In practice, this means the underlying data block of a growable SharedArrayBuffer cannot be grown by being copied without stopping the world. We do not recommend stopping the world as an implementation strategy because it introduces a serialization point and is slow.
+
+Grown memory must appear zeroed from the moment of its creation, including to any racy accesses in parallel. This can be accomplished via zero-filled-on-demand virtual memory pages, or careful synchronization if manually zeroing memory.
+
+Integer-indexed property access on TypedArray views of growable SharedArrayBuffers is intended to be optimizable similarly to access on TypedArray views of non-growable SharedArrayBuffers, because integer-indexed property loads on are not synchronizing on the underlying buffer's length (see programmer guidelines above). For example, bounds checks for property accesses may still be hoisted out of loops.
+
+In practice it is difficult to implement growable SharedArrayBuffer by copying on hosts that do not have virtual memory, such as those running on embedded devices without an MMU. Memory usage behaviour of growable SharedArrayBuffers on such hosts may significantly differ from that of hosts with virtual memory. Such hosts should clearly communicate memory usage expectations to users.
+
+25.3 DataView Objects
+
+25.3.1 Abstract Operations For DataView Objects
+
+25.3.1.1 DataView With Buffer Witness Records
+
+A DataView With Buffer Witness Record is a Record used to encapsulate a DataView along with a cached byte length of the viewed buffer. It is used to help ensure there is a single ReadSharedMemory event of the byte length data block when the viewed buffer is a growable SharedArrayBuffer .
+
+DataView With Buffer Witness Records have the fields listed in Table 73 .
+
+Table 73: DataView With Buffer Witness Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Object]]
+
+a DataView
+
+The DataView object whose buffer's byte length is loaded.
+
+[[CachedBufferByteLength]]
+
+a non-negative integer or detached
+
+The byte length of the object's [[ViewedArrayBuffer]] when the Record was created.
+
+25.3.1.2 MakeDataViewWithBufferWitnessRecord ( obj , order )
+
+The abstract operation MakeDataViewWithBufferWitnessRecord takes arguments obj (a DataView) and order ( seq-cst or unordered ) and returns a DataView With Buffer Witness Record . It performs the following steps when called:
+
+- Let buffer be obj . [[ViewedArrayBuffer]] .
+
+- If IsDetachedBuffer ( buffer ) is true , then
+- Let byteLength be detached .
+
+- Else,
+- Let byteLength be ArrayBufferByteLength ( buffer , order ).
+
+- Return the DataView With Buffer Witness Record { [[Object]] : obj , [[CachedBufferByteLength]] : byteLength }.
+
+25.3.1.3 GetViewByteLength ( viewRecord )
+
+The abstract operation GetViewByteLength takes argument viewRecord (a DataView With Buffer Witness Record ) and returns a non-negative integer . It performs the following steps when called:
+
+- Assert : IsViewOutOfBounds ( viewRecord ) is false .
+
+- Let view be viewRecord . [[Object]] .
+
+- If view . [[ByteLength]] is not auto , return view . [[ByteLength]] .
+
+- Assert : IsFixedLengthArrayBuffer ( view . [[ViewedArrayBuffer]] ) is false .
+
+- Let byteOffset be view . [[ByteOffset]] .
+
+- Let byteLength be viewRecord . [[CachedBufferByteLength]] .
+
+- Assert : byteLength is not detached .
+
+- Return byteLength - byteOffset .
+
+25.3.1.4 IsViewOutOfBounds ( viewRecord )
+
+The abstract operation IsViewOutOfBounds takes argument viewRecord (a DataView With Buffer Witness Record ) and returns a Boolean. It performs the following steps when called:
+
+- Let view be viewRecord . [[Object]] .
+
+- Let bufferByteLength be viewRecord . [[CachedBufferByteLength]] .
+
+- If IsDetachedBuffer ( view . [[ViewedArrayBuffer]] ) is true , then
+- Assert : bufferByteLength is detached .
+
+- Return true .
+
+- Assert : bufferByteLength is a non-negative integer .
+
+- Let byteOffsetStart be view . [[ByteOffset]] .
+
+- If view . [[ByteLength]] is auto , then
+- Let byteOffsetEnd be bufferByteLength .
+
+- Else,
+- Let byteOffsetEnd be byteOffsetStart + view . [[ByteLength]] .
+
+- NOTE : A 0-length DataView whose [[ByteOffset]] is bufferByteLength is not considered out-of-bounds.
+
+- If byteOffsetStart > bufferByteLength or byteOffsetEnd > bufferByteLength , return true .
+
+- Return false .
+
+25.3.1.5 GetViewValue ( view , requestIndex , isLittleEndian , type )
+
+The abstract operation GetViewValue takes arguments view (an ECMAScript language value ), requestIndex (an ECMAScript language value ), isLittleEndian (an ECMAScript language value ), and type (a TypedArray element type ) and returns either a normal completion containing either a Number or a BigInt, or a throw completion . It is used by functions on DataView instances to retrieve values from the view's buffer. It performs the following steps when called:
+
+- Perform ? RequireInternalSlot ( view , [[DataView]] ).
+
+- Assert : view has a [[ViewedArrayBuffer]] internal slot.
+
+- Let getIndex be ? ToIndex ( requestIndex ).
+
+- Set isLittleEndian to ToBoolean ( isLittleEndian ).
+
+- Let viewOffset be view . [[ByteOffset]] .
+
+- Let viewRecord be MakeDataViewWithBufferWitnessRecord ( view , unordered ).
+
+- NOTE : Bounds checking is not a synchronizing operation when view 's backing buffer is a growable SharedArrayBuffer .
+
+- If IsViewOutOfBounds ( viewRecord ) is true , throw a TypeError exception.
+
+- Let viewSize be GetViewByteLength ( viewRecord ).
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- If getIndex + elementSize > viewSize , throw a RangeError exception.
+
+- Let bufferIndex be getIndex + viewOffset .
+
+- Return GetValueFromBuffer ( view . [[ViewedArrayBuffer]] , bufferIndex , type , false , unordered , isLittleEndian ).
+
+25.3.1.6 SetViewValue ( view , requestIndex , isLittleEndian , type , value )
+
+The abstract operation SetViewValue takes arguments view (an ECMAScript language value ), requestIndex (an ECMAScript language value ), isLittleEndian (an ECMAScript language value ), type (a TypedArray element type ), and value (an ECMAScript language value ) and returns either a normal completion containing undefined or a throw completion . It is used by functions on DataView instances to store values into the view's buffer. It performs the following steps when called:
+
+- Perform ? RequireInternalSlot ( view , [[DataView]] ).
+
+- Assert : view has a [[ViewedArrayBuffer]] internal slot.
+
+- Let getIndex be ? ToIndex ( requestIndex ).
+
+- If IsBigIntElementType ( type ) is true , let number be ? ToBigInt ( value ).
+
+- Else, let number be ? ToNumber ( value ).
+
+- Set isLittleEndian to ToBoolean ( isLittleEndian ).
+
+- Let viewOffset be view . [[ByteOffset]] .
+
+- Let viewRecord be MakeDataViewWithBufferWitnessRecord ( view , unordered ).
+
+- NOTE : Bounds checking is not a synchronizing operation when view 's backing buffer is a growable SharedArrayBuffer .
+
+- If IsViewOutOfBounds ( viewRecord ) is true , throw a TypeError exception.
+
+- Let viewSize be GetViewByteLength ( viewRecord ).
+
+- Let elementSize be the Element Size value specified in Table 71 for Element Type type .
+
+- If getIndex + elementSize > viewSize , throw a RangeError exception.
+
+- Let bufferIndex be getIndex + viewOffset .
+
+- Perform SetValueInBuffer ( view . [[ViewedArrayBuffer]] , bufferIndex , type , number , false , unordered , isLittleEndian ).
+
+- Return undefined .
+
+25.3.2 The DataView Constructor
+
+The DataView constructor :
+
+- is %DataView% .
+
+- is the initial value of the "DataView" property of the global object .
+
+- creates and initializes a new DataView when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified DataView behaviour must include a super call to the DataView constructor to create and initialize subclass instances with the internal state necessary to support the built-in methods of DataView.prototype .
+
+25.3.2.1 DataView ( buffer [ , byteOffset [ , byteLength ] ] )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Perform ? RequireInternalSlot ( buffer , [[ArrayBufferData]] ).
+
+- Let offset be ? ToIndex ( byteOffset ).
+
+- If IsDetachedBuffer ( buffer ) is true , throw a TypeError exception.
+
+- Let bufferByteLength be ArrayBufferByteLength ( buffer , seq-cst ).
+
+- If offset > bufferByteLength , throw a RangeError exception.
+
+- Let bufferIsFixedLength be IsFixedLengthArrayBuffer ( buffer ).
+
+- If byteLength is undefined , then
+- If bufferIsFixedLength is true , then
+- Let viewByteLength be bufferByteLength - offset .
+
+- Else,
+- Let viewByteLength be auto .
+
+- Else,
+- Let viewByteLength be ? ToIndex ( byteLength ).
+
+- If offset + viewByteLength > bufferByteLength , throw a RangeError exception.
+
+- Let obj be ? OrdinaryCreateFromConstructor (NewTarget, "%DataView.prototype%" , « [[DataView]] , [[ViewedArrayBuffer]] , [[ByteLength]] , [[ByteOffset]] »).
+
+- If IsDetachedBuffer ( buffer ) is true , throw a TypeError exception.
+
+- Set bufferByteLength to ArrayBufferByteLength ( buffer , seq-cst ).
+
+- If offset > bufferByteLength , throw a RangeError exception.
+
+- If byteLength is not undefined , then
+- If offset + viewByteLength > bufferByteLength , throw a RangeError exception.
+
+- Set obj . [[ViewedArrayBuffer]] to buffer .
+
+- Set obj . [[ByteLength]] to viewByteLength .
+
+- Set obj . [[ByteOffset]] to offset .
+
+- Return obj .
+
+25.3.3 Properties of the DataView Constructor
+
+The DataView constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+25.3.3.1 DataView.prototype
+
+The initial value of DataView.prototype is the DataView prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+25.3.4 Properties of the DataView Prototype Object
+
+The DataView prototype object :
+
+- is %DataView.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have a [[DataView]] , [[ViewedArrayBuffer]] , [[ByteLength]] , or [[ByteOffset]] internal slot.
+
+25.3.4.1 get DataView.prototype.buffer
+
+DataView.prototype.buffer is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[DataView]] ).
+
+- Assert : obj has a [[ViewedArrayBuffer]] internal slot.
+
+- Let buffer be obj . [[ViewedArrayBuffer]] .
+
+- Return buffer .
+
+25.3.4.2 get DataView.prototype.byteLength
+
+DataView.prototype.byteLength is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[DataView]] ).
+
+- Assert : obj has a [[ViewedArrayBuffer]] internal slot.
+
+- Let viewRecord be MakeDataViewWithBufferWitnessRecord ( obj , seq-cst ).
+
+- If IsViewOutOfBounds ( viewRecord ) is true , throw a TypeError exception.
+
+- Let size be GetViewByteLength ( viewRecord ).
+
+- Return 𝔽 ( size ).
+
+25.3.4.3 get DataView.prototype.byteOffset
+
+DataView.prototype.byteOffset is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let obj be the this value.
+
+- Perform ? RequireInternalSlot ( obj , [[DataView]] ).
+
+- Assert : obj has a [[ViewedArrayBuffer]] internal slot.
+
+- Let viewRecord be MakeDataViewWithBufferWitnessRecord ( obj , seq-cst ).
+
+- If IsViewOutOfBounds ( viewRecord ) is true , throw a TypeError exception.
+
+- Let offset be obj . [[ByteOffset]] .
+
+- Return 𝔽 ( offset ).
+
+25.3.4.4 DataView.prototype.constructor
+
+The initial value of DataView.prototype.constructor is %DataView% .
+
+25.3.4.5 DataView.prototype.getBigInt64 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , bigint64 ).
+
+25.3.4.6 DataView.prototype.getBigUint64 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , biguint64 ).
+
+25.3.4.7 DataView.prototype.getFloat16 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , float16 ).
+
+25.3.4.8 DataView.prototype.getFloat32 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , float32 ).
+
+25.3.4.9 DataView.prototype.getFloat64 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , float64 ).
+
+25.3.4.10 DataView.prototype.getInt8 ( byteOffset )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? GetViewValue ( view , byteOffset , true , int8 ).
+
+25.3.4.11 DataView.prototype.getInt16 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , int16 ).
+
+25.3.4.12 DataView.prototype.getInt32 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , int32 ).
+
+25.3.4.13 DataView.prototype.getUint8 ( byteOffset )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? GetViewValue ( view , byteOffset , true , uint8 ).
+
+25.3.4.14 DataView.prototype.getUint16 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , uint16 ).
+
+25.3.4.15 DataView.prototype.getUint32 ( byteOffset [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? GetViewValue ( view , byteOffset , littleEndian , uint32 ).
+
+25.3.4.16 DataView.prototype.setBigInt64 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , bigint64 , value ).
+
+25.3.4.17 DataView.prototype.setBigUint64 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , biguint64 , value ).
+
+25.3.4.18 DataView.prototype.setFloat16 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , float16 , value ).
+
+25.3.4.19 DataView.prototype.setFloat32 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , float32 , value ).
+
+25.3.4.20 DataView.prototype.setFloat64 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , float64 , value ).
+
+25.3.4.21 DataView.prototype.setInt8 ( byteOffset , value )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? SetViewValue ( view , byteOffset , true , int8 , value ).
+
+25.3.4.22 DataView.prototype.setInt16 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , int16 , value ).
+
+25.3.4.23 DataView.prototype.setInt32 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , int32 , value ).
+
+25.3.4.24 DataView.prototype.setUint8 ( byteOffset , value )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- Return ? SetViewValue ( view , byteOffset , true , uint8 , value ).
+
+25.3.4.25 DataView.prototype.setUint16 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , uint16 , value ).
+
+25.3.4.26 DataView.prototype.setUint32 ( byteOffset , value [ , littleEndian ] )
+
+This method performs the following steps when called:
+
+- Let view be the this value.
+
+- If littleEndian is not present, set littleEndian to false .
+
+- Return ? SetViewValue ( view , byteOffset , littleEndian , uint32 , value ).
+
+25.3.4.27 DataView.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "DataView" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+25.3.5 Properties of DataView Instances
+
+DataView instances are ordinary objects that inherit properties from the DataView prototype object . DataView instances each have [[DataView]] , [[ViewedArrayBuffer]] , [[ByteLength]] , and [[ByteOffset]] internal slots.
+
+Note
+The value of the [[DataView]] internal slot is not used within this specification. The simple presence of that internal slot is used within the specification to identify objects created using the DataView constructor .
+
+25.4 The Atomics Object
+
+The Atomics object:
+
+- is %Atomics% .
+
+- is the initial value of the "Atomics" property of the global object .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- does not have a [[Call]] internal method; it cannot be invoked as a function.
+
+The Atomics object provides functions that operate indivisibly (atomically) on shared memory array cells as well as functions that let agents wait for and dispatch primitive events. When used with discipline, the Atomics functions allow multi- agent programs that communicate through shared memory to execute in a well-understood order even on parallel CPUs. The rules that govern shared-memory communication are provided by the memory model , defined below.
+
+Note
+For informative guidelines for programming and implementing shared memory in ECMAScript, please see the notes at the end of the memory model section.
+
+25.4.1 Waiter Record
+
+A Waiter Record is a Record used to denote a particular call to Atomics.wait or Atomics.waitAsync .
+
+A Waiter Record has fields listed in Table 74 .
+
+Table 74: Waiter Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[AgentSignifier]]
+
+an agent signifier
+
+The agent that called Atomics.wait or Atomics.waitAsync .
+
+[[PromiseCapability]]
+
+a PromiseCapability Record or blocking
+
+If denoting a call to Atomics.waitAsync , the resulting promise, otherwise blocking .
+
+[[TimeoutTime]]
+
+a non-negative extended mathematical value
+
+The earliest time by which timeout may be triggered; computed using time values .
+
+[[Result]]
+
+"ok" or "timed-out"
+
+The return value of the call.
+
+25.4.2 WaiterList Records
+
+A WaiterList Record is used to explain waiting and notification of agents via Atomics.wait , Atomics.waitAsync , and Atomics.notify .
+
+A WaiterList Record has fields listed in Table 75 .
+
+Table 75: WaiterList Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Waiters]]
+
+a List of Waiter Records
+
+The calls to Atomics.wait or Atomics.waitAsync that are waiting on the location with which this WaiterList is associated.
+
+[[MostRecentLeaveEvent]]
+
+a Synchronize event or empty
+
+The event of the most recent leaving of its critical section , or empty if its critical section has never been entered.
+
+There can be multiple Waiter Records in a WaiterList with the same agent signifier .
+
+The agent cluster has a store of WaiterList Records; the store is indexed by ( block , i ), where block is a Shared Data Block and i a byte offset into the memory of block . WaiterList Records are agent -independent: a lookup in the store of WaiterList Records by ( block , i ) will result in the same WaiterList Record in any agent in the agent cluster .
+
+Each WaiterList Record has a critical section that controls exclusive access to that WaiterList Record during evaluation. Only a single agent may enter a WaiterList Record's critical section at one time. Entering and leaving a WaiterList Record's critical section is controlled by the abstract operations EnterCriticalSection and LeaveCriticalSection . Operations on a WaiterList Record—adding and removing waiting agents , traversing the list of agents , suspending and notifying agents on the list, setting and retrieving the Synchronize event —may only be performed by agents that have entered the WaiterList Record's critical section.
+
+25.4.3 Abstract Operations for Atomics
+
+25.4.3.1 ValidateIntegerTypedArray ( ta , waitable )
+
+The abstract operation ValidateIntegerTypedArray takes arguments ta (an ECMAScript language value ) and waitable (a Boolean) and returns either a normal completion containing a TypedArray With Buffer Witness Record , or a throw completion . It is used to constrain the TypedArrays that can be used with %Atomics% functions, particularly those that can guarantee atomic interactions with shared memory. It performs the following steps when called:
+
+- NOTE : Bounds checking is not a synchronizing operation when ta 's backing buffer is a growable SharedArrayBuffer .
+
+- Let taRecord be ? ValidateTypedArray ( ta , unordered ).
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- If IsNoTearConfiguration ( elementType , seq-cst ) is false , throw a TypeError exception.
+
+- If waitable is true and elementType is neither int32 nor bigint64 , throw a TypeError exception.
+
+- Return taRecord .
+
+25.4.3.2 ValidateAtomicAccess ( taRecord , requestIndex )
+
+The abstract operation ValidateAtomicAccess takes arguments taRecord (a TypedArray With Buffer Witness Record ) and requestIndex (an ECMAScript language value ) and returns either a normal completion containing a non-negative integer or a throw completion . It performs the following steps when called:
+
+- Let length be TypedArrayLength ( taRecord ).
+
+- Let accessIndex be ? ToIndex ( requestIndex ).
+
+- Assert : accessIndex ≥ 0.
+
+- If accessIndex ≥ length , throw a RangeError exception.
+
+- Let ta be taRecord . [[Object]] .
+
+- Let elementSize be TypedArrayElementSize ( ta ).
+
+- Let offset be ta . [[ByteOffset]] .
+
+- Return ( accessIndex × elementSize ) + offset .
+
+25.4.3.3 ValidateAtomicAccessOnIntegerTypedArray ( ta , requestIndex )
+
+The abstract operation ValidateAtomicAccessOnIntegerTypedArray takes arguments ta (an ECMAScript language value ) and requestIndex (an ECMAScript language value ) and returns either a normal completion containing a non-negative integer or a throw completion . It performs the following steps when called:
+
+- Let taRecord be ? ValidateIntegerTypedArray ( ta , false ).
+
+- Return ? ValidateAtomicAccess ( taRecord , requestIndex ).
+
+25.4.3.4 RevalidateAtomicAccess ( ta , byteIndexInBuffer )
+
+The abstract operation RevalidateAtomicAccess takes arguments ta (a TypedArray ) and byteIndexInBuffer (a non-negative integer ) and returns either a normal completion containing unused or a throw completion . This operation revalidates the index within the backing buffer for atomic operations after all argument coercions are performed in Atomics methods, as argument coercions can have arbitrary side effects, which could cause the buffer to become out of bounds. This operation does not throw when ta 's backing buffer is a SharedArrayBuffer. It performs the following steps when called:
+
+- NOTE : Bounds checking is not a synchronizing operation when ta 's backing buffer is a growable SharedArrayBuffer .
+
+- Let taRecord be ? ValidateTypedArrayBounds ( ta , unordered ).
+
+- Assert : byteIndexInBuffer ≥ ta . [[ByteOffset]] .
+
+- If byteIndexInBuffer ≥ taRecord . [[CachedBufferByteLength]] , throw a RangeError exception.
+
+- Return unused .
+
+25.4.3.5 GetWaiterList ( block , i )
+
+The abstract operation GetWaiterList takes arguments block (a Shared Data Block ) and i (a non-negative integer that is evenly divisible by 4) and returns a WaiterList Record . It performs the following steps when called:
+
+- Assert : i and i + 3 are valid byte offsets within the memory of block .
+
+- Return the WaiterList Record that is referenced by the pair ( block , i ).
+
+25.4.3.6 EnterCriticalSection ( waiterList )
+
+The abstract operation EnterCriticalSection takes argument waiterList (a WaiterList Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is not in the critical section for any WaiterList Record .
+
+- Wait until no agent is in the critical section for waiterList , then enter the critical section for waiterList (without allowing any other agent to enter).
+
+- If waiterList . [[MostRecentLeaveEvent]] is not empty , then
+- NOTE : A waiterList whose critical section has been entered at least once has a Synchronize event set by LeaveCriticalSection .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let enterEvent be a new Synchronize event .
+
+- Append enterEvent to eventsRecord . [[EventList]] .
+
+- Append ( waiterList . [[MostRecentLeaveEvent]] , enterEvent ) to eventsRecord . [[AgentSynchronizesWith]] .
+
+- Return unused .
+
+EnterCriticalSection has contention when an agent attempting to enter the critical section must wait for another agent to leave it. When there is no contention, FIFO order of EnterCriticalSection calls is observable. When there is contention, an implementation may choose an arbitrary order but may not cause an agent to wait indefinitely.
+
+25.4.3.7 LeaveCriticalSection ( waiterList )
+
+The abstract operation LeaveCriticalSection takes argument waiterList (a WaiterList Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let leaveEvent be a new Synchronize event .
+
+- Append leaveEvent to eventsRecord . [[EventList]] .
+
+- Set waiterList . [[MostRecentLeaveEvent]] to leaveEvent .
+
+- Leave the critical section for waiterList .
+
+- Return unused .
+
+25.4.3.8 AddWaiter ( waiterList , waiterRecord )
+
+The abstract operation AddWaiter takes arguments waiterList (a WaiterList Record ) and waiterRecord (a Waiter Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- Assert : There is no Waiter Record in waiterList . [[Waiters]] whose [[PromiseCapability]] field is waiterRecord . [[PromiseCapability]] and whose [[AgentSignifier]] field is waiterRecord . [[AgentSignifier]] .
+
+- Append waiterRecord to waiterList . [[Waiters]] .
+
+- Return unused .
+
+25.4.3.9 RemoveWaiter ( waiterList , waiterRecord )
+
+The abstract operation RemoveWaiter takes arguments waiterList (a WaiterList Record ) and waiterRecord (a Waiter Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- Assert : waiterList . [[Waiters]] contains waiterRecord .
+
+- Remove waiterRecord from waiterList . [[Waiters]] .
+
+- Return unused .
+
+25.4.3.10 RemoveWaiters ( waiterList , count )
+
+The abstract operation RemoveWaiters takes arguments waiterList (a WaiterList Record ) and count (a non-negative integer or +∞) and returns a List of Waiter Records . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- Let length be the number of elements in waiterList . [[Waiters]] .
+
+- Set count to min ( count , length ).
+
+- Let waiters be a List whose elements are the first count elements of waiterList . [[Waiters]] .
+
+- Remove the first count elements of waiterList . [[Waiters]] .
+
+- Return waiters .
+
+25.4.3.11 SuspendThisAgent ( waiterList , waiterRecord )
+
+The abstract operation SuspendThisAgent takes arguments waiterList (a WaiterList Record ) and waiterRecord (a Waiter Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- Assert : waiterList . [[Waiters]] contains waiterRecord .
+
+- Let thisAgent be AgentSignifier ().
+
+- Assert : waiterRecord . [[AgentSignifier]] is thisAgent .
+
+- Assert : waiterRecord . [[PromiseCapability]] is blocking .
+
+- Assert : AgentCanSuspend () is true .
+
+- Perform LeaveCriticalSection ( waiterList ) and suspend the surrounding agent until the time is waiterRecord . [[TimeoutTime]] , performing the combined operation in such a way that a notification that arrives after the critical section is exited but before the suspension takes effect is not lost. The surrounding agent can only wake from suspension due to a timeout or due to another agent calling NotifyWaiter with arguments waiterList and thisAgent (i.e. via a call to Atomics.notify ).
+
+- Perform EnterCriticalSection ( waiterList ).
+
+- Return unused .
+
+25.4.3.12 NotifyWaiter ( waiterList , waiterRecord )
+
+The abstract operation NotifyWaiter takes arguments waiterList (a WaiterList Record ) and waiterRecord (a Waiter Record ) and returns unused . It performs the following steps when called:
+
+- Assert : The surrounding agent is in the critical section for waiterList .
+
+- If waiterRecord . [[PromiseCapability]] is blocking , then
+- Wake the agent whose signifier is waiterRecord . [[AgentSignifier]] from suspension.
+
+- NOTE : This causes the agent to resume execution in SuspendThisAgent .
+
+- Else if AgentSignifier () is waiterRecord . [[AgentSignifier]] , then
+- Let promiseCapability be waiterRecord . [[PromiseCapability]] .
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « waiterRecord . [[Result]] »).
+
+- Else,
+- Perform EnqueueResolveInAgentJob ( waiterRecord . [[AgentSignifier]] , waiterRecord . [[PromiseCapability]] , waiterRecord . [[Result]] ).
+
+- Return unused .
+
+Note
+An agent must not access another agent 's promise capability in any capacity beyond passing it to the host .
+
+25.4.3.13 EnqueueResolveInAgentJob ( agentSignifier , promiseCapability , resolution )
+
+The abstract operation EnqueueResolveInAgentJob takes arguments agentSignifier (an agent signifier ), promiseCapability (a PromiseCapability Record ), and resolution ( "ok" or "timed-out" ) and returns unused . It performs the following steps when called:
+
+- Let resolveJob be a new Job Abstract Closure with no parameters that captures agentSignifier , promiseCapability , and resolution and performs the following steps when called:
+- Assert : AgentSignifier () is agentSignifier .
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « resolution »).
+
+- Return unused .
+
+- Let realmInTargetAgent be ! GetFunctionRealm ( promiseCapability . [[Resolve]] ).
+
+- Assert : agentSignifier is realmInTargetAgent . [[AgentSignifier]] .
+
+- Perform HostEnqueueGenericJob ( resolveJob , realmInTargetAgent ).
+
+- Return unused .
+
+25.4.3.14 DoWait ( mode , ta , index , value , timeout )
+
+The abstract operation DoWait takes arguments mode ( sync or async ), ta (an ECMAScript language value ), index (an ECMAScript language value ), value (an ECMAScript language value ), and timeout (an ECMAScript language value ) and returns either a normal completion containing either an Object, "not-equal" , "timed-out" , or "ok" , or a throw completion . It performs the following steps when called:
+
+- Let taRecord be ? ValidateIntegerTypedArray ( ta , true ).
+
+- Let buffer be taRecord . [[Object]] . [[ViewedArrayBuffer]] .
+
+- If IsSharedArrayBuffer ( buffer ) is false , throw a TypeError exception.
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccess ( taRecord , index ).
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- Assert : elementType is either bigint64 or int32 .
+
+- If elementType is bigint64 , let expected be ? ToBigInt64 ( value ); else let expected be ? ToInt32 ( value ).
+
+- Let timeoutNumber be ? ToNumber ( timeout ).
+
+- If timeoutNumber is either NaN or +∞ 𝔽 , let realTimeout be +∞.
+
+- Else if timeoutNumber is -∞ 𝔽 , let realTimeout be 0.
+
+- Else, let realTimeout be max ( ℝ ( timeoutNumber ), 0).
+
+- If mode is sync and AgentCanSuspend () is false , throw a TypeError exception.
+
+- Let block be buffer . [[ArrayBufferData]] .
+
+- Let waiterList be GetWaiterList ( block , byteIndexInBuffer ).
+
+- If mode is sync , then
+- Let promiseCapability be blocking .
+
+- Let resultObj be undefined .
+
+- Else,
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let resultObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform EnterCriticalSection ( waiterList ).
+
+- Let witness be GetValueFromBuffer ( buffer , byteIndexInBuffer , elementType , true , seq-cst ).
+
+- If expected ≠ witness , then
+- Perform LeaveCriticalSection ( waiterList ).
+
+- If mode is sync , return "not-equal" .
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "async" , false ).
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "value" , "not-equal" ).
+
+- Return resultObj .
+
+- If realTimeout = 0 and mode is async , then
+- NOTE : There is no special handling of synchronous immediate timeouts. Asynchronous immediate timeouts have special handling in order to fail fast and avoid unnecessary Promise jobs.
+
+- Perform LeaveCriticalSection ( waiterList ).
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "async" , false ).
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "value" , "timed-out" ).
+
+- Return resultObj .
+
+- Let thisAgent be AgentSignifier ().
+
+- Let now be the time value (UTC) identifying the current time.
+
+- Let additionalTimeout be an implementation-defined non-negative mathematical value .
+
+- Let timeoutTime be ℝ ( now ) + realTimeout + additionalTimeout .
+
+- NOTE : When realTimeout is +∞, timeoutTime is also +∞.
+
+- Let waiterRecord be a new Waiter Record { [[AgentSignifier]] : thisAgent , [[PromiseCapability]] : promiseCapability , [[TimeoutTime]] : timeoutTime , [[Result]] : "ok" }.
+
+- Perform AddWaiter ( waiterList , waiterRecord ).
+
+- If mode is sync , then
+- Perform SuspendThisAgent ( waiterList , waiterRecord ).
+
+- Else if timeoutTime is finite , then
+- Perform EnqueueAtomicsWaitAsyncTimeoutJob ( waiterList , waiterRecord ).
+
+- Perform LeaveCriticalSection ( waiterList ).
+
+- If mode is sync , return waiterRecord . [[Result]] .
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "async" , true ).
+
+- Perform ! CreateDataPropertyOrThrow ( resultObj , "value" , promiseCapability . [[Promise]] ).
+
+- Return resultObj .
+
+Note
+additionalTimeout allows implementations to pad timeouts as necessary, such as for reducing power consumption or coarsening timer resolution to mitigate timing attacks. This value may differ from call to call of DoWait.
+
+25.4.3.15 EnqueueAtomicsWaitAsyncTimeoutJob ( waiterList , waiterRecord )
+
+The abstract operation EnqueueAtomicsWaitAsyncTimeoutJob takes arguments waiterList (a WaiterList Record ) and waiterRecord (a Waiter Record ) and returns unused . It performs the following steps when called:
+
+- Let timeoutJob be a new Job Abstract Closure with no parameters that captures waiterList and waiterRecord and performs the following steps when called:
+- Perform EnterCriticalSection ( waiterList ).
+
+- If waiterList . [[Waiters]] contains waiterRecord , then
+- Let timeOfJobExecution be the time value (UTC) identifying the current time.
+
+- Assert : ℝ ( timeOfJobExecution ) ≥ waiterRecord . [[TimeoutTime]] (ignoring potential non-monotonicity of time values ).
+
+- Set waiterRecord . [[Result]] to "timed-out" .
+
+- Perform RemoveWaiter ( waiterList , waiterRecord ).
+
+- Perform NotifyWaiter ( waiterList , waiterRecord ).
+
+- Perform LeaveCriticalSection ( waiterList ).
+
+- Return unused .
+
+- Let now be the time value (UTC) identifying the current time.
+
+- Let currentRealm be the current Realm Record .
+
+- Perform HostEnqueueTimeoutJob ( timeoutJob , currentRealm , 𝔽 ( waiterRecord . [[TimeoutTime]] ) - now ).
+
+- Return unused .
+
+25.4.3.16 AtomicCompareExchangeInSharedBlock ( block , byteIndexInBuffer , elementSize , expectedBytes , replacementBytes )
+
+The abstract operation AtomicCompareExchangeInSharedBlock takes arguments block (a Shared Data Block ), byteIndexInBuffer (an integer ), elementSize (a non-negative integer ), expectedBytes (a List of byte values ), and replacementBytes (a List of byte values ) and returns a List of byte values . It performs the following steps when called:
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let rawBytesRead be a List of length elementSize whose elements are nondeterministically chosen byte values .
+
+- NOTE : In implementations, rawBytesRead is the result of a load-link, of a load-exclusive, or of an operand of a read-modify-write instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency.
+
+- NOTE : The comparison of the expected value and the read value is performed outside of the read-modify-write modification function to avoid needlessly strong synchronization when the expected value is not equal to the read value.
+
+- If ByteListEqual ( rawBytesRead , expectedBytes ) is true , then
+- Let second be a new read-modify-write modification function with parameters ( oldBytes , newBytes ) that captures nothing and performs the following steps atomically when called:
+- Return newBytes .
+
+- Let event be ReadModifyWriteSharedMemory { [[Order]] : seq-cst , [[NoTear]] : true , [[Block]] : block , [[ByteIndex]] : byteIndexInBuffer , [[ElementSize]] : elementSize , [[Payload]] : replacementBytes , [[ModifyOp]] : second }.
+
+- Else,
+- Let event be ReadSharedMemory { [[Order]] : seq-cst , [[NoTear]] : true , [[Block]] : block , [[ByteIndex]] : byteIndexInBuffer , [[ElementSize]] : elementSize }.
+
+- Append event to eventsRecord . [[EventList]] .
+
+- Append Chosen Value Record { [[Event]] : event , [[ChosenValue]] : rawBytesRead } to execution . [[ChosenValues]] .
+
+- Return rawBytesRead .
+
+25.4.3.17 AtomicReadModifyWrite ( ta , index , value , op )
+
+The abstract operation AtomicReadModifyWrite takes arguments ta (an ECMAScript language value ), index (an ECMAScript language value ), value (an ECMAScript language value ), and op (a read-modify-write modification function ) and returns either a normal completion containing either a Number or a BigInt, or a throw completion . op takes two List of byte values arguments and returns a List of byte values . This operation atomically loads a value, combines it with another value, and stores the combination. It returns the loaded value. It performs the following steps when called:
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccessOnIntegerTypedArray ( ta , index ).
+
+- If ta . [[ContentType]] is bigint , let coerced be ? ToBigInt ( value ).
+
+- Else, let coerced be 𝔽 (? ToIntegerOrInfinity ( value )).
+
+- Perform ? RevalidateAtomicAccess ( ta , byteIndexInBuffer ).
+
+- Let buffer be ta . [[ViewedArrayBuffer]] .
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- Return GetModifySetValueInBuffer ( buffer , byteIndexInBuffer , elementType , coerced , op ).
+
+25.4.3.18 ByteListBitwiseOp ( op , xBytes , yBytes )
+
+The abstract operation ByteListBitwiseOp takes arguments op ( & , ^ , or | ), xBytes (a List of byte values ), and yBytes (a List of byte values ) and returns a List of byte values . The operation atomically performs a bitwise operation on all byte values of the arguments and returns a List of byte values . It performs the following steps when called:
+
+- Assert : xBytes and yBytes have the same number of elements.
+
+- Let result be a new empty List .
+
+- Let i be 0.
+
+- For each element xByte of xBytes , do
+- Let yByte be yBytes [ i ].
+
+- If op is & , then
+- Let resultByte be the result of applying the bitwise AND operation to xByte and yByte .
+
+- Else if op is ^ , then
+- Let resultByte be the result of applying the bitwise exclusive OR (XOR) operation to xByte and yByte .
+
+- Else,
+- Assert : op is | .
+
+- Let resultByte be the result of applying the bitwise inclusive OR operation to xByte and yByte .
+
+- Set i to i + 1.
+
+- Append resultByte to result .
+
+- Return result .
+
+25.4.3.19 ByteListEqual ( xBytes , yBytes )
+
+The abstract operation ByteListEqual takes arguments xBytes (a List of byte values ) and yBytes (a List of byte values ) and returns a Boolean. It performs the following steps when called:
+
+- If xBytes and yBytes do not have the same number of elements, return false .
+
+- Let i be 0.
+
+- For each element xByte of xBytes , do
+- Let yByte be yBytes [ i ].
+
+- If xByte ≠ yByte , return false .
+
+- Set i to i + 1.
+
+- Return true .
+
+25.4.4 Atomics.add ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let add be a new read-modify-write modification function with parameters ( xBytes , yBytes ) that captures ta and performs the following steps atomically when called:
+- Let type be TypedArrayElementType ( ta ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Let x be RawBytesToNumeric ( type , xBytes , isLittleEndian ).
+
+- Let y be RawBytesToNumeric ( type , yBytes , isLittleEndian ).
+
+- If x is a Number , then
+- Let sum be Number::add ( x , y ).
+
+- Else,
+- Assert : x is a BigInt .
+
+- Let sum be BigInt::add ( x , y ).
+
+- Let sumBytes be NumericToRawBytes ( type , sum , isLittleEndian ).
+
+- Assert : sumBytes , xBytes , and yBytes have the same number of elements.
+
+- Return sumBytes .
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , add ).
+
+25.4.5 Atomics.and ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let and be a new read-modify-write modification function with parameters ( xBytes , yBytes ) that captures nothing and performs the following steps atomically when called:
+- Return ByteListBitwiseOp ( & , xBytes , yBytes ).
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , and ).
+
+25.4.6 Atomics.compareExchange ( ta , index , expectedValue , replacementValue )
+
+This function performs the following steps when called:
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccessOnIntegerTypedArray ( ta , index ).
+
+- Let buffer be ta . [[ViewedArrayBuffer]] .
+
+- Let block be buffer . [[ArrayBufferData]] .
+
+- If ta . [[ContentType]] is bigint , then
+- Let expected be ? ToBigInt ( expectedValue ).
+
+- Let replacement be ? ToBigInt ( replacementValue ).
+
+- Else,
+- Let expected be 𝔽 (? ToIntegerOrInfinity ( expectedValue )).
+
+- Let replacement be 𝔽 (? ToIntegerOrInfinity ( replacementValue )).
+
+- Perform ? RevalidateAtomicAccess ( ta , byteIndexInBuffer ).
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- Let elementSize be TypedArrayElementSize ( ta ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Let expectedBytes be NumericToRawBytes ( elementType , expected , isLittleEndian ).
+
+- Let replacementBytes be NumericToRawBytes ( elementType , replacement , isLittleEndian ).
+
+- If IsSharedArrayBuffer ( buffer ) is true , then
+- Let rawBytesRead be AtomicCompareExchangeInSharedBlock ( block , byteIndexInBuffer , elementSize , expectedBytes , replacementBytes ).
+
+- Else,
+- Let rawBytesRead be a List of length elementSize whose elements are the sequence of elementSize bytes starting with block [ byteIndexInBuffer ].
+
+- If ByteListEqual ( rawBytesRead , expectedBytes ) is true , then
+- Store the individual bytes of replacementBytes into block , starting at block [ byteIndexInBuffer ].
+
+- Return RawBytesToNumeric ( elementType , rawBytesRead , isLittleEndian ).
+
+25.4.7 Atomics.exchange ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let second be a new read-modify-write modification function with parameters ( oldBytes , newBytes ) that captures nothing and performs the following steps atomically when called:
+- Return newBytes .
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , second ).
+
+25.4.8 Atomics.isLockFree ( size )
+
+This function performs the following steps when called:
+
+- Let n be ? ToIntegerOrInfinity ( size ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- If n = 1, return agentRecord . [[IsLockFree1]] .
+
+- If n = 2, return agentRecord . [[IsLockFree2]] .
+
+- If n = 4, return true .
+
+- If n = 8, return agentRecord . [[IsLockFree8]] .
+
+- Return false .
+
+Note
+This function is an optimization primitive. The intuition is that if the atomic step of an atomic primitive ( compareExchange , load , store , add , sub , and , or , xor , or exchange ) on a datum of size n bytes will be performed without the surrounding agent acquiring a lock outside the n bytes comprising the datum, then Atomics.isLockFree ( n ) will return true . High-performance algorithms will use this function to determine whether to use locks or atomic operations in critical sections . If an atomic primitive is not lock-free then it is often more efficient for an algorithm to provide its own locking.
+
+Atomics.isLockFree (4) always returns true as that can be supported on all known relevant hardware. Being able to assume this will generally simplify programs.
+
+Regardless of the value returned by this function, all atomic operations are guaranteed to be atomic. For example, they will never have a visible operation take place in the middle of the operation (e.g., “tearing”).
+
+25.4.9 Atomics.load ( ta , index )
+
+This function performs the following steps when called:
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccessOnIntegerTypedArray ( ta , index ).
+
+- Perform ? RevalidateAtomicAccess ( ta , byteIndexInBuffer ).
+
+- Let buffer be ta . [[ViewedArrayBuffer]] .
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- Return GetValueFromBuffer ( buffer , byteIndexInBuffer , elementType , true , seq-cst ).
+
+25.4.10 Atomics.notify ( ta , index , count )
+
+This function notifies some agents that are sleeping in the wait queue.
+
+It performs the following steps when called:
+
+- Let taRecord be ? ValidateIntegerTypedArray ( ta , true ).
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccess ( taRecord , index ).
+
+- If count is undefined , then
+- Set count to +∞.
+
+- Else,
+- Let intCount be ? ToIntegerOrInfinity ( count ).
+
+- Set count to max ( intCount , 0).
+
+- Let buffer be ta . [[ViewedArrayBuffer]] .
+
+- Let block be buffer . [[ArrayBufferData]] .
+
+- If IsSharedArrayBuffer ( buffer ) is false , return +0 𝔽 .
+
+- Let waiterList be GetWaiterList ( block , byteIndexInBuffer ).
+
+- Perform EnterCriticalSection ( waiterList ).
+
+- Let waiters be RemoveWaiters ( waiterList , count ).
+
+- For each element waiterRecord of waiters , do
+- Perform NotifyWaiter ( waiterList , waiterRecord ).
+
+- Perform LeaveCriticalSection ( waiterList ).
+
+- Let waitersCount be the number of elements in waiters .
+
+- Return 𝔽 ( waitersCount ).
+
+25.4.11 Atomics.or ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let or be a new read-modify-write modification function with parameters ( xBytes , yBytes ) that captures nothing and performs the following steps atomically when called:
+- Return ByteListBitwiseOp ( | , xBytes , yBytes ).
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , or ).
+
+25.4.12 Atomics.pause ( )
+
+This function provides a hint to the CPU that the program is spin looping while waiting on a value.
+
+It performs the following steps when called:
+
+- If the execution environment of the ECMAScript implementation supports signaling to the operating system or CPU that the current executing code is in a spin-wait loop, send that signal.
+
+- Return undefined .
+
+Note 1
+This method is designed for programs implementing spin-wait loops, such as spinlock fast paths inside of mutexes, to provide a hint to the CPU that it is spinning while waiting on a value. It has no observable behaviour other than timing.
+
+Implementations are expected to implement a pause or yield instruction if the best practices of the underlying architecture recommends such instructions in spin loops. For example, the Intel Optimization Manual recommends the pause instruction.
+
+Implementations are encouraged to have an internal upper bound on the maximum amount of time paused on the order of tens to hundreds of nanoseconds.
+
+Note 2
+Due to the overhead of function calls, it is reasonable that an inlined call to this method in an optimizing compiler waits a different amount of time than a non-inlined call.
+
+25.4.13 Atomics.store ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let byteIndexInBuffer be ? ValidateAtomicAccessOnIntegerTypedArray ( ta , index ).
+
+- If ta . [[ContentType]] is bigint , let coerced be ? ToBigInt ( value ).
+
+- Else, let coerced be 𝔽 (? ToIntegerOrInfinity ( value )).
+
+- Perform ? RevalidateAtomicAccess ( ta , byteIndexInBuffer ).
+
+- Let buffer be ta . [[ViewedArrayBuffer]] .
+
+- Let elementType be TypedArrayElementType ( ta ).
+
+- Perform SetValueInBuffer ( buffer , byteIndexInBuffer , elementType , coerced , true , seq-cst ).
+
+- Return coerced .
+
+25.4.14 Atomics.sub ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let subtract be a new read-modify-write modification function with parameters ( xBytes , yBytes ) that captures ta and performs the following steps atomically when called:
+- Let type be TypedArrayElementType ( ta ).
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let isLittleEndian be agentRecord . [[LittleEndian]] .
+
+- Let x be RawBytesToNumeric ( type , xBytes , isLittleEndian ).
+
+- Let y be RawBytesToNumeric ( type , yBytes , isLittleEndian ).
+
+- If x is a Number , then
+- Let difference be Number::subtract ( x , y ).
+
+- Else,
+- Assert : x is a BigInt .
+
+- Let difference be BigInt::subtract ( x , y ).
+
+- Let differenceBytes be NumericToRawBytes ( type , difference , isLittleEndian ).
+
+- Assert : differenceBytes , xBytes , and yBytes have the same number of elements.
+
+- Return differenceBytes .
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , subtract ).
+
+25.4.15 Atomics.wait ( ta , index , value , timeout )
+
+This function puts the surrounding agent in a wait queue and suspends it until notified or until the wait times out, returning a String differentiating those cases.
+
+It performs the following steps when called:
+
+- Return ? DoWait ( sync , ta , index , value , timeout ).
+
+25.4.16 Atomics.waitAsync ( ta , index , value , timeout )
+
+This function returns a Promise that is resolved when the calling agent is notified or the timeout is reached.
+
+It performs the following steps when called:
+
+- Return ? DoWait ( async , ta , index , value , timeout ).
+
+25.4.17 Atomics.xor ( ta , index , value )
+
+This function performs the following steps when called:
+
+- Let xor be a new read-modify-write modification function with parameters ( xBytes , yBytes ) that captures nothing and performs the following steps atomically when called:
+- Return ByteListBitwiseOp ( ^ , xBytes , yBytes ).
+
+- Return ? AtomicReadModifyWrite ( ta , index , value , xor ).
+
+25.4.18 Atomics [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Atomics" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+25.5 The JSON Object
+
+The JSON object:
+
+- is %JSON% .
+
+- is the initial value of the "JSON" property of the global object .
+
+- is an ordinary object .
+
+- contains two functions, parse and stringify , that are used to parse and construct JSON texts.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- does not have a [[Call]] internal method; it cannot be invoked as a function.
+
+The JSON Data Interchange Format is defined in ECMA-404. The JSON interchange format used in this specification is exactly that described by ECMA-404. Conforming implementations of JSON.parse and JSON.stringify must support the exact interchange format described in ECMA-404 without any deletions or extensions to the format.
+
+25.5.1 JSON.isRawJSON ( obj )
+
+This function performs the following steps when called:
+
+- If obj is an Object and obj has an [[IsRawJSON]] internal slot, return true .
+
+- Return false .
+
+25.5.2 JSON.parse ( text [ , reviver ] )
+
+This function parses a JSON text (a JSON-formatted String) and produces an ECMAScript language value . The JSON format represents literals, arrays, and objects with a syntax similar to the syntax for ECMAScript literals, Array Initializers, and Object Initializers. After parsing, JSON objects are realized as ECMAScript objects. JSON arrays are realized as ECMAScript Array instances. JSON strings, numbers, booleans, and null are realized as ECMAScript Strings, Numbers, Booleans, and null .
+
+The optional reviver parameter is a function that can filter and transform the results. For each value produced by the parse, reviver is called with three arguments (the associated property key , the value, and a context object). If the property is unmodified and its value is primitive, the provided context object has a "source" property containing source text of the corresponding Parse Node . If the call returns undefined , the property is deleted. Otherwise, the property is redefined to use the return value.
+
+- Let jsonString be ? ToString ( text ).
+
+- Let parseResult be ? ParseJSON ( jsonString ).
+
+- Let unfiltered be parseResult . [[Value]] .
+
+- If IsCallable ( reviver ) is false , return unfiltered .
+
+- Let root be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Let rootName be the empty String.
+
+- Perform ! CreateDataPropertyOrThrow ( root , rootName , unfiltered ).
+
+- Let snapshot be CreateJSONParseRecord ( parseResult . [[ParseNode]] , rootName , unfiltered ).
+
+- Return ? InternalizeJSONProperty ( root , rootName , reviver , snapshot ).
+
+The "length" property of this function is 2 𝔽 .
+
+25.5.2.1 ParseJSON ( text )
+
+The abstract operation ParseJSON takes argument text (a String) and returns either a normal completion containing a Record with fields [[ParseNode]] (a Parse Node ) and [[Value]] (an ECMAScript language value ), or a throw completion . It performs the following steps when called:
+
+- If StringToCodePoints ( text ) is not a valid JSON text as specified in ECMA-404, throw a SyntaxError exception.
+
+- Let scriptString be the string-concatenation of "(" , text , and ");" .
+
+- Let script be ParseText ( scriptString , Script ).
+
+- NOTE : The early error rules defined in 13.2.5.1 have special handling for the above invocation of ParseText .
+
+- Assert : script is a Parse Node .
+
+- Let result be ! Evaluation of script .
+
+- NOTE : The PropertyDefinitionEvaluation semantics defined in 13.2.5.6 have special handling for the above evaluation.
+
+- Assert : result is either a String, a Number, a Boolean, an Object that is defined by either an ArrayLiteral or an ObjectLiteral , or null .
+
+- Return the Record { [[ParseNode]] : script , [[Value]] : result }.
+
+It is not permitted for a conforming implementation of JSON.parse to extend the JSON grammars. If an implementation wishes to support a modified or extended JSON interchange format it must do so by defining a different parse function.
+
+Note 1
+Valid JSON text is a subset of the ECMAScript PrimaryExpression syntax. Step 1 verifies that jsonString conforms to that subset, and step 8 asserts that evaluation returns a value of an appropriate type.
+
+However, because 13.2.5.6 behaves differently during ParseJSON, the same source text can produce different results when evaluated as a PrimaryExpression rather than as JSON. Furthermore, the Early Error for duplicate "__proto__" properties in object literals, which likewise does not apply during ParseJSON, means that not all texts accepted by ParseJSON are valid as a PrimaryExpression , despite matching the grammar.
+
+Note 2
+In the case where there are duplicate name Strings within an object, lexically preceding values for the same key shall be overwritten.
+
+25.5.2.2 JSON Parse Record
+
+A JSON Parse Record is a Record used to describe the initial state of a value parsed from JSON text.
+
+JSON Parse Records have the fields listed in Table 76 .
+
+Table 76: JSON Parse Record Fields
+
+Field Name
+Value
+Meaning
+
+[[ParseNode]]
+a Parse Node
+The context Parse Node .
+
+[[Key]]
+a property name
+The property name with which [[Value]] is associated.
+
+[[Value]]
+an ECMAScript language value
+The value produced by evaluation of [[ParseNode]] .
+
+[[Elements]]
+a List of JSON Parse Records
+If [[Value]] is an Array, this contains the JSON Parse Records corresponding with the elements of [[Value]] . Otherwise, this is an empty List .
+
+[[Entries]]
+a List of JSON Parse Records
+If [[Value]] is a non-Array Object, this contains the JSON Parse Records corresponding with the entries of [[Value]] . Otherwise, this is an empty List .
+
+25.5.2.3 CreateJSONParseRecord ( parseNode , key , value )
+
+The abstract operation CreateJSONParseRecord takes arguments parseNode (a Parse Node ), key (a property name ), and value (an ECMAScript language value ) and returns a JSON Parse Record . It recursively combines a parseNode parsed from JSON text and the value produced by its evaluation. It performs the following steps when called:
+
+- Let typedValueNode be ShallowestContainedJSONValue ( parseNode ).
+
+- Assert : typedValueNode is not empty .
+
+- Let elements be a new empty List .
+
+- Let entries be a new empty List .
+
+- If value is an Object , then
+- Let isArray be ! IsArray ( value ).
+
+- If isArray is true , then
+- Assert : typedValueNode is an ArrayLiteral Parse Node .
+
+- Let contentNodes be the JSONArrayLiteralContentNodes of typedValueNode .
+
+- Let length be the number of elements in contentNodes .
+
+- Let valueLength be ! LengthOfArrayLike ( value ).
+
+- Assert : valueLength is length .
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let propertyName be ! ToString ( 𝔽 ( index )).
+
+- Let elementParseRecord be CreateJSONParseRecord ( contentNodes [ index ], propertyName , ! Get ( value , propertyName )).
+
+- Append elementParseRecord to elements .
+
+- Set index to index + 1.
+
+- Else,
+- Assert : typedValueNode is an ObjectLiteral Parse Node .
+
+- Let propertyNodes be the PropertyDefinitionNodes of typedValueNode .
+
+- NOTE : Because value was produced from JSON text and has not been modified, all of its property keys are Strings and will be exhaustively enumerated.
+
+- Let keys be ! EnumerableOwnProperties ( value , key ).
+
+- For each String propertyKey of keys , do
+- NOTE : In the case of JSON text specifying multiple name/value pairs with the same name for a single object (such as {"a":"lost","a":"kept"} ), the value for the corresponding property of the resulting ECMAScript object is specified by the last pair with that name.
+
+- Let propertyDefinition be empty .
+
+- For each Parse Node propertyNode of propertyNodes , do
+- Let propertyName be the PropName of propertyNode .
+
+- If propertyName is propertyKey , set propertyDefinition to propertyNode .
+
+- Assert : propertyDefinition is
+PropertyDefinition :
+PropertyName
+:
+AssignmentExpression
+
+.
+
+- Let propertyValueNode be the AssignmentExpression of propertyDefinition .
+
+- Let entryParseRecord be CreateJSONParseRecord ( propertyValueNode , propertyKey , ! Get ( value , propertyKey )).
+
+- Append entryParseRecord to entries .
+
+- Else,
+- Assert : typedValueNode is neither an ArrayLiteral Parse Node nor an ObjectLiteral Parse Node .
+
+- Return the JSON Parse Record { [[ParseNode]] : typedValueNode , [[Key]] : key , [[Value]] : value , [[Elements]] : elements , [[Entries]] : entries }.
+
+25.5.2.4 InternalizeJSONProperty ( holder , name , reviver , parseRecord )
+
+The abstract operation InternalizeJSONProperty takes arguments holder (an Object), name (a String), reviver (a function object ), and parseRecord (a JSON Parse Record or empty ) and returns either a normal completion containing an ECMAScript language value or a throw completion .
+
+Note
+This algorithm intentionally does not throw an exception if either [[Delete]] or CreateDataProperty return false .
+
+It performs the following steps when called:
+
+- Let value be ? Get ( holder , name ).
+
+- Let context be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- If parseRecord is a JSON Parse Record and SameValue ( parseRecord . [[Value]] , value ) is true , then
+- If value is not an Object , then
+- Let parseNode be parseRecord . [[ParseNode]] .
+
+- Assert : parseNode is neither an ArrayLiteral Parse Node nor an ObjectLiteral Parse Node .
+
+- Let sourceText be the source text matched by parseNode .
+
+- Perform ! CreateDataPropertyOrThrow ( context , "source" , CodePointsToString ( sourceText )).
+
+- Let elementRecords be parseRecord . [[Elements]] .
+
+- Let entryRecords be parseRecord . [[Entries]] .
+
+- Else,
+- Let elementRecords be a new empty List .
+
+- Let entryRecords be a new empty List .
+
+- If value is an Object , then
+- Let isArray be ? IsArray ( value ).
+
+- If isArray is true , then
+- Let elementRecordsLength be the number of elements in elementRecords .
+
+- Let length be ? LengthOfArrayLike ( value ).
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let propertyKey be ! ToString ( 𝔽 ( index )).
+
+- If index < elementRecordsLength , let elementRecord be elementRecords [ index ]; else let elementRecord be empty .
+
+- Let newElement be ? InternalizeJSONProperty ( value , propertyKey , reviver , elementRecord ).
+
+- If newElement is undefined , then
+- Perform ? value . [[Delete]] ( propertyKey ) .
+
+- Else,
+- Perform ? CreateDataProperty ( value , propertyKey , newElement ).
+
+- Set index to index + 1.
+
+- Else,
+- Let keys be ? EnumerableOwnProperties ( value , key ).
+
+- For each String propertyKey of keys , do
+- If there exists an element entry of entryRecords such that entry . [[Key]] is propertyKey , let entryRecord be entry ; else let entryRecord be empty .
+
+- Let newElement be ? InternalizeJSONProperty ( value , propertyKey , reviver , entryRecord ).
+
+- If newElement is undefined , then
+- Perform ? value . [[Delete]] ( propertyKey ) .
+
+- Else,
+- Perform ? CreateDataProperty ( value , propertyKey , newElement ).
+
+- Return ? Call ( reviver , holder , « name , value , context »).
+
+25.5.2.5 Static Semantics: ShallowestContainedJSONValue ( root )
+
+The abstract operation ShallowestContainedJSONValue takes argument root (a Parse Node ) and returns a Parse Node or empty . It performs a breadth-first search of the parse tree rooted at root , and returns the first node that is an instance of a nonterminal corresponding to a JSON value, or empty if there is no such node. It performs the following steps when called:
+
+- Let activeFunc be the active function object .
+
+- Assert : activeFunc is a JSON.parse built-in function object (see JSON.parse ).
+
+- Let types be « NullLiteral , BooleanLiteral , NumericLiteral , StringLiteral , ArrayLiteral , ObjectLiteral , UnaryExpression ».
+
+- Let unaryExpr be empty .
+
+- Let queue be « root ».
+
+- Repeat, while queue is not empty,
+- Let candidate be the first element of queue .
+
+- Remove the first element from queue .
+
+- Let queuedChildren be false .
+
+- For each nonterminal type of types , do
+- If candidate is an instance of type , then
+- NOTE : In the JSON grammar, a number token may represent a negative value. In ECMAScript, negation is represented as a unary operation in which a UnaryExpression parses to a - followed by a derived UnaryExpression .
+
+- If type is UnaryExpression , then
+- If the parent of candidate is not a UnaryExpression Parse Node , set unaryExpr to candidate .
+
+- Else if type is NumericLiteral , then
+- Assert : candidate is contained within unaryExpr .
+
+- Return unaryExpr .
+
+- Else,
+- Return candidate .
+
+- If queuedChildren is false , candidate is an instance of a nonterminal, and candidate Contains type is true , then
+- Let children be a List containing each child node of candidate , in order.
+
+- Set queue to the list-concatenation of queue and children .
+
+- Set queuedChildren to true .
+
+- Return empty .
+
+25.5.2.6 Static Semantics: JSONArrayLiteralContentNodes
+
+The syntax-directed operation JSONArrayLiteralContentNodes takes no arguments and returns a List of Parse Nodes . It is defined piecewise over the following productions:
+
+ArrayLiteral :
+[
+Elision opt
+]
+
+[
+ElementList
+]
+
+[
+ElementList
+,
+Elision opt
+]
+
+- Assert : Elision is not present.
+
+- If ElementList is not present, return a new empty List .
+
+- Return the JSONArrayLiteralContentNodes of ElementList .
+
+ElementList :
+Elision opt
+AssignmentExpression
+
+- Assert : Elision is not present.
+
+- Return « AssignmentExpression ».
+
+ElementList :
+ElementList
+,
+Elision opt
+AssignmentExpression
+
+- Assert : Elision is not present.
+
+- Let elements be the JSONArrayLiteralContentNodes of the derived ElementList .
+
+- Return the list-concatenation of elements and « AssignmentExpression ».
+
+ElementList :
+Elision opt
+SpreadElement
+
+ElementList
+,
+Elision opt
+SpreadElement
+
+- NOTE : JSON text as specified in ECMA-404 does not include SpreadElement .
+
+- Assert : This step is never reached.
+
+25.5.3 JSON.rawJSON ( text )
+
+This function returns an object representing raw JSON text of a string, number, boolean, or null value.
+
+- Let jsonString be ? ToString ( text ).
+
+- If jsonString is the empty String, throw a SyntaxError exception.
+
+- If the first code unit of jsonString is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), 0x0022 (QUOTATION MARK), or 0x002D (HYPHEN-MINUS), throw a SyntaxError exception.
+
+- If the last code unit of jsonString is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), or 0x0022 (QUOTATION MARK), throw a SyntaxError exception.
+
+- Let parseResult be ? ParseJSON ( jsonString ).
+
+- Assert : parseResult . [[Value]] is either a String, a Number, a Boolean, or null .
+
+- Let internalSlotsList be « [[IsRawJSON]] ».
+
+- Let obj be OrdinaryObjectCreate ( null , internalSlotsList ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "rawJSON" , jsonString ).
+
+- Perform ! SetIntegrityLevel ( obj , frozen ).
+
+- Return obj .
+
+25.5.4 JSON.stringify ( value [ , replacer [ , space ] ] )
+
+This function returns a String in UTF-16 encoded JSON format representing an ECMAScript language value , or undefined . It can take three parameters. The value parameter is an ECMAScript language value , which is usually an object or array, although it can also be a String, Boolean, Number or null . The optional replacer parameter is either a function that alters the way objects and arrays are stringified, or an array of Strings and Numbers that acts as an inclusion list for selecting the object properties that will be stringified. The optional space parameter is a String or Number that allows the result to have white space injected into it to improve human readability.
+
+It performs the following steps when called:
+
+- Let stack be a new empty List .
+
+- Let indent be the empty String.
+
+- Let propertyList be undefined .
+
+- Let replacerFunc be undefined .
+
+- If replacer is an Object , then
+- If IsCallable ( replacer ) is true , then
+- Set replacerFunc to replacer .
+
+- Else,
+- Let isArray be ? IsArray ( replacer ).
+
+- If isArray is true , then
+- Set propertyList to a new empty List .
+
+- Let length be ? LengthOfArrayLike ( replacer ).
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- Let propertyKey be ! ToString ( 𝔽 ( k )).
+
+- Let propertyValue be ? Get ( replacer , propertyKey ).
+
+- Let item be undefined .
+
+- If propertyValue is a String , then
+- Set item to propertyValue .
+
+- Else if propertyValue is a Number , then
+- Set item to ! ToString ( propertyValue ).
+
+- Else if propertyValue is an Object , then
+- If propertyValue has a [[StringData]] or [[NumberData]] internal slot, set item to ? ToString ( propertyValue ).
+
+- If item is not undefined and propertyList does not contain item , then
+- Append item to propertyList .
+
+- Set k to k + 1.
+
+- If space is an Object , then
+- If space has a [[NumberData]] internal slot, then
+- Set space to ? ToNumber ( space ).
+
+- Else if space has a [[StringData]] internal slot, then
+- Set space to ? ToString ( space ).
+
+- If space is a Number , then
+- Let spaceMV be ! ToIntegerOrInfinity ( space ).
+
+- Set spaceMV to min (10, spaceMV ).
+
+- If spaceMV < 1, let gap be the empty String; else let gap be the String value containing spaceMV occurrences of the code unit 0x0020 (SPACE).
+
+- Else if space is a String , then
+- If the length of space ≤ 10, let gap be space ; else let gap be the substring of space from 0 to 10.
+
+- Else,
+- Let gap be the empty String.
+
+- Let wrapper be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( wrapper , the empty String, value ).
+
+- Let state be the JSON Serialization Record { [[ReplacerFunction]] : replacerFunc , [[Stack]] : stack , [[Indent]] : indent , [[Gap]] : gap , [[PropertyList]] : propertyList }.
+
+- Return ? SerializeJSONProperty ( state , the empty String, wrapper ).
+
+The "length" property of this function is 3 𝔽 .
+
+Note 1
+JSON structures are allowed to be nested to any depth, but they must be acyclic. If value is or contains a cyclic structure, then this function must throw a TypeError exception. This is an example of a value that cannot be stringified:
+
+a = [];
+a[ 0 ] = a;
+my_text = JSON . stringify (a); // This must throw a TypeError.
+
+Note 2
+Symbolic primitive values are rendered as follows:
+
+-
+The null value is rendered in JSON text as the String value "null" .
+
+-
+The undefined value is not rendered.
+
+-
+The true value is rendered in JSON text as the String value "true" .
+
+-
+The false value is rendered in JSON text as the String value "false" .
+
+Note 3
+String values are wrapped in QUOTATION MARK ( " ) code units. The code units " and \ are escaped with \ prefixes. Control characters code units are replaced with escape sequences \u HHHH, or with the shorter forms, \b (BACKSPACE), \f (FORM FEED), \n (LINE FEED), \r (CARRIAGE RETURN), \t (CHARACTER TABULATION).
+
+Note 4
+Finite numbers are stringified as if by calling ToString ( number ). NaN and Infinity regardless of sign are represented as the String value "null" .
+
+Note 5
+Values that do not have a JSON representation (such as undefined and functions) do not produce a String. Instead they produce the undefined value. In arrays these values are represented as the String value "null" . In objects an unrepresentable value causes the property to be excluded from stringification.
+
+Note 6
+An object is rendered as U+007B (LEFT CURLY BRACKET) followed by zero or more properties, separated with a U+002C (COMMA), closed with a U+007D (RIGHT CURLY BRACKET). A property is a quoted String representing the property name , a U+003A (COLON), and then the stringified property value. An array is rendered as an opening U+005B (LEFT SQUARE BRACKET) followed by zero or more values, separated with a U+002C (COMMA), closed with a U+005D (RIGHT SQUARE BRACKET).
+
+25.5.4.1 JSON Serialization Record
+
+A JSON Serialization Record is a Record used to enable serialization to the JSON format.
+
+JSON Serialization Records have the fields listed in Table 77 .
+
+Table 77: JSON Serialization Record Fields
+
+Field Name
+Value
+Meaning
+
+[[ReplacerFunction]]
+a function object or undefined
+A function that can supply replacement values for object properties (from JSON.stringify's replacer parameter).
+
+[[PropertyList]]
+either a List of Strings or undefined
+The names of properties to include when serializing a non-array object (from JSON.stringify's replacer parameter).
+
+[[Gap]]
+a String
+The unit of indentation (from JSON.stringify's space parameter).
+
+[[Stack]]
+a List of Objects
+The set of nested objects that are in the process of being serialized. Used to detect cyclic structures.
+
+[[Indent]]
+a String
+The current indentation.
+
+25.5.4.2 SerializeJSONProperty ( state , key , holder )
+
+The abstract operation SerializeJSONProperty takes arguments state (a JSON Serialization Record ), key (a String), and holder (an Object) and returns either a normal completion containing either a String or undefined , or a throw completion . It performs the following steps when called:
+
+- Let value be ? Get ( holder , key ).
+
+- If value is an Object or value is a BigInt , then
+- Let toJSON be ? GetV ( value , "toJSON" ).
+
+- If IsCallable ( toJSON ) is true , then
+- Set value to ? Call ( toJSON , value , « key »).
+
+- If state . [[ReplacerFunction]] is not undefined , then
+- Set value to ? Call ( state . [[ReplacerFunction]] , holder , « key , value »).
+
+- If value is an Object , then
+- If value has an [[IsRawJSON]] internal slot, then
+- Let rawJSON be ! Get ( value , "rawJSON" ).
+
+- Assert : rawJSON is a String .
+
+- Return rawJSON .
+
+- If value has a [[NumberData]] internal slot, then
+- Set value to ? ToNumber ( value ).
+
+- Else if value has a [[StringData]] internal slot, then
+- Set value to ? ToString ( value ).
+
+- Else if value has a [[BooleanData]] internal slot, then
+- Set value to value . [[BooleanData]] .
+
+- Else if value has a [[BigIntData]] internal slot, then
+- Set value to value . [[BigIntData]] .
+
+- If value is null , return "null" .
+
+- If value is true , return "true" .
+
+- If value is false , return "false" .
+
+- If value is a String , return QuoteJSONString ( value ).
+
+- If value is a Number , then
+- If value is finite , return ! ToString ( value ).
+
+- Return "null" .
+
+- If value is a BigInt , throw a TypeError exception.
+
+- If value is an Object and IsCallable ( value ) is false , then
+- Let isArray be ? IsArray ( value ).
+
+- If isArray is true , then
+- Return ? SerializeJSONArray ( state , value ).
+
+- Return ? SerializeJSONObject ( state , value ).
+
+- Return undefined .
+
+25.5.4.3 QuoteJSONString ( value )
+
+The abstract operation QuoteJSONString takes argument value (a String) and returns a String. It wraps value in 0x0022 (QUOTATION MARK) code units and escapes certain other code units within it. This operation interprets value as a sequence of UTF-16 encoded code points, as described in 6.1.4 . It performs the following steps when called:
+
+- Let product be the String value consisting solely of the code unit 0x0022 (QUOTATION MARK).
+
+- For each code point codePoint of StringToCodePoints ( value ), do
+- If codePoint is listed in the “Code Point” column of Table 78 , then
+- Set product to the string-concatenation of product and the escape sequence for codePoint as specified in the “Escape Sequence” column of the corresponding row.
+
+- Else if codePoint has a numeric value less than 0x0020 (SPACE) or codePoint has the same numeric value as a leading surrogate or trailing surrogate , then
+- Let unit be the code unit whose numeric value is the numeric value of codePoint .
+
+- Set product to the string-concatenation of product and UnicodeEscape ( unit ).
+
+- Else,
+- Set product to the string-concatenation of product and UTF16EncodeCodePoint ( codePoint ).
+
+- Set product to the string-concatenation of product and the code unit 0x0022 (QUOTATION MARK).
+
+- Return product .
+
+Table 78: JSON Single Character Escape Sequences
+
+Code Point
+
+Unicode Character Name
+
+Escape Sequence
+
+U+0008
+
+BACKSPACE
+
+\b
+
+U+0009
+
+CHARACTER TABULATION
+
+\t
+
+U+000A
+
+LINE FEED (LF)
+
+\n
+
+U+000C
+
+FORM FEED (FF)
+
+\f
+
+U+000D
+
+CARRIAGE RETURN (CR)
+
+\r
+
+U+0022
+
+QUOTATION MARK
+
+\"
+
+U+005C
+
+REVERSE SOLIDUS
+
+\\
+
+25.5.4.4 UnicodeEscape ( codeUnit )
+
+The abstract operation UnicodeEscape takes argument codeUnit (a code unit) and returns a String. It represents codeUnit as a Unicode escape sequence. It performs the following steps when called:
+
+- Let n be the numeric value of codeUnit .
+
+- Assert : n ≤ 0xFFFF.
+
+- Let hex be the String representation of n , formatted as a lowercase hexadecimal number.
+
+- Return the string-concatenation of the code unit 0x005C (REVERSE SOLIDUS), "u" , and StringPad ( hex , 4, "0" , start ).
+
+25.5.4.5 SerializeJSONObject ( state , value )
+
+The abstract operation SerializeJSONObject takes arguments state (a JSON Serialization Record ) and value (an Object) and returns either a normal completion containing a String or a throw completion . It serializes an object. It performs the following steps when called:
+
+- If state . [[Stack]] contains value , throw a TypeError exception because the structure is cyclical.
+
+- Append value to state . [[Stack]] .
+
+- Let stepBack be state . [[Indent]] .
+
+- Set state . [[Indent]] to the string-concatenation of state . [[Indent]] and state . [[Gap]] .
+
+- If state . [[PropertyList]] is not undefined , then
+- Let keys be state . [[PropertyList]] .
+
+- Else,
+- Let keys be ? EnumerableOwnProperties ( value , key ).
+
+- Let partial be a new empty List .
+
+- For each element propertyKey of keys , do
+- Let stringP be ? SerializeJSONProperty ( state , propertyKey , value ).
+
+- If stringP is not undefined , then
+- Let member be QuoteJSONString ( propertyKey ).
+
+- Set member to the string-concatenation of member and ":" .
+
+- If state . [[Gap]] is not the empty String, then
+- Set member to the string-concatenation of member and the code unit 0x0020 (SPACE).
+
+- Set member to the string-concatenation of member and stringP .
+
+- Append member to partial .
+
+- If partial is empty, then
+- Let final be "{}" .
+
+- Else,
+- If state . [[Gap]] is the empty String, then
+- Let properties be the String value formed by concatenating all the element Strings of partial with each adjacent pair of Strings separated with the code unit 0x002C (COMMA). A comma is not inserted either before the first String or after the last String.
+
+- Let final be the string-concatenation of "{" , properties , and "}" .
+
+- Else,
+- Let separator be the string-concatenation of the code unit 0x002C (COMMA), the code unit 0x000A (LINE FEED), and state . [[Indent]] .
+
+- Let properties be the String value formed by concatenating all the element Strings of partial with each adjacent pair of Strings separated with separator . The separator String is not inserted either before the first String or after the last String.
+
+- Let final be the string-concatenation of "{" , the code unit 0x000A (LINE FEED), state . [[Indent]] , properties , the code unit 0x000A (LINE FEED), stepBack , and "}" .
+
+- Remove the last element of state . [[Stack]] .
+
+- Set state . [[Indent]] to stepBack .
+
+- Return final .
+
+25.5.4.6 SerializeJSONArray ( state , value )
+
+The abstract operation SerializeJSONArray takes arguments state (a JSON Serialization Record ) and value (an Object) and returns either a normal completion containing a String or a throw completion . It serializes an array. It performs the following steps when called:
+
+- If state . [[Stack]] contains value , throw a TypeError exception because the structure is cyclical.
+
+- Append value to state . [[Stack]] .
+
+- Let stepBack be state . [[Indent]] .
+
+- Set state . [[Indent]] to the string-concatenation of state . [[Indent]] and state . [[Gap]] .
+
+- Let partial be a new empty List .
+
+- Let length be ? LengthOfArrayLike ( value ).
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let stringP be ? SerializeJSONProperty ( state , ! ToString ( 𝔽 ( index )), value ).
+
+- If stringP is undefined , then
+- Append "null" to partial .
+
+- Else,
+- Append stringP to partial .
+
+- Set index to index + 1.
+
+- If partial is empty, then
+- Let final be "[]" .
+
+- Else,
+- If state . [[Gap]] is the empty String, then
+- Let properties be the String value formed by concatenating all the element Strings of partial with each adjacent pair of Strings separated with the code unit 0x002C (COMMA). A comma is not inserted either before the first String or after the last String.
+
+- Let final be the string-concatenation of "[" , properties , and "]" .
+
+- Else,
+- Let separator be the string-concatenation of the code unit 0x002C (COMMA), the code unit 0x000A (LINE FEED), and state . [[Indent]] .
+
+- Let properties be the String value formed by concatenating all the element Strings of partial with each adjacent pair of Strings separated with separator . The separator String is not inserted either before the first String or after the last String.
+
+- Let final be the string-concatenation of "[" , the code unit 0x000A (LINE FEED), state . [[Indent]] , properties , the code unit 0x000A (LINE FEED), stepBack , and "]" .
+
+- Remove the last element of state . [[Stack]] .
+
+- Set state . [[Indent]] to stepBack .
+
+- Return final .
+
+Note
+The representation of arrays includes only the elements in the interval from +0 𝔽 (inclusive) to array.length (exclusive). Properties whose keys are not array indices are excluded from the stringification. An array is stringified as an opening LEFT SQUARE BRACKET, elements separated by COMMA, and a closing RIGHT SQUARE BRACKET.
+
+25.5.5 JSON [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "JSON" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.

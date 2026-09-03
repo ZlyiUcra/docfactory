@@ -1,0 +1,69 @@
+# Annex D (informative) Host Layering Points
+# джерело: https://tc39.es/ecma262/multipage/host-layering-points.html
+# отримано: 2026-09-01
+
+Annex D (informative) Host Layering Points
+
+See 4.2 for the definition of host .
+
+D.1 Host Hooks
+
+HostCallJobCallback (...)
+
+HostEnqueueFinalizationRegistryCleanupJob (...)
+
+HostEnqueueGenericJob (...)
+
+HostEnqueuePromiseJob (...)
+
+HostEnqueueTimeoutJob (...)
+
+HostEnsureCanCompileStrings (...)
+
+HostFinalizeImportMeta (...)
+
+HostGetImportMetaProperties (...)
+
+HostGrowSharedArrayBuffer (...)
+
+HostHasSourceTextAvailable (...)
+
+HostLoadImportedModule (...)
+
+HostGetSupportedImportAttributes (...)
+
+HostMakeJobCallback (...)
+
+HostPromiseRejectionTracker (...)
+
+HostResizeArrayBuffer (...)
+
+InitializeHostDefinedRealm (...)
+
+D.2 Host-defined Fields
+
+[[HostDefined]] on Realm Records : See Table 20 .
+
+[[HostDefined]] on Script Records : See Table 35 .
+
+[[HostDefined]] on Module Records : See Table 39 .
+
+[[HostDefined]] on JobCallback Records : See Table 24 .
+
+[[IsHTMLDDA]] : See B.3.6 .
+
+D.3 Host-defined Objects
+
+The global object : See clause 19 .
+
+D.4 Running Jobs
+
+Preparation steps before, and cleanup steps after, invocation of Job Abstract Closures . See 9.5 .
+
+D.5 Internal Methods of Exotic Objects
+
+Any of the essential internal methods in Table 4 for any exotic object not specified within this specification.
+
+D.6 Built-in Objects and Methods
+
+Any built-in objects and methods not defined within this specification, except as restricted in 17.1 .

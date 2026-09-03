@@ -1,0 +1,921 @@
+# 15 Locale Objects
+# джерело: https://tc39.es/ecma402/#locale-objects
+# отримано: 2026-09-01
+
+15 Locale Objects
+
+15.1 The Intl.Locale Constructor
+
+The Intl.Locale constructor :
+
+- is %Intl.Locale% .
+
+- is the initial value of the "Locale" property of the Intl object .
+
+15.1.1 Intl.Locale ( tag [ , options ] )
+
+When the Intl.Locale function is called with an argument tag and an optional argument options , the following steps are taken:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let localeExtensionKeys be %Intl.Locale% . [[LocaleExtensionKeys]] .
+
+- Let internalSlotsList be « [[InitializedLocale]] , [[Locale]] , [[Calendar]] , [[Collation]] , [[FirstDayOfWeek]] , [[HourCycle]] , [[NumberingSystem]] ».
+
+- If localeExtensionKeys contains "kf" , then
+- Append [[CaseFirst]] to internalSlotsList .
+
+- If localeExtensionKeys contains "kn" , then
+- Append [[Numeric]] to internalSlotsList .
+
+- Let locale be ? OrdinaryCreateFromConstructor (NewTarget, "%Intl.Locale.prototype%" , internalSlotsList ).
+
+- If tag is not a String and tag is not an Object , throw a TypeError exception.
+
+- If tag is an Object and tag has an [[InitializedLocale]] internal slot, then
+- Set tag to tag . [[Locale]] .
+
+- Else,
+- Set tag to ? ToString ( tag ).
+
+- Set options to ? CoerceOptionsToObject ( options ).
+
+- If IsWellFormedLanguageTag ( tag ) is false , throw a RangeError exception.
+
+- NOTE: Because LanguageId canonicalization can alter tag in arbitrary ways according to Alias Rules from supplementalMetadata.xml , it is necessary to perform such canonicalization before applying overrides from options .
+
+- Set tag to CanonicalizeUnicodeLocaleId ( tag ).
+
+- Set tag to ? UpdateLanguageId ( tag , options ).
+
+- Let opt be a new Record .
+
+- Let calendar be ? GetOption ( options , "calendar" , string , empty , undefined ).
+
+- If calendar is not undefined , then
+- If calendar cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- Set opt . [[ca]] to calendar .
+
+- Let collation be ? GetOption ( options , "collation" , string , empty , undefined ).
+
+- If collation is not undefined , then
+- If collation cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- Set opt . [[co]] to collation .
+
+- Let fw be ? GetOption ( options , "firstDayOfWeek" , string , empty , undefined ).
+
+- If fw is not undefined , then
+- Set fw to WeekdayToUValue ( fw ).
+
+- If fw cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- Set opt . [[fw]] to fw .
+
+- Let hc be ? GetOption ( options , "hourCycle" , string , « "h11" , "h12" , "h23" , "h24" », undefined ).
+
+- Set opt . [[hc]] to hc .
+
+- Let kf be ? GetOption ( options , "caseFirst" , string , « "upper" , "lower" , "false" », undefined ).
+
+- Set opt . [[kf]] to kf .
+
+- Let kn be ? GetOption ( options , "numeric" , boolean , empty , undefined ).
+
+- If kn is not undefined , set kn to ! ToString ( kn ).
+
+- Set opt . [[kn]] to kn .
+
+- Let numberingSystem be ? GetOption ( options , "numberingSystem" , string , empty , undefined ).
+
+- If numberingSystem is not undefined , then
+- If numberingSystem cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- Set opt . [[nu]] to numberingSystem .
+
+- Let localeRecord be MakeLocaleRecord ( tag , opt , localeExtensionKeys ).
+
+- Set locale . [[Locale]] to localeRecord . [[locale]] .
+
+- Set locale . [[Calendar]] to localeRecord . [[ca]] .
+
+- Set locale . [[Collation]] to localeRecord . [[co]] .
+
+- Set locale . [[FirstDayOfWeek]] to localeRecord . [[fw]] .
+
+- Set locale . [[HourCycle]] to localeRecord . [[hc]] .
+
+- If localeExtensionKeys contains "kf" , then
+- Set locale . [[CaseFirst]] to localeRecord . [[kf]] .
+
+- If localeExtensionKeys contains "kn" , then
+- If localeRecord . [[kn]] is either "true" or the empty String, then
+- Set locale . [[Numeric]] to true .
+
+- Else,
+- Set locale . [[Numeric]] to false .
+
+- Set locale . [[NumberingSystem]] to localeRecord . [[nu]] .
+
+- Return locale .
+
+15.1.2 UpdateLanguageId ( tag , options )
+
+The abstract operation UpdateLanguageId takes arguments tag (a well-formed language tag ) and options (an Object) and returns either a normal completion containing a well-formed language tag or a throw completion . It updates the unicode_language_id subtags in tag from the corresponding properties of options , validates them, and returns the result. It performs the following steps when called:
+
+- Let baseName be GetLocaleBaseName ( tag ).
+
+- Let language be ? GetOption ( options , "language" , string , empty , GetLocaleLanguage ( baseName )).
+
+- If language cannot be matched by the unicode_language_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- Let script be ? GetOption ( options , "script" , string , empty , GetLocaleScript ( baseName )).
+
+- If script is not undefined , then
+- If script cannot be matched by the unicode_script_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- Let region be ? GetOption ( options , "region" , string , empty , GetLocaleRegion ( baseName )).
+
+- If region is not undefined , then
+- If region cannot be matched by the unicode_region_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- Let variants be ? GetOption ( options , "variants" , string , empty , GetLocaleVariants ( baseName )).
+
+- If variants is not undefined , then
+- If variants is the empty String, throw a RangeError exception.
+
+- Let lowerVariants be the ASCII-lowercase of variants .
+
+- Let variantSubtags be StringSplitToList ( lowerVariants , "-" ).
+
+- For each element variant of variantSubtags , do
+- If variant cannot be matched by the unicode_variant_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- If variantSubtags contains any duplicate elements, throw a RangeError exception.
+
+- Let allExtensions be the suffix of tag following baseName .
+
+- Let newTag be language .
+
+- If script is not undefined , set newTag to the string-concatenation of newTag , "-" , and script .
+
+- If region is not undefined , set newTag to the string-concatenation of newTag , "-" , and region .
+
+- If variants is not undefined , set newTag to the string-concatenation of newTag , "-" , and variants .
+
+- Set newTag to the string-concatenation of newTag and allExtensions .
+
+- Return newTag .
+
+15.1.3 MakeLocaleRecord ( tag , options , localeExtensionKeys )
+
+The abstract operation MakeLocaleRecord takes arguments tag (a language tag ), options (a Record ), and localeExtensionKeys (a List of Strings) and returns a Record . It constructs and returns a Record in which each element of localeExtensionKeys defines a corresponding field with data from any Unicode locale extension sequence of tag as overridden by a corresponding field of options , and which additionally includes a [[locale]] field containing a Unicode canonicalized locale identifier resulting from incorporating those fields into tag . It performs the following steps when called:
+
+- If tag contains a substring that is a Unicode locale extension sequence , then
+- Let extension be the String value consisting of the substring of the Unicode locale extension sequence within tag .
+
+- Let components be UnicodeExtensionComponents ( extension ).
+
+- Let attributes be components . [[Attributes]] .
+
+- Let keywords be components . [[Keywords]] .
+
+- Else,
+- Let attributes be a new empty List .
+
+- Let keywords be a new empty List .
+
+- Let result be a new Record .
+
+- For each element key of localeExtensionKeys , do
+- If keywords contains an element whose [[Key]] is key , then
+- Let entry be the element of keywords whose [[Key]] is key .
+
+- Let value be entry . [[Value]] .
+
+- Else,
+- Let entry be empty .
+
+- Let value be undefined .
+
+- Assert : options has a field [[< key >]].
+
+- Let overrideValue be options .[[< key >]].
+
+- If overrideValue is not undefined , then
+- Set value to CanonicalizeUValue ( key , overrideValue ).
+
+- If entry is not empty , then
+- Set entry . [[Value]] to value .
+
+- Else,
+- Append the Record { [[Key]] : key , [[Value]] : value } to keywords .
+
+- Set result .[[< key >]] to value .
+
+- Let locale be the String value that is tag with any Unicode locale extension sequences removed.
+
+- If attributes is not empty or keywords is not empty, then
+- Set result . [[locale]] to InsertUnicodeExtensionAndCanonicalize ( locale , attributes , keywords ).
+
+- Else,
+- Set result . [[locale]] to CanonicalizeUnicodeLocaleId ( locale ).
+
+- Return result .
+
+15.2 Properties of the Intl.Locale Constructor
+
+The Intl.Locale constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+15.2.1 Intl.Locale.prototype
+
+The value of Intl.Locale.prototype is %Intl.Locale.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+15.2.2 Internal slots
+
+The value of the [[LocaleExtensionKeys]] internal slot is a List that must include all elements of « "ca" , "co" , "fw" , "hc" , "nu" », must additionally include any element of « "kf" , "kn" » that is also an element of %Intl.Collator% . [[RelevantExtensionKeys]] , and must not include any other elements.
+
+15.3 Properties of the Intl.Locale Prototype Object
+
+The Intl.Locale prototype object :
+
+- is %Intl.Locale.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.Locale instance and does not have an [[InitializedLocale]] internal slot or any of the other internal slots of Intl.Locale instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+15.3.1 Intl.Locale.prototype.constructor
+
+The initial value of Intl.Locale.prototype.constructor is %Intl.Locale% .
+
+15.3.2 get Intl.Locale.prototype.baseName
+
+Intl.Locale.prototype.baseName is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return GetLocaleBaseName ( loc . [[Locale]] ).
+
+15.3.3 get Intl.Locale.prototype.calendar
+
+Intl.Locale.prototype.calendar is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[Calendar]] .
+
+15.3.4 get Intl.Locale.prototype.caseFirst
+
+This property only exists if %Intl.Locale% . [[LocaleExtensionKeys]] contains "kf" .
+
+Intl.Locale.prototype.caseFirst is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[CaseFirst]] .
+
+15.3.5 get Intl.Locale.prototype.collation
+
+Intl.Locale.prototype.collation is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[Collation]] .
+
+15.3.6 get Intl.Locale.prototype.firstDayOfWeek
+
+Intl.Locale.prototype.firstDayOfWeek is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[FirstDayOfWeek]] .
+
+15.3.7 get Intl.Locale.prototype.hourCycle
+
+Intl.Locale.prototype.hourCycle is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[HourCycle]] .
+
+15.3.8 get Intl.Locale.prototype.language
+
+Intl.Locale.prototype.language is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return GetLocaleLanguage ( loc . [[Locale]] ).
+
+15.3.9 Intl.Locale.prototype.maximize ( )
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Let maximal be the result of the Add Likely Subtags algorithm applied to loc . [[Locale]] . If an error is signaled, set maximal to loc . [[Locale]] .
+
+- Return ! Construct ( %Intl.Locale% , « maximal »).
+
+15.3.10 Intl.Locale.prototype.minimize ( )
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Let minimal be the result of the Remove Likely Subtags algorithm applied to loc . [[Locale]] . If an error is signaled, set minimal to loc . [[Locale]] .
+
+- Return ! Construct ( %Intl.Locale% , « minimal »).
+
+15.3.11 get Intl.Locale.prototype.numberingSystem
+
+Intl.Locale.prototype.numberingSystem is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[NumberingSystem]] .
+
+15.3.12 get Intl.Locale.prototype.numeric
+
+This property only exists if %Intl.Locale% . [[LocaleExtensionKeys]] contains "kn" .
+
+Intl.Locale.prototype.numeric is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[Numeric]] .
+
+15.3.13 get Intl.Locale.prototype.region
+
+Intl.Locale.prototype.region is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return GetLocaleRegion ( loc . [[Locale]] ).
+
+15.3.14 get Intl.Locale.prototype.script
+
+Intl.Locale.prototype.script is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return GetLocaleScript ( loc . [[Locale]] ).
+
+15.3.15 Intl.Locale.prototype.toString ( )
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return loc . [[Locale]] .
+
+15.3.16 Intl.Locale.prototype.getCalendars ( )
+
+When the getCalendars method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return CalendarsOfLocale ( loc ).
+
+15.3.17 Intl.Locale.prototype.getCollations ( )
+
+When the getCollations method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return CollationsOfLocale ( loc ).
+
+15.3.18 Intl.Locale.prototype.getHourCycles ( )
+
+When the getHourCycles method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return HourCyclesOfLocale ( loc ).
+
+15.3.19 Intl.Locale.prototype.getNumberingSystems ( )
+
+When the getNumberingSystems method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return NumberingSystemsOfLocale ( loc ).
+
+15.3.20 Intl.Locale.prototype.getTimeZones ( )
+
+When the getTimeZones method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return TimeZonesOfLocale ( loc ).
+
+15.3.21 Intl.Locale.prototype.getTextInfo ( )
+
+When the getTextInfo method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Let info be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Let dir be TextDirectionOfLocale ( loc ).
+
+- Perform ! CreateDataPropertyOrThrow ( info , "direction" , dir ).
+
+- Return info .
+
+15.3.22 Intl.Locale.prototype.getWeekInfo ( )
+
+When the getWeekInfo method is called, the following steps are taken:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Let info be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Let weekInfo be WeekInfoOfLocale ( loc ).
+
+- Perform ! CreateDataPropertyOrThrow ( info , "firstDay" , weekInfo . [[FirstDay]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( info , "weekend" , CreateArrayFromList ( weekInfo . [[Weekend]] )).
+
+- Return info .
+
+15.3.23 get Intl.Locale.prototype.variants
+
+Intl.Locale.prototype.variants is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let loc be the this value.
+
+- Perform ? RequireInternalSlot ( loc , [[InitializedLocale]] ).
+
+- Return GetLocaleVariants ( loc . [[Locale]] ).
+
+15.3.24 Intl.Locale.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.Locale" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+15.4 Properties of Intl.Locale Instances
+
+Intl.Locale instances are ordinary objects that inherit properties from %Intl.Locale.prototype% .
+
+Intl.Locale instances have an [[InitializedLocale]] internal slot.
+
+Intl.Locale instances also have several internal slots that are computed by The Intl.Locale Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for formatting.
+
+- [[Calendar]] is either undefined or a String value that is a well-formed Unicode Calendar Identifier in canonical form.
+
+- [[Collation]] is either undefined or a String value that is a well-formed Unicode Collation Identifier in canonical form.
+
+- [[FirstDayOfWeek]] is either undefined or a String value that is a valid Unicode First Day Identifier in canonical form.
+
+- [[HourCycle]] is either undefined or a String value that is a valid Unicode Hour Cycle Identifier in canonical form.
+
+- [[NumberingSystem]] is either undefined or a String value that is a well-formed Unicode Number System Identifier in canonical form.
+
+- [[CaseFirst]] is either undefined or one of the String values "upper" , "lower" , or "false" . This internal slot only exists if the [[LocaleExtensionKeys]] internal slot of %Intl.Locale% contains "kf" .
+
+- [[Numeric]] is either undefined or a Boolean value specifying whether numeric sorting is used by the locale. This internal slot only exists if the [[LocaleExtensionKeys]] internal slot of %Intl.Locale% contains "kn" .
+
+15.5 Abstract Operations for Locale Objects
+
+15.5.1 GetLocaleBaseName ( locale )
+
+The abstract operation GetLocaleBaseName takes argument locale (a String) and returns a String. It performs the following steps when called:
+
+- Assert : locale can be matched by the unicode_locale_id Unicode locale nonterminal .
+
+- Return the longest prefix of locale matched by the unicode_language_id Unicode locale nonterminal .
+
+15.5.2 GetLocaleLanguage ( locale )
+
+The abstract operation GetLocaleLanguage takes argument locale (a String) and returns a String. It performs the following steps when called:
+
+- Let baseName be GetLocaleBaseName ( locale ).
+
+- Assert : The first subtag of baseName can be matched by the unicode_language_subtag Unicode locale nonterminal .
+
+- Return the first subtag of baseName .
+
+15.5.3 GetLocaleScript ( locale )
+
+The abstract operation GetLocaleScript takes argument locale (a String) and returns a String or undefined . It performs the following steps when called:
+
+- Let baseName be GetLocaleBaseName ( locale ).
+
+- Assert : baseName contains at most one subtag that can be matched by the unicode_script_subtag Unicode locale nonterminal .
+
+- If baseName contains a subtag matched by the unicode_script_subtag Unicode locale nonterminal , return that subtag .
+
+- Return undefined .
+
+15.5.4 GetLocaleRegion ( locale )
+
+The abstract operation GetLocaleRegion takes argument locale (a String) and returns a String or undefined . It performs the following steps when called:
+
+- Let baseName be GetLocaleBaseName ( locale ).
+
+- NOTE: A unicode_region_subtag subtag is only valid immediately after an initial unicode_language_subtag subtag , optionally with a single unicode_script_subtag subtag between them. In that position, unicode_region_subtag cannot be confused with any other valid subtag because all their productions are disjoint.
+
+- Assert : The first subtag of baseName can be matched by the unicode_language_subtag Unicode locale nonterminal .
+
+- Let baseNameTail be the suffix of baseName following the first subtag .
+
+- Assert : baseNameTail contains at most one subtag that can be matched by the unicode_region_subtag Unicode locale nonterminal .
+
+- If baseNameTail contains a subtag matched by the unicode_region_subtag Unicode locale nonterminal , return that subtag .
+
+- Return undefined .
+
+15.5.5 GetLocaleVariants ( locale )
+
+The abstract operation GetLocaleVariants takes argument locale (a String) and returns a String or undefined . It performs the following steps when called:
+
+- Let baseName be GetLocaleBaseName ( locale ).
+
+- NOTE: Each subtag in baseName that is preceded by "-" is either a unicode_script_subtag , unicode_region_subtag , or unicode_variant_subtag , but any substring matched by unicode_variant_subtag is strictly longer than any prefix thereof which could also be matched by one of the other productions.
+
+- Let subtags be StringSplitToList ( baseName , "-" ).
+
+- Let dashIndex be the length of subtags [0].
+
+- Remove the first element from subtags .
+
+- For each String subtag of subtags , do
+- If subtag is matched by the unicode_variant_subtag Unicode locale nonterminal , then
+- Return the substring of baseName from dashIndex + 1.
+
+- Let subtagLength be the length of subtag .
+
+- Set dashIndex to dashIndex + subtagLength + 1.
+
+- Return undefined .
+
+15.5.6 UnicodeExtensionValue ( locale , key )
+
+The abstract operation UnicodeExtensionValue takes arguments locale (a Unicode canonicalized locale identifier ) and key (a String) and returns a String or empty . It performs the following steps when called:
+
+- If locale contains a Unicode locale extension sequence , then
+- Let extension be the Unicode locale extension sequence of locale .
+
+- Let components be UnicodeExtensionComponents ( extension ).
+
+- Let keywords be components . [[Keywords]] .
+
+- If there exists an element entry of keywords such that entry . [[Key]] is key , return entry . [[Value]] .
+
+- Return empty .
+
+15.5.7 CanonicalUnicodeSubdivision ( locale , key )
+
+The abstract operation CanonicalUnicodeSubdivision takes arguments locale (a Unicode canonicalized locale identifier ) and key ( "rg" or "sd" ) and returns a String or undefined . It performs the following steps when called:
+
+- Let subdivision be UnicodeExtensionValue ( locale , key ).
+
+- If subdivision is empty , return undefined .
+
+- If subdivision cannot be matched by the unicode_subdivision_id Unicode locale nonterminal , return undefined .
+
+- Let region be the longest prefix of subdivision matched by the unicode_region_subtag Unicode locale nonterminal .
+
+- Let regionLocale be the string-concatenation of "und-" and region .
+
+- Set regionLocale to CanonicalizeUnicodeLocaleId ( regionLocale ).
+
+- Return GetLocaleRegion ( regionLocale ).
+
+15.5.8 RegionPreference ( locale )
+
+The abstract operation RegionPreference takes argument locale (a Unicode canonicalized locale identifier ) and returns a Record with fields [[Region]] (a String) and [[RegionOverride]] (a String or undefined ). It performs the following steps when called:
+
+- Let region be GetLocaleRegion ( locale ).
+
+- If region is undefined , then
+- Set region to CanonicalUnicodeSubdivision ( locale , "sd" ).
+
+- If region is undefined , then
+- Let maximal be the result of the Add Likely Subtags algorithm applied to locale . If an error is signaled, set maximal to locale .
+
+- Set maximal to CanonicalizeUnicodeLocaleId ( maximal ).
+
+- Set region to GetLocaleRegion ( maximal ).
+
+- If region is undefined , then
+- Set region to "001" .
+
+- Let regionOverride be CanonicalUnicodeSubdivision ( locale , "rg" ).
+
+- Return { [[Region]] : region , [[RegionOverride]] : regionOverride }.
+
+15.5.9 CalendarsOfLocale ( loc )
+
+The implementation-defined abstract operation CalendarsOfLocale takes argument loc (an Intl.Locale) and returns an Array. The following algorithm refers to Locale data specified in Unicode Technical Standard #35 Part 4 Dates, Calendar Preference Data . It performs the following steps when called:
+
+- If loc . [[Calendar]] is not undefined , then
+- Return CreateArrayFromList (« loc . [[Calendar]] »).
+
+- Let preference be RegionPreference ( loc . [[Locale]] ).
+
+- If preference . [[RegionOverride]] is not undefined , let preferredRegions be « preference . [[RegionOverride]] , preference . [[Region]] »; else let preferredRegions be « preference . [[Region]] ».
+
+- Let calendarsInUse be a new empty List .
+
+- Let language be GetLocaleLanguage ( loc . [[Locale]] ).
+
+- For each String region of preferredRegions , do
+- Let locale be the string-concatenation of language , "-" , and region .
+
+- If calendarsInUse is empty and calendar preference data for locale locale are available, then
+- Set calendarsInUse to a List of unique calendar types in common use for date and time formatting in locale locale , sorted by descending preference of use in locale .
+
+- If calendarsInUse is empty and calendar preference data for region region are available, then
+- Set calendarsInUse to a List of unique calendar types in common use for date and time formatting in region region , sorted by descending preference of use in region .
+
+- Let list be a new empty List .
+
+- Let availableCalendars be AvailableCalendars ().
+
+- For each element identifier of calendarsInUse , do
+- Let canonical be CanonicalizeUValue ( "ca" , identifier ).
+
+- If availableCalendars contains canonical and list does not contain canonical , then
+- Append canonical to list .
+
+- If list is empty, set list to « "gregory" ».
+
+- Return CreateArrayFromList ( list ).
+
+15.5.10 CollationsOfLocale ( loc )
+
+The implementation-defined abstract operation CollationsOfLocale takes argument loc (an Intl.Locale) and returns an Array. It performs the following steps when called:
+
+- If loc . [[Collation]] is not undefined , then
+- Return CreateArrayFromList (« loc . [[Collation]] »).
+
+- Let match be LookupMatchingLocaleByPrefix ( %Intl.Collator% . [[AvailableLocales]] , « loc . [[Locale]] »).
+
+- If match is not undefined , then
+- Let foundLocale be match . [[locale]] .
+
+- Let foundLocaleData be %Intl.Collator% . [[SortLocaleData]] .[[< foundLocale >]].
+
+- Let list be a copy of foundLocaleData . [[co]] .
+
+- Assert : list [0] is null .
+
+- Remove the first element from list .
+
+- Else,
+- Let list be « "emoji" , "eor" ».
+
+- Let sorted be a copy of list , sorted according to lexicographic code unit order .
+
+- Return CreateArrayFromList ( sorted ).
+
+15.5.11 HourCyclesOfLocale ( loc )
+
+The implementation-defined abstract operation HourCyclesOfLocale takes argument loc (an Intl.Locale) and returns an Array. The following algorithm refers to Locale data specified in Unicode Technical Standard #35 Part 4 Dates, Time Data . It performs the following steps when called:
+
+- If loc . [[HourCycle]] is not undefined , then
+- Return CreateArrayFromList (« loc . [[HourCycle]] »).
+
+- Let preference be RegionPreference ( loc . [[Locale]] ).
+
+- If preference . [[RegionOverride]] is not undefined , let preferredRegions be « preference . [[RegionOverride]] , preference . [[Region]] »; else let preferredRegions be « preference . [[Region]] ».
+
+- Let hourCycles be a new empty List .
+
+- Let language be GetLocaleLanguage ( loc . [[Locale]] ).
+
+- For each String region of preferredRegions , do
+- Let locale be the string-concatenation of language , "-" , and region .
+
+- If hourCycles is empty and time data for locale locale are available, then
+- Set hourCycles to a List of unique hour cycle identifiers, which must be lower case Strings indicating either the 12-hour format ( "h11" , "h12" ) or the 24-hour format ( "h23" , "h24" ), sorted in descending preference of those in common use for date and time formatting in locale locale .
+
+- If hourCycles is empty and time data for region region are available, then
+- Set hourCycles to a List of unique hour cycle identifiers, which must be lower case Strings indicating either the 12-hour format ( "h11" , "h12" ) or the 24-hour format ( "h23" , "h24" ), sorted in descending preference of those in common use for date and time formatting in region region .
+
+- If hourCycles is empty, set hourCycles to « "h23" ».
+
+- Return CreateArrayFromList ( hourCycles ).
+
+15.5.12 NumberingSystemsOfLocale ( loc )
+
+The implementation-defined abstract operation NumberingSystemsOfLocale takes argument loc (an Intl.Locale) and returns an Array. It performs the following steps when called:
+
+- If loc . [[NumberingSystem]] is not undefined , then
+- Return CreateArrayFromList (« loc . [[NumberingSystem]] »).
+
+- Let match be LookupMatchingLocaleByPrefix ( %Intl.NumberFormat% . [[AvailableLocales]] , « loc . [[Locale]] »).
+
+- If match is not undefined , then
+- Let foundLocale be match . [[locale]] .
+
+- Let foundLocaleData be %Intl.NumberFormat% . [[LocaleData]] .[[< foundLocale >]].
+
+- Let numberingSystems be foundLocaleData . [[nu]] .
+
+- Let list be « numberingSystems [0] ».
+
+- Else,
+- Let list be « "latn" ».
+
+- Return CreateArrayFromList ( list ).
+
+15.5.13 TimeZonesOfLocale ( loc )
+
+The implementation-defined abstract operation TimeZonesOfLocale takes argument loc (an Intl.Locale) and returns an Array or undefined . It performs the following steps when called:
+
+- Let region be GetLocaleRegion ( loc . [[Locale]] ).
+
+- If region is undefined , return undefined .
+
+- Let list be a List of unique canonical time zone identifiers , which must be String values indicating a canonical Zone name of the IANA Time Zone Database, of those in common use in region . The list is empty if no time zones are commonly used in region . The list is sorted according to lexicographic code unit order .
+
+- Return CreateArrayFromList ( list ).
+
+15.5.14 TextDirectionOfLocale ( loc )
+
+The implementation-defined abstract operation TextDirectionOfLocale takes argument loc (an Intl.Locale) and returns a String or undefined . The following algorithm refers to Locale data specified in Unicode Technical Standard #35 Part 1 Core, Script Metadata . It performs the following steps when called:
+
+- Let locale be loc . [[Locale]] .
+
+- Let script be GetLocaleScript ( locale ).
+
+- If script is undefined , then
+- Let maximal be the result of the Add Likely Subtags algorithm applied to locale . If an error is signaled, return undefined .
+
+- Set script to GetLocaleScript ( maximal ).
+
+- If script is undefined , return undefined .
+
+- If the default general ordering of characters within a line in script is right-to-left, return "rtl" .
+
+- If the default general ordering of characters within a line in script is left-to-right, return "ltr" .
+
+- Return undefined .
+
+Note 1
+When the direction of default general ordering of characters within a line in the script cannot be determined, or the direction is neither right-to-left nor left-to-right, then undefined will be returned.
+
+Note 2
+Text in a language may have more than one possible direction. Text in a language written in one script may also have more than one possible direction. Therefore, if there is direction information included in the metadata associated with a piece of text, that direction information should be considered as the primary source of truth. The information returned by TextDirectionOfLocale should only be used as a fallback mechanism while there is no metadata associated with the text to provide the direction information of the text. It should only be used while the direction information is not present but language information is known. Web developers should not rely too much on this API to decide the direction of the text.
+
+15.5.15 WeekdayToUValue ( fw )
+
+The abstract operation WeekdayToUValue takes argument fw (a String) and returns a String. It converts a string that numerically represents a day of the week to a valid Unicode First Day Identifier defined in Unicode Technical Standard #35 Part 1 Core Section 3.6.1 Key and Type Definitions , and returns any other string unmodified. It performs the following steps when called:
+
+- For each row of Table 26 , except the header row, in table order, do
+- Let weekday be the Weekday value of the current row.
+
+- Let string be the String value of the current row.
+
+- If fw is equal to weekday , return string .
+
+- Return fw .
+
+Table 26: Weekday String and Value
+
+Weekday
+String
+Value
+
+"0"
+"sun"
+7 𝔽
+
+"1"
+"mon"
+1 𝔽
+
+"2"
+"tue"
+2 𝔽
+
+"3"
+"wed"
+3 𝔽
+
+"4"
+"thu"
+4 𝔽
+
+"5"
+"fri"
+5 𝔽
+
+"6"
+"sat"
+6 𝔽
+
+"7"
+"sun"
+7 𝔽
+
+15.5.16 WeekdayUValueToNumber ( fw )
+
+The abstract operation WeekdayUValueToNumber takes argument fw (a String) and returns an integral Number or undefined . It converts a Unicode First Day Identifier defined in Unicode Technical Standard #35 Part 1 Core Section 3.6.1 Key and Type Definitions to a numeric ISO 8601 calendar day of week , and returns undefined for any other string. It performs the following steps when called:
+
+- For each row of Table 26 , except the header row, in table order, do
+- Let string be the String value of the current row.
+
+- Let value be the Value value of the current row.
+
+- If fw is equal to string , return value .
+
+- Return undefined .
+
+15.5.17 WeekInfoOfLocale ( loc )
+
+The implementation-defined abstract operation WeekInfoOfLocale takes argument loc (an Intl.Locale) and returns a Record . The following algorithm refers to Locale data specified in Unicode Technical Standard #35 Part 4 Dates, Week Elements . It performs the following steps when called:
+
+- Let preference be RegionPreference ( loc . [[Locale]] ).
+
+- Let region be preference . [[Region]] .
+
+- Let regionOverride be preference . [[RegionOverride]] .
+
+- If regionOverride is not undefined and week data for region regionOverride are available, then
+- Let lookupRegion be regionOverride .
+
+- Else if week data for region region are available, then
+- Let lookupRegion be region .
+
+- Else,
+- Let lookupRegion be "001" .
+
+- Let weekInfo be a Record whose fields are defined by Table 27 , with values based on region lookupRegion .
+
+- Let firstDayString be loc . [[FirstDayOfWeek]] .
+
+- If firstDayString is not undefined , then
+- Let firstDay be WeekdayUValueToNumber ( firstDayString ).
+
+- If firstDay is not undefined , set weekInfo . [[FirstDay]] to firstDay .
+
+- Return weekInfo .
+
+Note
+The record's return values are determined by locale , in accordance with the specifications outlined in Unicode Technical Standard #35 Part 4 Dates, Week Data and First Day Overrides .
+
+Table 27: WeekInfo Record Fields
+
+Field Name
+Value
+Meaning
+
+[[FirstDay]]
+The ISO 8601 calendar day of week of a calendar day, which is its 1-based ordinal position within the sequence of week calendar days that starts with Monday at 1 𝔽 and ends with Sunday at 7 𝔽 .
+Which day of the week is considered “first” for calendar purposes.
+
+[[Weekend]]
+A List of one or more ISO 8601 calendar day of week integral Number values 1 𝔽 (Monday) through 7 𝔽 (Sunday), in ascending numeric order.
+The list of weekday values indicating which days of the week are considered as part of the “weekend” for calendar purposes. Notice that the number of days in the weekend may differ across locales and may be non-contiguous.

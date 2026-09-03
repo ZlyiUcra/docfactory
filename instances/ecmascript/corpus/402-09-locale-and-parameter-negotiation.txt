@@ -1,0 +1,471 @@
+# 9 Locale and Parameter Negotiation
+# джерело: https://tc39.es/ecma402/#locale-and-parameter-negotiation
+# отримано: 2026-09-01
+
+9 Locale and Parameter Negotiation
+
+Service constructors use common patterns to negotiate the requests represented by locales and options arguments against the actual capabilities of an implementation. That common behaviour is explained here in terms of internal slots describing the capabilities, abstract operations using these internal slots, and specialized data types defined below.
+
+An Available Locales List is an arbitrarily-ordered duplicate-free List of language tags , each of which is well-formed , canonicalized , and lacks a Unicode locale extension sequence . It represents all locales for which the implementation provides functionality within a particular context.
+
+A Language Priority List is a List of well-formed and canonicalized language tags representing a sequence of locale preferences by descending priority. It corresponds with the term of the same name defined in BCP 47 at RFC 4647 section 2.3 but prohibits "*" elements and contains only canonicalized contents.
+
+A Resolution Option Descriptor is a Record with fields [[Key]] (a string, usually an element of a [[RelevantExtensionKeys]] List ) and [[Property]] (a string), and optionally also with either or both of [[Type]] ( boolean or string ) and [[Values]] ( empty or a List of ECMAScript language values ). It describes how to read options relevant to locale resolution during object construction.
+
+9.1 Internal slots of Service Constructors
+
+Each service constructor has the following internal slots:
+
+- [[AvailableLocales]] is an Available Locales List . It must include the value returned by DefaultLocale . Additionally, for each element with more than one subtag , it must also include a less narrow language tag with the same language subtag and a strict subset of the same following subtags (i.e., omitting one or more) to serve as a potential fallback from ResolveLocale . In particular, each element with a language subtag and a script subtag and a region subtag must be accompanied by another element consisting of only the same language subtag and region subtag but missing the script subtag . For example,
+
+- If [[AvailableLocales]] contains "de-DE" , then it must also contain "de" (which might be selected to satisfy requested locales such as "de-AT" and "de-CH" ).
+
+- If [[AvailableLocales]] contains "az-Latn-AZ" , then it must also contain "az-AZ" (which might be selected to satisfy requested locales such as "az-Cyrl-AZ" if "az-Cyrl" is unavailable).
+
+- [[RelevantExtensionKeys]] is a List of Unicode locale extension sequence keys defined in Unicode Technical Standard #35 Part 1 Core, Section 3.6.1 Key and Type Definitions that are relevant for the functionality of the constructed objects.
+
+- [[ResolutionOptionDescriptors]] is a List of Resolution Option Descriptors used for reading options during object construction.
+
+- [[SortLocaleData]] and [[SearchLocaleData]] (for Intl.Collator) and [[LocaleData]] (for every other service constructor ) are Records . In addition to fields specific to its service constructor , each such Record has a field for each locale contained in [[AvailableLocales]] . The value of each such locale-named field is a Record in which each element of [[RelevantExtensionKeys]] identifies the name of a field whose value is a non-empty List of Strings representing the type values that are supported by the implementation in the relevant locale for the corresponding Unicode locale extension sequence key, with the first element providing the default value for that key in the locale.
+
+Note
+For example, an implementation of DateTimeFormat might include the language tag "fa-IR" in its [[AvailableLocales]] internal slot, and must (according to 11.2.3 ) include the keys "ca" , "hc" , and "nu" in its [[RelevantExtensionKeys]] internal slot.
+The default calendar for that locale is usually "persian" , but an implementation might also support "gregory" , "islamic" , and "islamic-civil" .
+The Record in the DateTimeFormat [[LocaleData]] internal slot would therefore include a [[fa-IR]] field whose value is a Record like { [[ca]] : « "persian" , "gregory" , "islamic" , "islamic-civil" », [[hc]] : « … », [[nu]] : « … » }, along with other locale-named fields having the same value shape but different elements in their Lists .
+
+9.2 Abstract Operations
+
+9.2.1 CanonicalizeLocaleList ( locales )
+
+The abstract operation CanonicalizeLocaleList takes argument locales (an ECMAScript language value ) and returns either a normal completion containing a Language Priority List or a throw completion . It performs the following steps when called:
+
+- If locales is undefined , then
+- Return a new empty List .
+
+- Let seen be a new empty List .
+
+- If locales is a String or locales is an Object and locales has an [[InitializedLocale]] internal slot, then
+- Let localesObj be CreateArrayFromList (« locales »).
+
+- Else,
+- Let localesObj be ? ToObject ( locales ).
+
+- Let length be ? LengthOfArrayLike ( localesObj ).
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- Let propertyKey be ! ToString ( 𝔽 ( k )).
+
+- Let exists be ? HasProperty ( localesObj , propertyKey ).
+
+- If exists is true , then
+- Let element be ? Get ( localesObj , propertyKey ).
+
+- If element is neither a String nor an Object, throw a TypeError exception.
+
+- If element is an Object and element has an [[InitializedLocale]] internal slot, then
+- Let tag be element . [[Locale]] .
+
+- Else,
+- Let tag be ? ToString ( element ).
+
+- If IsWellFormedLanguageTag ( tag ) is false , throw a RangeError exception.
+
+- Let canonicalizedTag be CanonicalizeUnicodeLocaleId ( tag ).
+
+- If seen does not contain canonicalizedTag , append canonicalizedTag to seen .
+
+- Set k to k + 1.
+
+- Return seen .
+
+Note 1
+Non-normative summary: The abstract operation interprets the locales argument as an array and copies its elements into a List , validating the elements as well-formed language tags and canonicalizing them, and omitting duplicates.
+
+Note 2
+Requiring element to be a String or Object means that the Number value NaN will not be interpreted as the language tag "nan" , which stands for Min Nan Chinese.
+
+9.2.2 CanonicalizeUValue ( ukey , uvalue )
+
+The abstract operation CanonicalizeUValue takes arguments ukey (a Unicode locale extension sequence key defined in Unicode Technical Standard #35 Part 1 Core Section 3.6.1 Key and Type Definitions ) and uvalue (a String) and returns a String. The returned String is the canonical and case-regularized form of uvalue as a value of ukey . It performs the following steps when called:
+
+- Let lowerValue be the ASCII-lowercase of uvalue .
+
+- Let canonicalized be the String value resulting from canonicalizing lowerValue as a value of key ukey per Unicode Technical Standard #35 Part 1 Core, Annex C LocaleId Canonicalization Section 5 Canonicalizing Syntax, Processing LocaleIds .
+
+- NOTE: It is recommended that implementations use the 'u' extension data in common/bcp47 provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+- Return canonicalized .
+
+9.2.3 LookupMatchingLocaleByPrefix ( availableLocales , requestedLocales )
+
+The abstract operation LookupMatchingLocaleByPrefix takes arguments availableLocales (an Available Locales List ) and requestedLocales (a Language Priority List ) and returns a Record with fields [[locale]] (a Unicode canonicalized locale identifier ) and [[extension]] (a Unicode locale extension sequence or empty ) or undefined . It determines the best element of availableLocales for satisfying requestedLocales using the lookup algorithm defined in BCP 47 at RFC 4647 section 3.4 , ignoring Unicode locale extension sequences . If a non-default match is found, it returns a Record with a [[locale]] field containing the matching language tag from availableLocales and an [[extension]] field containing the Unicode locale extension sequence of the corresponding element of requestedLocales (or empty if requested language tag has no such sequence). It performs the following steps when called:
+
+- For each element locale of requestedLocales , do
+- Let extension be empty .
+
+- If locale contains a Unicode locale extension sequence , then
+- Set extension to the Unicode locale extension sequence of locale .
+
+- Set locale to the String value that is locale with any Unicode locale extension sequences removed.
+
+- Let prefix be locale .
+
+- Repeat, while prefix is not the empty String,
+- If availableLocales contains prefix , return the Record { [[locale]] : prefix , [[extension]] : extension }.
+
+- If prefix contains "-" (code unit 0x002D HYPHEN-MINUS), let pos be the index into prefix of the last occurrence of "-" ; else let pos be 0.
+
+- Repeat, while pos ≥ 2 and the substring of prefix from pos - 2 to pos - 1 is "-" ,
+- Set pos to pos - 2.
+
+- Set prefix to the substring of prefix from 0 to pos .
+
+- Return undefined .
+
+Note
+When a requested locale includes a Unicode Technical Standard #35 Part 1 Core BCP 47 T Extension subtag sequence, the truncation in this algorithm may temporarily generate invalid language tags . However, none of them will be returned because availableLocales contains only valid language tags .
+
+9.2.4 LookupMatchingLocaleByBestFit ( availableLocales , requestedLocales )
+
+The implementation-defined abstract operation LookupMatchingLocaleByBestFit takes arguments availableLocales (an Available Locales List ) and requestedLocales (a Language Priority List ) and returns a Record with fields [[locale]] (a Unicode canonicalized locale identifier ) and [[extension]] (a Unicode locale extension sequence or empty ), or undefined . It determines the best element of availableLocales for satisfying requestedLocales , ignoring Unicode locale extension sequences . The algorithm is implementation dependent, but should produce results that a typical user of the requested locales would consider at least as good as those produced by the LookupMatchingLocaleByPrefix algorithm. If a non-default match is found, it returns a Record with a [[locale]] field containing the matching language tag from availableLocales and an [[extension]] field containing the Unicode locale extension sequence of the corresponding element of requestedLocales (or empty if requested language tag has no such sequence).
+
+9.2.5 UnicodeExtensionComponents ( extension )
+
+The abstract operation UnicodeExtensionComponents takes argument extension (a Unicode locale extension sequence ) and returns a Record with fields [[Attributes]] and [[Keywords]] . It deconstructs extension into a List of unique attributes and a List of keywords with unique keys. Any repeated appearance of an attribute or keyword key after the first is ignored. It performs the following steps when called:
+
+- Assert : The ASCII-lowercase of extension is extension .
+
+- Assert : The substring of extension from 0 to 3 is "-u-" .
+
+- Let attributes be a new empty List .
+
+- Let keywords be a new empty List .
+
+- Let keyword be undefined .
+
+- Let size be the length of extension .
+
+- Let k be 3.
+
+- Repeat, while k < size ,
+- Let e be StringIndexOf ( extension , "-" , k ).
+
+- If e is not-found , let length be size - k ; else let length be e - k .
+
+- Let subtag be the substring of extension from k to k + length .
+
+- NOTE: A keyword is a sequence of subtags in which the first is a key of length 2 and any subsequent ones (if present) have length in the inclusive interval from 3 to 8, collectively constituting a value along with their medial "-" separators. An attribute is a single subtag with length in the inclusive interval from 3 to 8 that precedes all keywords .
+
+- Assert : length ≥ 2.
+
+- If keyword is undefined and length ≠ 2, then
+- If subtag is not an element of attributes , append subtag to attributes .
+
+- Else if length = 2, then
+- Set keyword to the Record { [[Key]] : subtag , [[Value]] : the empty String }.
+
+- If keywords does not contain an element whose [[Key]] is keyword . [[Key]] , append keyword to keywords .
+
+- Else if keyword . [[Value]] is the empty String, then
+- Set keyword . [[Value]] to subtag .
+
+- Else,
+- Set keyword . [[Value]] to the string-concatenation of keyword . [[Value]] , "-" , and subtag .
+
+- Set k to k + length + 1.
+
+- Return the Record { [[Attributes]] : attributes , [[Keywords]] : keywords }.
+
+9.2.6 InsertUnicodeExtensionAndCanonicalize ( locale , attributes , keywords )
+
+The abstract operation InsertUnicodeExtensionAndCanonicalize takes arguments locale (a language tag ), attributes (a List of Strings), and keywords (a List of Records ) and returns a Unicode canonicalized locale identifier . It incorporates attributes and keywords into locale as a Unicode locale extension sequence and returns the canonicalized result. It performs the following steps when called:
+
+- Assert : locale does not contain a Unicode locale extension sequence .
+
+- Let extension be "-u" .
+
+- For each element attr of attributes , do
+- Set extension to the string-concatenation of extension , "-" , and attr .
+
+- For each Record { [[Key]] , [[Value]] } keyword of keywords , do
+- Set extension to the string-concatenation of extension , "-" , and keyword . [[Key]] .
+
+- If keyword . [[Value]] is not the empty String, set extension to the string-concatenation of extension , "-" , and keyword . [[Value]] .
+
+- If extension is "-u" , return CanonicalizeUnicodeLocaleId ( locale ).
+
+- Let privateIndex be StringIndexOf ( locale , "-x-" , 0).
+
+- If privateIndex is not-found , then
+- Let newLocale be the string-concatenation of locale and extension .
+
+- Else,
+- Let preExtension be the substring of locale from 0 to privateIndex .
+
+- Let postExtension be the substring of locale from privateIndex .
+
+- Let newLocale be the string-concatenation of preExtension , extension , and postExtension .
+
+- Assert : IsWellFormedLanguageTag ( newLocale ) is true .
+
+- Return CanonicalizeUnicodeLocaleId ( newLocale ).
+
+9.2.7 ResolveLocale ( availableLocales , requestedLocales , options , relevantExtensionKeys , localeData )
+
+The abstract operation ResolveLocale takes arguments availableLocales (an Available Locales List ), requestedLocales (a Language Priority List ), options (a Record ), relevantExtensionKeys (a List of Strings), and localeData (a Record ) and returns a Record . It performs "lookup" as defined in BCP 47 at RFC 4647 section 3 , determining the best element of availableLocales for satisfying requestedLocales using either the LookupMatchingLocaleByBestFit algorithm or LookupMatchingLocaleByPrefix algorithm as specified by options . [[localeMatcher]] , ignoring Unicode locale extension sequences , and returns a representation of the match that also includes corresponding data from localeData and a resolved value for each element of relevantExtensionKeys (defaulting to data from the matched locale, superseded by data from the requested Unicode locale extension sequence if present and then by data from options if present). If the matched element from requestedLocales contains a Unicode locale extension sequence , it is copied onto the language tag in the [[Locale]] field of the returned Record , omitting any keyword Unicode locale nonterminal whose key value is not contained within relevantExtensionKeys or type value is superseded by a different value from options . It performs the following steps when called:
+
+- Let matcher be options . [[localeMatcher]] .
+
+- If matcher is "lookup" , then
+- Let match be LookupMatchingLocaleByPrefix ( availableLocales , requestedLocales ).
+
+- Else,
+- Let match be LookupMatchingLocaleByBestFit ( availableLocales , requestedLocales ).
+
+- If match is undefined , set match to the Record { [[locale]] : DefaultLocale (), [[extension]] : empty }.
+
+- Let foundLocale be match . [[locale]] .
+
+- Let foundLocaleData be localeData .[[< foundLocale >]].
+
+- Assert : foundLocaleData is a Record .
+
+- Let result be a new Record .
+
+- Set result . [[LocaleData]] to foundLocaleData .
+
+- If match . [[extension]] is not empty , then
+- Let components be UnicodeExtensionComponents ( match . [[extension]] ).
+
+- Let keywords be components . [[Keywords]] .
+
+- Else,
+- Let keywords be a new empty List .
+
+- Let supportedKeywords be a new empty List .
+
+- For each element key of relevantExtensionKeys , do
+- Let keyLocaleData be foundLocaleData .[[< key >]].
+
+- Assert : keyLocaleData is a List .
+
+- Let value be keyLocaleData [0].
+
+- Assert : value is a String or value is null .
+
+- Let supportedKeyword be empty .
+
+- If keywords contains an element whose [[Key]] is key , then
+- Let entry be the element of keywords whose [[Key]] is key .
+
+- Let requestedValue be entry . [[Value]] .
+
+- If requestedValue is not the empty String, then
+- If keyLocaleData contains requestedValue , then
+- Set value to requestedValue .
+
+- Set supportedKeyword to the Record { [[Key]] : key , [[Value]] : value }.
+
+- Else if keyLocaleData contains "true" , then
+- Set value to "true" .
+
+- Set supportedKeyword to the Record { [[Key]] : key , [[Value]] : the empty String }.
+
+- Assert : options has a field [[< key >]].
+
+- Let optionsValue be options .[[< key >]].
+
+- Assert : optionsValue is a String , or optionsValue is either undefined or null .
+
+- If optionsValue is a String , then
+- Let ukey be the ASCII-lowercase of key .
+
+- Set optionsValue to CanonicalizeUValue ( ukey , optionsValue ).
+
+- If optionsValue is the empty String, then
+- Set optionsValue to "true" .
+
+- If SameValue ( optionsValue , value ) is false and keyLocaleData contains optionsValue , then
+- Set value to optionsValue .
+
+- Set supportedKeyword to empty .
+
+- If supportedKeyword is not empty , append supportedKeyword to supportedKeywords .
+
+- Set result .[[< key >]] to value .
+
+- If supportedKeywords is not empty, then
+- Let supportedAttributes be a new empty List .
+
+- Set foundLocale to InsertUnicodeExtensionAndCanonicalize ( foundLocale , supportedAttributes , supportedKeywords ).
+
+- Set result . [[Locale]] to foundLocale .
+
+- Return result .
+
+9.2.8 ResolveOptions ( ctor , localeData , locales , options [ , specialBehaviours [ , modifyResolutionOptions ] ] )
+
+The abstract operation ResolveOptions takes arguments ctor (a service constructor ), localeData (a Record ), locales (an ECMAScript language value ), and options (an ECMAScript language value ) and optional arguments specialBehaviours (a List of enums ) and modifyResolutionOptions (an Abstract Closure with one parameter) and returns either a normal completion containing a Record with fields [[Options]] (an Object), [[ResolvedLocale]] (a Record ), and [[ResolutionOptions]] (a Record ), or a throw completion . It reads the inputs for ctor and resolves them into a locale. It performs the following steps when called:
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- If specialBehaviours is present and contains require-options and options is undefined , throw a TypeError exception.
+
+- If specialBehaviours is present and contains coerce-options , set options to ? CoerceOptionsToObject ( options ). Otherwise, set options to ? GetOptionsObject ( options ).
+
+- Let matcher be ? GetOption ( options , "localeMatcher" , string , « "lookup" , "best fit" », "best fit" ).
+
+- Let opt be the Record { [[localeMatcher]] : matcher }.
+
+- For each Resolution Option Descriptor desc of ctor . [[ResolutionOptionDescriptors]] , do
+- If desc has a [[Type]] field, let type be desc . [[Type]] . Otherwise, let type be string .
+
+- If desc has a [[Values]] field, let values be desc . [[Values]] . Otherwise, let values be empty .
+
+- Let value be ? GetOption ( options , desc . [[Property]] , type , values , undefined ).
+
+- If value is not undefined , then
+- Set value to ! ToString ( value ).
+
+- If value cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- Let key be desc . [[Key]] .
+
+- Set opt .[[< key >]] to value .
+
+- If modifyResolutionOptions is present, perform ! modifyResolutionOptions ( opt ).
+
+- Let resolution be ResolveLocale ( ctor . [[AvailableLocales]] , requestedLocales , opt , ctor . [[RelevantExtensionKeys]] , localeData ).
+
+- Return the Record { [[Options]] : options , [[ResolvedLocale]] : resolution , [[ResolutionOptions]] : opt }.
+
+9.2.9 FilterLocales ( availableLocales , requestedLocales , options )
+
+The abstract operation FilterLocales takes arguments availableLocales (an Available Locales List ), requestedLocales (a Language Priority List ), and options (an ECMAScript language value ) and returns either a normal completion containing a List of Unicode canonicalized locale identifiers or a throw completion . It performs "filtering" as defined in BCP 47 at RFC 4647 section 3 , returning the elements of requestedLocales for which availableLocales contains a matching locale when using either the LookupMatchingLocaleByBestFit algorithm or LookupMatchingLocaleByPrefix algorithm as specified in options , preserving their relative order. It performs the following steps when called:
+
+- Set options to ? CoerceOptionsToObject ( options ).
+
+- Let matcher be ? GetOption ( options , "localeMatcher" , string , « "lookup" , "best fit" », "best fit" ).
+
+- Let subset be a new empty List .
+
+- For each element locale of requestedLocales , do
+- If matcher is "lookup" , then
+- Let match be LookupMatchingLocaleByPrefix ( availableLocales , « locale »).
+
+- Else,
+- Let match be LookupMatchingLocaleByBestFit ( availableLocales , « locale »).
+
+- If match is not undefined , append locale to subset .
+
+- Return CreateArrayFromList ( subset ).
+
+9.2.10 CoerceOptionsToObject ( options )
+
+The abstract operation CoerceOptionsToObject takes argument options (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion .
+It coerces options into an Object suitable for use with GetOption , defaulting to an empty Object.
+Because it coerces non-null primitive values into objects, its use is discouraged for new functionality in favour of GetOptionsObject .
+It performs the following steps when called:
+
+- If options is undefined , then
+- Return OrdinaryObjectCreate ( null ).
+
+- Return ? ToObject ( options ).
+
+9.2.11 GetOption ( options , propertyKey , type , values , default )
+
+The abstract operation GetOption takes arguments options (an Object), propertyKey (a property key ), type ( boolean or string ), values ( empty or a List of ECMAScript language values ), and default ( required or an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It extracts the value of the specified property of options , converts it to the required type , checks whether it is allowed by values if values is not empty , and substitutes default if the value is undefined . It performs the following steps when called:
+
+- Let value be ? Get ( options , propertyKey ).
+
+- If value is undefined , then
+- If default is required , throw a TypeError exception.
+
+- Return default .
+
+- If type is boolean , then
+- Set value to ToBoolean ( value ).
+
+- Else,
+- Assert : type is string .
+
+- Set value to ? ToString ( value ).
+
+- If values is not empty and values does not contain value , throw a RangeError exception.
+
+- Return value .
+
+9.2.12 GetBooleanOrStringNumberFormatOption ( options , propertyKey , stringValues , fallback )
+
+The abstract operation GetBooleanOrStringNumberFormatOption takes arguments options (an Object), propertyKey (a property key ), stringValues (a List of Strings), and fallback (an ECMAScript language value ) and returns either a normal completion containing either a Boolean, String, or fallback , or a throw completion . It extracts the value of the property named propertyKey from the provided options object. It returns fallback if that value is undefined , true if that value is true , false if that value coerces to false , and otherwise coerces it to a String and returns the result if it is allowed by stringValues . It performs the following steps when called:
+
+- Let value be ? Get ( options , propertyKey ).
+
+- If value is undefined , return fallback .
+
+- If value is true , return true .
+
+- If ToBoolean ( value ) is false , return false .
+
+- Set value to ? ToString ( value ).
+
+- If stringValues does not contain value , throw a RangeError exception.
+
+- Return value .
+
+9.2.13 DefaultNumberOption ( value , minimum , maximum , fallback )
+
+The abstract operation DefaultNumberOption takes arguments value (an ECMAScript language value ), minimum (an integer ), maximum (an integer ), and fallback (an integer or undefined ) and returns either a normal completion containing either an integer or undefined , or a throw completion . It converts value to an integer , checks whether it is in the allowed range, and fills in a fallback value if necessary. It performs the following steps when called:
+
+- If value is undefined , return fallback .
+
+- Set value to ? ToNumber ( value ).
+
+- If value is not finite or ℝ ( value ) < minimum or ℝ ( value ) > maximum , throw a RangeError exception.
+
+- Return floor ( ℝ ( value )).
+
+9.2.14 GetNumberOption ( options , propertyKey , minimum , maximum , fallback )
+
+The abstract operation GetNumberOption takes arguments options (an Object), propertyKey (a String), minimum (an integer ), maximum (an integer ), and fallback (an integer or undefined ) and returns either a normal completion containing either an integer or undefined , or a throw completion . It extracts the value of the property named propertyKey from the provided options object, converts it to an integer , checks whether it is in the allowed range, and fills in a fallback value if necessary. It performs the following steps when called:
+
+- Let value be ? Get ( options , propertyKey ).
+
+- Return ? DefaultNumberOption ( value , minimum , maximum , fallback ).
+
+9.2.15 PartitionPattern ( pattern )
+
+The abstract operation PartitionPattern takes argument pattern (a Pattern String ) and returns a List of Records with fields [[Type]] (a String) and [[Value]] (a String or undefined ).
+The [[Value]] field will be a String value if [[Type]] is "literal" , and undefined otherwise.
+It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- Let placeholderEnd be -1.
+
+- Let placeholderStart be StringIndexOf ( pattern , "{" , 0).
+
+- Repeat, while placeholderStart is not not-found ,
+- Let literal be the substring of pattern from placeholderEnd + 1 to placeholderStart .
+
+- If literal is not the empty String, then
+- Append the Record { [[Type]] : "literal" , [[Value]] : literal } to result .
+
+- Set placeholderEnd to StringIndexOf ( pattern , "}" , placeholderStart ).
+
+- Assert : placeholderEnd is not not-found and placeholderStart < placeholderEnd .
+
+- Let placeholderName be the substring of pattern from placeholderStart + 1 to placeholderEnd .
+
+- Append the Record { [[Type]] : placeholderName , [[Value]] : undefined } to result .
+
+- Set placeholderStart to StringIndexOf ( pattern , "{" , placeholderEnd ).
+
+- Let tail be the substring of pattern from placeholderEnd + 1.
+
+- If tail is not the empty String, then
+- Append the Record { [[Type]] : "literal" , [[Value]] : tail } to result .
+
+- Return result .

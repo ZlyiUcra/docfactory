@@ -1,0 +1,31 @@
+# 2 Conformance
+# джерело: https://tc39.es/ecma402/#conformance
+# отримано: 2026-09-01
+
+2 Conformance
+
+A conforming implementation of this specification must conform to ECMA-262 , and must provide and support all the objects, properties, functions, and program semantics described in this specification. Nothing in this specification is intended to allow behaviour that is otherwise prohibited by ECMA-262 , and any such conflict should be considered an editorial error rather than an override of constraints from ECMA-262 .
+
+A conforming implementation is permitted to provide additional objects, properties, and functions beyond those described in this specification. In particular, a conforming implementation is permitted to provide properties not described in this specification, and values for those properties, for objects that are described herein. A conforming implementation is not permitted to add optional arguments to the functions defined in this specification.
+
+A conforming implementation is permitted to accept additional values, and then have implementation-defined behaviour instead of throwing a RangeError , for the following properties of options arguments:
+
+- The options property "localeMatcher" in all constructors and supportedLocalesOf methods.
+
+- The options properties "usage" and "sensitivity" in the Collator constructor .
+
+- The options properties "style" , "currencyDisplay" , "notation" , "compactDisplay" , "signDisplay" , "currencySign" , and "unitDisplay" in the NumberFormat constructor .
+
+- The options properties "minimumIntegerDigits" , "minimumFractionDigits" , "maximumFractionDigits" , "minimumSignificantDigits" , and "maximumSignificantDigits" in the NumberFormat constructor , provided that the additional values are interpreted as integer values higher than the specified limits.
+
+- The options properties listed in Table 16 in the DateTimeFormat constructor .
+
+- The options property "formatMatcher" in the DateTimeFormat constructor .
+
+- The options properties "minimumIntegerDigits" , "minimumFractionDigits" , "maximumFractionDigits" , and "minimumSignificantDigits" in the PluralRules constructor , provided that the additional values are interpreted as integer values higher than the specified limits.
+
+- The options property "type" in the PluralRules constructor .
+
+- The options property "style" and "numeric" in the RelativeTimeFormat constructor .
+
+- The options property "style" and "type" in the DisplayNames constructor .

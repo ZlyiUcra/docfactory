@@ -1,0 +1,79 @@
+# ECMA-414 ECMAScript Specification Suite, 3rd edition
+# джерело: https://ecma-international.org/wp-content/uploads/ECMA-414_3rd_edition_december_2017.pdf
+# отримано: 2026-09-01
+
+ECMAScript is the general purpose programming language that is an essential part of the Web Browser
+application platform, but it is also widely used in many other environments.
+
+Essential components o f an ECMAScript implementation are described in several individual standards and
+technical reports.
+
+The ECMAScript Specification Suite is just a collection of those. The specificatio ns that define the
+ECMAScript programming language and its built-in libraries are developed by Ecma International.
+
+The I nternational Standard for ECMAScript Specification Suite defined by this document aggregate these
+specifications via normative and informative references to the latest published Ecma International ECMAScript
+specifications. This has the advantage that an update of the Suite is only needed if there is a change (addition
+or deletion) in the set of the individual ECMAScript standards and technical reports.
+
+This Ecma Standard was developed by Tech nical Committee 39 and was adopted by the General
+Assembly of December 2017 .
+"COPYRIGHT NOTICE
+
+1 Scope
+
+This International Standard defines the ECMAScript Specification Suite containing the ECMAScript
+programming language and its required and optional built-in libraries. It defines all the necessary componen ts
+(both normative and informative) that is needed to implement this suite of standards . This suite does not
+change if one or more components are updated by a new standard edition. The Suite changes only when new
+components are added and / or old components are removed from it.
+
+2 Normative references
+
+The following documents, in whole or in part, are normatively referenced in this document and are
+indispensable for its application . For dated references, only the edition cited applies. For undated references,
+the latest edition of the referenced document (including any amendments) applies.
+
+ECMA-262, ECMAScript® Language Specification
+ECMA-402, ECMAScript® Internationalization API Specification
+ISO/IEC 21778, The JSON Data Interchange Syntax (ECMA-404)
+
+3 Informative references
+
+ECMA TR/104, ECMAScript® Test Suite
+
+4 ECMAScript
+
+An implementation of ECMAScript consists of the ECMAScript programming language, required built -in
+libraries, and optional built -in libraries. The implementation of the ECMAScript language and re quired library
+shall conform to ECMA -262. The required library include data interchange functions that sha ll conform to
+ISO/IEC 21778. An implementation of ECMAScript may include an optional internationalization library that if
+included shall conform to ECMA-402.
+
+The following Ecma Standards are part of the current ECMAScript Specification Suite (see Figure 1):
+ ECMA-262, ECMAScript® Language Specification
+ ECMA-402, ECMAScript® Internationalization API Specification
+ ISO/IEC 21778, The JSON Data Interchange Syntax
+Figure 1 – Components of the ECMAScript Specification Suite Standard
+
+4.1 ECMA-262, ECMAScript® Language Specification
+
+This Standard defines the ECMAScript general purpose programming language. The language specification
+defines the syntax and semantics of the ECMAScript language; the language’s execution environment; and, a
+built-in library that is available for use by ECMAScript programs as they execute.
+
+4.2 ECMA-402, ECMAScript® Internationalization API Specification
+
+This Standard defines the applicatio n programming interface for ECMAScript objects that support programs
+that need to adapt to the linguistic and cultural conventions used by different human languages and countries.
+
+4.3 ISO/IEC 21778, The JSON Data Interchange Syntax
+
+JSON is a lightweight, text -based, language-independent syntax for defining data interchange format s. It was
+derived from the ECMAScript programming language, but is programming language independent. JSON
+defines a small set of structuring rules for the portable representation of str uctured data.
+
+5 ECMAScript Test Suite
+
+ECMA TR/104, ECMAScript ® Test Suite provides a set of non -normative software tests that ECMAScript
+implementers can use to help verify conformant ECMAScript implementations.

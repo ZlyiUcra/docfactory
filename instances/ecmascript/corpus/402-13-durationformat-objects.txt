@@ -1,0 +1,1053 @@
+# 13 DurationFormat Objects
+# джерело: https://tc39.es/ecma402/#durationformat-objects
+# отримано: 2026-09-01
+
+13 DurationFormat Objects
+
+13.1 The Intl.DurationFormat Constructor
+
+The Intl.DurationFormat constructor :
+
+- is %Intl.DurationFormat% .
+
+- is the initial value of the "DurationFormat" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+13.1.1 Intl.DurationFormat ( [ locales [ , options ] ] )
+
+When the Intl.DurationFormat function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let durationFormat be ? OrdinaryCreateFromConstructor (NewTarget, "%Intl.DurationFormatPrototype%" , « [[InitializedDurationFormat]] , [[Locale]] , [[NumberingSystem]] , [[Style]] , [[YearsOptions]] , [[MonthsOptions]] , [[WeeksOptions]] , [[DaysOptions]] , [[HoursOptions]] , [[MinutesOptions]] , [[SecondsOptions]] , [[MillisecondsOptions]] , [[MicrosecondsOptions]] , [[NanosecondsOptions]] , [[HourMinuteSeparator]] , [[MinuteSecondSeparator]] , [[FractionalDigits]] »).
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.DurationFormat% , %Intl.DurationFormat% . [[LocaleData]] , locales , options ).
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set durationFormat . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Let resolvedLocaleData be resolvedLocale . [[LocaleData]] .
+
+- Let digitalFormat be resolvedLocaleData . [[DigitalFormat]] .
+
+- Set durationFormat . [[HourMinuteSeparator]] to digitalFormat . [[HourMinuteSeparator]] .
+
+- Set durationFormat . [[MinuteSecondSeparator]] to digitalFormat . [[MinuteSecondSeparator]] .
+
+- Set durationFormat . [[NumberingSystem]] to resolvedLocale . [[nu]] .
+
+- Let style be ? GetOption ( options , "style" , string , « "long" , "short" , "narrow" , "digital" », "short" ).
+
+- Set durationFormat . [[Style]] to style .
+
+- Let prevStyle be the empty String.
+
+- For each row of Table 20 , except the header row, in table order, do
+- Let slot be the Internal Slot value of the current row.
+
+- Let unit be the Unit value of the current row.
+
+- Let styles be the Styles value of the current row.
+
+- Let digitalBase be the Digital Default value of the current row.
+
+- Let unitOptions be ? GetDurationUnitOptions ( unit , options , style , styles , digitalBase , prevStyle , digitalFormat . [[TwoDigitHours]] ).
+
+- Set the value of durationFormat 's internal slot whose name is slot to unitOptions .
+
+- If unit is one of "hours" , "minutes" , "seconds" , "milliseconds" , or "microseconds" , then
+- Set prevStyle to unitOptions . [[Style]] .
+
+- Set durationFormat . [[FractionalDigits]] to ? GetNumberOption ( options , "fractionalDigits" , 0, 9, undefined ).
+
+- Return durationFormat .
+
+Table 20: Internal slots and property names of DurationFormat instances
+
+Internal Slot
+Unit
+Styles
+Digital Default
+
+[[YearsOptions]]
+"years"
+« "long" , "short" , "narrow" »
+"short"
+
+[[MonthsOptions]]
+"months"
+« "long" , "short" , "narrow" »
+"short"
+
+[[WeeksOptions]]
+"weeks"
+« "long" , "short" , "narrow" »
+"short"
+
+[[DaysOptions]]
+"days"
+« "long" , "short" , "narrow" »
+"short"
+
+[[HoursOptions]]
+"hours"
+« "long" , "short" , "narrow" , "numeric" , "2-digit" »
+"numeric"
+
+[[MinutesOptions]]
+"minutes"
+« "long" , "short" , "narrow" , "numeric" , "2-digit" »
+"numeric"
+
+[[SecondsOptions]]
+"seconds"
+« "long" , "short" , "narrow" , "numeric" , "2-digit" »
+"numeric"
+
+[[MillisecondsOptions]]
+"milliseconds"
+« "long" , "short" , "narrow" , "numeric" »
+"numeric"
+
+[[MicrosecondsOptions]]
+"microseconds"
+« "long" , "short" , "narrow" , "numeric" »
+"numeric"
+
+[[NanosecondsOptions]]
+"nanoseconds"
+« "long" , "short" , "narrow" , "numeric" »
+"numeric"
+
+13.2 Properties of the Intl.DurationFormat Constructor
+
+The Intl.DurationFormat constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+13.2.1 Intl.DurationFormat.prototype
+
+The value of Intl.DurationFormat.prototype is %Intl.DurationFormat.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+13.2.2 Intl.DurationFormat.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.DurationFormat% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+13.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « "nu" ».
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « { [[Key]] : "nu" , [[Property]] : "numberingSystem" } ».
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 and the following additional constraints for all locale values locale :
+
+- [[LocaleData]] .[[< locale >]] must be a Record with fields [[nu]] and [[DigitalFormat]] .
+
+- [[LocaleData]] .[[< locale >]]. [[nu]] must be a List as specified in 16.2.3 and must not include the values "native" , "traditio" , or "finance" .
+
+- [[LocaleData]] .[[< locale >]]. [[DigitalFormat]] must be a Record with keys corresponding to each numbering system available for locale . Each value associated with one of those keys must be a Record containing the following fields:
+
+- [[HourMinuteSeparator]] must be a String value that is the appropriate separator between hours and minutes for that combination of locale and numbering system when using style "numeric" or "2-digit" .
+
+- [[MinuteSecondSeparator]] must be a String value that is the appropriate separator between minutes and seconds for that combination of locale and numbering system when using style "numeric" or "2-digit" .
+
+- [[TwoDigitHours]] must be a Boolean value indicating whether hours are always displayed using two digits when using style "numeric" .
+
+Note It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at http://cldr.unicode.org/ ).
+
+13.3 Properties of the Intl.DurationFormat Prototype Object
+
+The Intl.DurationFormat prototype object :
+
+- is %Intl.DurationFormat.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.DurationFormat instance and does not have an [[InitializedDurationFormat]] internal slot or any of the other internal slots of Intl.DurationFormat instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+13.3.1 Intl.DurationFormat.prototype.constructor
+
+The initial value of Intl.DurationFormat.prototype.constructor is the intrinsic object %Intl.DurationFormat% .
+
+13.3.2 Intl.DurationFormat.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let df be the this value.
+
+- Perform ? RequireInternalSlot ( df , [[InitializedDurationFormat]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 21 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of df 's internal slot whose name is the Internal Slot value of the current row.
+
+- If value is not undefined , then
+- If there is a Conversion value in the current row, let conversion be that value; else let conversion be empty .
+
+- If conversion is number , then
+- Set value to 𝔽 ( value ).
+
+- Else if conversion is not empty , then
+- Assert : conversion is style+display and value is a Duration Unit Options Record .
+
+- NOTE: value . [[Style]] will be represented with a property named propertyKey (a plural Temporal unit), then value . [[Display]] will be represented with a property whose name suffixes propertyKey with "Display" .
+
+- Let style be value . [[Style]] .
+
+- If style is "fractional" , then
+- Assert : IsFractionalSecondUnitName ( propertyKey ) is true .
+
+- Set style to "numeric" .
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , style ).
+
+- Set propertyKey to the string-concatenation of propertyKey and "Display" .
+
+- Set value to value . [[Display]] .
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 21: Resolved Options of DurationFormat Instances
+
+Internal Slot
+Property
+Conversion
+
+[[Locale]]
+"locale"
+
+[[NumberingSystem]]
+"numberingSystem"
+
+[[Style]]
+"style"
+
+[[YearsOptions]]
+"years"
+style+display
+
+[[MonthsOptions]]
+"months"
+style+display
+
+[[WeeksOptions]]
+"weeks"
+style+display
+
+[[DaysOptions]]
+"days"
+style+display
+
+[[HoursOptions]]
+"hours"
+style+display
+
+[[MinutesOptions]]
+"minutes"
+style+display
+
+[[SecondsOptions]]
+"seconds"
+style+display
+
+[[MillisecondsOptions]]
+"milliseconds"
+style+display
+
+[[MicrosecondsOptions]]
+"microseconds"
+style+display
+
+[[NanosecondsOptions]]
+"nanoseconds"
+style+display
+
+[[FractionalDigits]]
+"fractionalDigits"
+number
+
+13.3.3 Intl.DurationFormat.prototype.format ( duration )
+
+When the format method is called with an argument duration , the following steps are taken:
+
+- Let df be the this value.
+
+- Perform ? RequireInternalSlot ( df , [[InitializedDurationFormat]] ).
+
+- Let record be ? ToDurationRecord ( duration ).
+
+- Let parts be PartitionDurationFormatPattern ( df , record ).
+
+- Let result be the empty String.
+
+- For each Record { [[Type]] , [[Value]] , [[Unit]] } part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+13.3.4 Intl.DurationFormat.prototype.formatToParts ( duration )
+
+When the formatToParts method is called with an argument duration , the following steps are taken:
+
+- Let df be the this value.
+
+- Perform ? RequireInternalSlot ( df , [[InitializedDurationFormat]] ).
+
+- Let record be ? ToDurationRecord ( duration ).
+
+- Let parts be PartitionDurationFormatPattern ( df , record ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each Record { [[Type]] , [[Value]] , [[Unit]] } part of parts , do
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "value" , part . [[Value]] ).
+
+- If part . [[Unit]] is not empty , perform ! CreateDataPropertyOrThrow ( obj , "unit" , part . [[Unit]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( n ), obj ).
+
+- Set n to n + 1.
+
+- Return result .
+
+13.3.5 Intl.DurationFormat.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.DurationFormat" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+13.4 Properties of Intl.DurationFormat Instances
+
+Intl.DurationFormat instances inherit properties from %Intl.DurationFormat.prototype% .
+
+Intl.DurationFormat instances have an [[InitializedDurationFormat]] internal slot.
+
+Intl.DurationFormat instances also have several internal slots that are computed by The Intl.DurationFormat Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for formatting.
+
+- [[NumberingSystem]] is a String value representing the Unicode Number System Identifier used for formatting.
+
+- [[Style]] is one of the String values "long" , "short" , "narrow" , or "digital" identifying the duration formatting style used.
+
+- [[YearsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Years]] field.
+
+- [[MonthsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Months]] field.
+
+- [[WeeksOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Weeks]] field.
+
+- [[DaysOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Days]] field.
+
+- [[HoursOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Hours]] field.
+
+- [[MinutesOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Minutes]] field.
+
+- [[SecondsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Seconds]] field.
+
+- [[MillisecondsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Milliseconds]] field.
+
+- [[MicrosecondsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Microseconds]] field.
+
+- [[NanosecondsOptions]] is a Duration Unit Options Record identifying the formatting style and display criteria for a Duration Record 's [[Nanoseconds]] field.
+
+- [[HourMinuteSeparator]] is a String value identifying the separator to be used between hours and minutes when both fields are displayed and both fields are formatted using numeric styles.
+
+- [[MinuteSecondSeparator]] is a String value identifying the separator to be used between minutes and seconds when both fields are displayed and both fields are formatted using numeric styles.
+
+- [[FractionalDigits]] is either undefined or a non-negative integer identifying the number of fractional digits to be used with numeric styles.
+
+13.5 Abstract Operations for DurationFormat Objects
+
+13.5.1 Duration Records
+
+A Duration Record is a Record value used to represent a Duration.
+
+Duration Records have the fields listed in Table 22
+
+Table 22: Duration Record Fields
+
+Field
+Meaning
+
+[[Years]]
+
+The number of years in the duration.
+
+[[Months]]
+
+The number of months in the duration.
+
+[[Weeks]]
+
+The number of weeks in the duration.
+
+[[Days]]
+
+The number of days in the duration.
+
+[[Hours]]
+
+The number of hours in the duration.
+
+[[Minutes]]
+
+The number of minutes in the duration.
+
+[[Seconds]]
+
+The number of seconds in the duration.
+
+[[Milliseconds]]
+
+The number of milliseconds in the duration.
+
+[[Microseconds]]
+
+The number of microseconds in the duration.
+
+[[Nanoseconds]]
+
+The number of nanoseconds in the duration.
+
+13.5.2 ToIntegerIfIntegral ( arg )
+
+The abstract operation ToIntegerIfIntegral takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integer , or a throw completion . It converts arg to an integer representing its Number value, or throws a RangeError when that value is not integral . It performs the following steps when called:
+
+- Let number be ? ToNumber ( arg ).
+
+- If number is not an integral Number , throw a RangeError exception.
+
+- Return ℝ ( number ).
+
+13.5.3 ToDurationRecord ( input )
+
+The abstract operation ToDurationRecord takes argument input (an ECMAScript language value ) and returns either a normal completion containing a Duration Record , or a throw completion . It converts a given object that represents a Duration into a Duration Record . It performs the following steps when called:
+
+- If input is not an Object , then
+- If input is a String , throw a RangeError exception.
+
+- Throw a TypeError exception.
+
+- Let result be a new Duration Record with each field set to 0.
+
+- Let days be ? Get ( input , "days" ).
+
+- If days is not undefined , set result . [[Days]] to ? ToIntegerIfIntegral ( days ).
+
+- Let hours be ? Get ( input , "hours" ).
+
+- If hours is not undefined , set result . [[Hours]] to ? ToIntegerIfIntegral ( hours ).
+
+- Let microseconds be ? Get ( input , "microseconds" ).
+
+- If microseconds is not undefined , set result . [[Microseconds]] to ? ToIntegerIfIntegral ( microseconds ).
+
+- Let milliseconds be ? Get ( input , "milliseconds" ).
+
+- If milliseconds is not undefined , set result . [[Milliseconds]] to ? ToIntegerIfIntegral ( milliseconds ).
+
+- Let minutes be ? Get ( input , "minutes" ).
+
+- If minutes is not undefined , set result . [[Minutes]] to ? ToIntegerIfIntegral ( minutes ).
+
+- Let months be ? Get ( input , "months" ).
+
+- If months is not undefined , set result . [[Months]] to ? ToIntegerIfIntegral ( months ).
+
+- Let nanoseconds be ? Get ( input , "nanoseconds" ).
+
+- If nanoseconds is not undefined , set result . [[Nanoseconds]] to ? ToIntegerIfIntegral ( nanoseconds ).
+
+- Let seconds be ? Get ( input , "seconds" ).
+
+- If seconds is not undefined , set result . [[Seconds]] to ? ToIntegerIfIntegral ( seconds ).
+
+- Let weeks be ? Get ( input , "weeks" ).
+
+- If weeks is not undefined , set result . [[Weeks]] to ? ToIntegerIfIntegral ( weeks ).
+
+- Let years be ? Get ( input , "years" ).
+
+- If years is not undefined , set result . [[Years]] to ? ToIntegerIfIntegral ( years ).
+
+- If years , months , weeks , days , hours , minutes , seconds , milliseconds , microseconds , and nanoseconds are all undefined , throw a TypeError exception.
+
+- If IsValidDuration ( result . [[Years]] , result . [[Months]] , result . [[Weeks]] , result . [[Days]] , result . [[Hours]] , result . [[Minutes]] , result . [[Seconds]] , result . [[Milliseconds]] , result . [[Microseconds]] , result . [[Nanoseconds]] ) is false , then
+- Throw a RangeError exception.
+
+- Return result .
+
+13.5.4 DurationSign ( duration )
+
+The abstract operation DurationSign takes argument duration (a Duration Record ) and returns -1, 0, or 1. It returns 1 if the most significant non-zero field in the duration argument is positive, and -1 if the most significant non-zero field is negative. If all of duration 's fields are zero, it returns 0. It performs the following steps when called:
+
+- For each value v of « duration . [[Years]] , duration . [[Months]] , duration . [[Weeks]] , duration . [[Days]] , duration . [[Hours]] , duration . [[Minutes]] , duration . [[Seconds]] , duration . [[Milliseconds]] , duration . [[Microseconds]] , duration . [[Nanoseconds]] », do
+- If v < 0, return -1.
+
+- If v > 0, return 1.
+
+- Return 0.
+
+13.5.5 IsValidDuration ( years , months , weeks , days , hours , minutes , seconds , milliseconds , microseconds , nanoseconds )
+
+The abstract operation IsValidDuration takes arguments years (an integer ), months (an integer ), weeks (an integer ), days (an integer ), hours (an integer ), minutes (an integer ), seconds (an integer ), milliseconds (an integer ), microseconds (an integer ), and nanoseconds (an integer ) and returns a Boolean. It returns true if its arguments form valid input from which to construct a Duration Record , and false otherwise. It performs the following steps when called:
+
+- Let sign be 0.
+
+- For each value v of « years , months , weeks , days , hours , minutes , seconds , milliseconds , microseconds , nanoseconds », do
+- If 𝔽 ( v ) is not finite , return false .
+
+- If v < 0, then
+- If sign > 0, return false .
+
+- Set sign to -1.
+
+- Else if v > 0, then
+- If sign < 0, return false .
+
+- Set sign to 1.
+
+- If abs ( years ) ≥ 2 32 , return false .
+
+- If abs ( months ) ≥ 2 32 , return false .
+
+- If abs ( weeks ) ≥ 2 32 , return false .
+
+- Let normalizedSeconds be days × 86,400 + hours × 3600 + minutes × 60 + seconds + ℝ ( 𝔽 ( milliseconds )) × 10 -3 + ℝ ( 𝔽 ( microseconds )) × 10 -6 + ℝ ( 𝔽 ( nanoseconds )) × 10 -9 .
+
+- NOTE: The above step cannot be implemented directly using floating-point arithmetic. Multiplying by 10 -3 , 10 -6 , and 10 -9 respectively may be imprecise when milliseconds , microseconds , or nanoseconds is an unsafe integer . This multiplication can be implemented in C++ with an implementation of std::remquo() with sufficient bits in the quotient. String manipulation will also give an exact result, since the multiplication is by a power of 10.
+
+- If abs ( normalizedSeconds ) ≥ 2 53 , return false .
+
+- Return true .
+
+13.5.6 GetDurationUnitOptions ( unit , options , baseStyle , stylesList , digitalBase , prevStyle , twoDigitHours )
+
+The abstract operation GetDurationUnitOptions takes arguments unit (a String), options (an Object), baseStyle (a String), stylesList (a List of Strings), digitalBase (a String), prevStyle (a String), and twoDigitHours (a Boolean) and returns either a normal completion containing a Duration Unit Options Record , or a throw completion . It extracts the relevant options for any given unit from an Object and returns them as a Record . It performs the following steps when called:
+
+- Let style be ? GetOption ( options , unit , string , stylesList , undefined ).
+
+- Let displayDefault be "always" .
+
+- If style is undefined , then
+- If baseStyle is "digital" , then
+- Set style to digitalBase .
+
+- If unit is not one of "hours" , "minutes" , or "seconds" , set displayDefault to "auto" .
+
+- Else if prevStyle is one of "fractional" , "numeric" or "2-digit" , then
+- Set style to "numeric" .
+
+- If unit is not "minutes" or "seconds" , set displayDefault to "auto" .
+
+- Else,
+- Set style to baseStyle .
+
+- Set displayDefault to "auto" .
+
+- If style is "numeric" and IsFractionalSecondUnitName ( unit ) is true , then
+- Set style to "fractional" .
+
+- Set displayDefault to "auto" .
+
+- Let displayField be the string-concatenation of unit and "Display" .
+
+- Let display be ? GetOption ( options , displayField , string , « "auto" , "always" », displayDefault ).
+
+- Perform ? ValidateDurationUnitStyle ( unit , style , display , prevStyle ).
+
+- If unit is "hours" and twoDigitHours is true , set style to "2-digit" .
+
+- If unit is "minutes" or "seconds" and prevStyle is "numeric" or "2-digit" , set style to "2-digit" .
+
+- Return the Duration Unit Options Record { [[Style]] : style , [[Display]] : display }.
+
+13.5.6.1 Duration Unit Options Records
+
+Each Duration Unit Options Record has the fields defined in Table 23 .
+
+Table 23: Duration Unit Options Record
+
+Field Name
+Value Type
+
+[[Style]]
+a String from the Styles column of Table 20
+
+[[Display]]
+"auto" or "always"
+
+13.5.6.2 ValidateDurationUnitStyle ( unit , style , display , prevStyle )
+
+The abstract operation ValidateDurationUnitStyle takes arguments unit (a String), style (a String), display (a String), and prevStyle (a String) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If display is "always" and style is "fractional" , throw a RangeError exception.
+
+- If prevStyle is "fractional" and style is not "fractional" , throw a RangeError exception.
+
+- If prevStyle is "numeric" or "2-digit" and style is not one of "fractional" , "numeric" or "2-digit" , throw a RangeError exception.
+
+- Return unused .
+
+Note unit is not referenced in the preceding algorithm, but it is recommended that implementations use it when constructing the message of a thrown exception.
+
+13.5.7 ComputeFractionalDigits ( durationFormat , duration )
+
+The abstract operation ComputeFractionalDigits takes arguments durationFormat (a DurationFormat Object) and duration (a Duration Record ) and returns a mathematical value . It computes the sum of all values in durationFormat units with "fractional" style, expressed as a fraction of the smallest unit of durationFormat that does not use "fractional" style. It performs the following steps when called:
+
+- Let result be 0.
+
+- Let exponent be 3.
+
+- For each row of Table 24 , except the header row, in table order, do
+- Let unitOptions be the value of durationFormat 's internal slot whose name is the Internal Slot value of the current row.
+
+- If unitOptions . [[Style]] is "fractional" , then
+- Let unit be the Unit value of the current row.
+
+- Assert : IsFractionalSecondUnitName ( unit ) is true .
+
+- Let value be the value of duration 's field whose name is the Value Field value of the current row.
+
+- Set result to result + ( value / 10 exponent ).
+
+- Set exponent to exponent + 3.
+
+- Return result .
+
+13.5.8 NextUnitFractional ( durationFormat , unit )
+
+The abstract operation NextUnitFractional takes arguments durationFormat (a DurationFormat Object) and unit (a String) and returns a Boolean. It returns true if the next smallest unit uses the "fractional" style. It performs the following steps when called:
+
+- If unit is "seconds" and durationFormat . [[MillisecondsOptions]] . [[Style]] is "fractional" , return true .
+
+- If unit is "milliseconds" and durationFormat . [[MicrosecondsOptions]] . [[Style]] is "fractional" , return true .
+
+- If unit is "microseconds" and durationFormat . [[NanosecondsOptions]] . [[Style]] is "fractional" , return true .
+
+- Return false .
+
+13.5.9 FormatNumericHours ( durationFormat , hoursValue , signDisplayed )
+
+The abstract operation FormatNumericHours takes arguments durationFormat (a DurationFormat object), hoursValue (an integer ), and signDisplayed (a Boolean) and returns a List of Records . hoursValue is an integer indicating a number of hours. It creates the parts for hoursValue according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- Let hoursStyle be durationFormat . [[HoursOptions]] . [[Style]] .
+
+- Assert : hoursStyle is "numeric" or hoursStyle is "2-digit" .
+
+- Let nfOptions be OrdinaryObjectCreate ( null ).
+
+- Let numberingSystem be durationFormat . [[NumberingSystem]] .
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "numberingSystem" , numberingSystem ).
+
+- If hoursStyle is "2-digit" , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumIntegerDigits" , 2 𝔽 ).
+
+- If signDisplayed is false , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "signDisplay" , "never" ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "useGrouping" , false ).
+
+- Let nf be ! Construct ( %Intl.NumberFormat% , « durationFormat . [[Locale]] , nfOptions »).
+
+- Let hoursParts be PartitionNumberPattern ( nf , hoursValue ).
+
+- For each Record { [[Type]] , [[Value]] } part of hoursParts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Unit]] : "hour" } to result .
+
+- Return result .
+
+13.5.10 FormatNumericMinutes ( durationFormat , minutesValue , hoursDisplayed , signDisplayed )
+
+The abstract operation FormatNumericMinutes takes arguments durationFormat (a DurationFormat Object), minutesValue (an integer ), hoursDisplayed (a Boolean), and signDisplayed (a Boolean) and returns a List of Records . minutesValue is an integer indicating a number of minutes. It creates the parts for minutesValue according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- If hoursDisplayed is true , then
+- Let separator be durationFormat . [[HourMinuteSeparator]] .
+
+- Append the Record { [[Type]] : "literal" , [[Value]] : separator , [[Unit]] : empty } to result .
+
+- Let minutesStyle be durationFormat . [[MinutesOptions]] . [[Style]] .
+
+- Assert : minutesStyle is "numeric" or minutesStyle is "2-digit" .
+
+- Let nfOptions be OrdinaryObjectCreate ( null ).
+
+- Let numberingSystem be durationFormat . [[NumberingSystem]] .
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "numberingSystem" , numberingSystem ).
+
+- If minutesStyle is "2-digit" , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumIntegerDigits" , 2 𝔽 ).
+
+- If signDisplayed is false , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "signDisplay" , "never" ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "useGrouping" , false ).
+
+- Let nf be ! Construct ( %Intl.NumberFormat% , « durationFormat . [[Locale]] , nfOptions »).
+
+- Let minutesParts be PartitionNumberPattern ( nf , minutesValue ).
+
+- For each Record { [[Type]] , [[Value]] } part of minutesParts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Unit]] : "minute" } to result .
+
+- Return result .
+
+13.5.11 FormatNumericSeconds ( durationFormat , secondsValue , minutesDisplayed , signDisplayed )
+
+The abstract operation FormatNumericSeconds takes arguments durationFormat (a DurationFormat Object), secondsValue (a mathematical value ), minutesDisplayed (a Boolean), and signDisplayed (a Boolean) and returns a List of Records . secondsValue is a mathematical value indicating a number of seconds. It creates the parts for secondsValue according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- If minutesDisplayed is true , then
+- Let separator be durationFormat . [[MinuteSecondSeparator]] .
+
+- Append the Record { [[Type]] : "literal" , [[Value]] : separator , [[Unit]] : empty } to result .
+
+- Let secondsStyle be durationFormat . [[SecondsOptions]] . [[Style]] .
+
+- Assert : secondsStyle is "numeric" or secondsStyle is "2-digit" .
+
+- Let nfOptions be OrdinaryObjectCreate ( null ).
+
+- Let numberingSystem be durationFormat . [[NumberingSystem]] .
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "numberingSystem" , numberingSystem ).
+
+- If secondsStyle is "2-digit" , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumIntegerDigits" , 2 𝔽 ).
+
+- If signDisplayed is false , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "signDisplay" , "never" ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "useGrouping" , false ).
+
+- Let fractionDigits be durationFormat . [[FractionalDigits]] .
+
+- If fractionDigits is undefined , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "maximumFractionDigits" , 9 𝔽 ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumFractionDigits" , +0 𝔽 ).
+
+- Else,
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "maximumFractionDigits" , fractionDigits ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumFractionDigits" , fractionDigits ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "roundingMode" , "trunc" ).
+
+- Let nf be ! Construct ( %Intl.NumberFormat% , « durationFormat . [[Locale]] , nfOptions »).
+
+- Let secondsParts be PartitionNumberPattern ( nf , secondsValue ).
+
+- For each Record { [[Type]] , [[Value]] } part of secondsParts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Unit]] : "second" } to result .
+
+- Return result .
+
+13.5.12 FormatNumericUnits ( durationFormat , duration , firstNumericUnit , signDisplayed )
+
+The abstract operation FormatNumericUnits takes arguments durationFormat (a DurationFormat Object), duration (a Duration Record ), firstNumericUnit (a String), and signDisplayed (a Boolean) and returns a List of Records . It creates the parts representing the elements of duration that use "numeric" or "2-digit" style according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Assert : firstNumericUnit is "hours" , "minutes" , or "seconds" .
+
+- Let numericPartsList be a new empty List .
+
+- Let hoursValue be duration . [[Hours]] .
+
+- Let hoursDisplay be durationFormat . [[HoursOptions]] . [[Display]] .
+
+- Let minutesValue be duration . [[Minutes]] .
+
+- Let minutesDisplay be durationFormat . [[MinutesOptions]] . [[Display]] .
+
+- Let secondsValue be duration . [[Seconds]] .
+
+- If duration . [[Milliseconds]] is not 0 or duration . [[Microseconds]] is not 0 or duration . [[Nanoseconds]] is not 0, then
+- Set secondsValue to secondsValue + ComputeFractionalDigits ( durationFormat , duration ).
+
+- Let secondsDisplay be durationFormat . [[SecondsOptions]] . [[Display]] .
+
+- Let hoursFormatted be false .
+
+- If firstNumericUnit is "hours" , then
+- If hoursValue is not 0 or hoursDisplay is "always" , then
+- Set hoursFormatted to true .
+
+- If secondsValue is not 0 or secondsDisplay is "always" , then
+- Let secondsFormatted be true .
+
+- Else,
+- Let secondsFormatted be false .
+
+- Let minutesFormatted be false .
+
+- If firstNumericUnit is "hours" or firstNumericUnit is "minutes" , then
+- If hoursFormatted is true and secondsFormatted is true , then
+- Set minutesFormatted to true .
+
+- Else if minutesValue is not 0 or minutesDisplay is "always" , then
+- Set minutesFormatted to true .
+
+- If hoursFormatted is true , then
+- If signDisplayed is true , then
+- If hoursValue is 0 and DurationSign ( duration ) is -1, then
+- Set hoursValue to negative-zero .
+
+- Let hoursParts be FormatNumericHours ( durationFormat , hoursValue , signDisplayed ).
+
+- Set numericPartsList to the list-concatenation of numericPartsList and hoursParts .
+
+- Set signDisplayed to false .
+
+- If minutesFormatted is true , then
+- If signDisplayed is true , then
+- If minutesValue is 0 and DurationSign ( duration ) is -1, then
+- Set minutesValue to negative-zero .
+
+- Let minutesParts be FormatNumericMinutes ( durationFormat , minutesValue , hoursFormatted , signDisplayed ).
+
+- Set numericPartsList to the list-concatenation of numericPartsList and minutesParts .
+
+- Set signDisplayed to false .
+
+- If secondsFormatted is true , then
+- Let secondsParts be FormatNumericSeconds ( durationFormat , secondsValue , minutesFormatted , signDisplayed ).
+
+- Set numericPartsList to the list-concatenation of numericPartsList and secondsParts .
+
+- Return numericPartsList .
+
+13.5.13 IsFractionalSecondUnitName ( unit )
+
+The abstract operation IsFractionalSecondUnitName takes argument unit (a String) and returns a Boolean. It performs the following steps when called:
+
+- If unit is one of "milliseconds" , "microseconds" , or "nanoseconds" , return true .
+
+- Return false .
+
+13.5.14 ListFormatParts ( durationFormat , partitionedPartsList )
+
+The abstract operation ListFormatParts takes arguments durationFormat (a DurationFormat Object) and partitionedPartsList (a List of Lists of Records ) and returns a List . It creates a List corresponding to the parts within the Lists in partitionedPartsList according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Let lfOptions be OrdinaryObjectCreate ( null ).
+
+- Perform ! CreateDataPropertyOrThrow ( lfOptions , "type" , "unit" ).
+
+- Let listStyle be durationFormat . [[Style]] .
+
+- If listStyle is "digital" , then
+- Set listStyle to "short" .
+
+- Perform ! CreateDataPropertyOrThrow ( lfOptions , "style" , listStyle ).
+
+- Let lf be ! Construct ( %Intl.ListFormat% , « durationFormat . [[Locale]] , lfOptions »).
+
+- Let strings be a new empty List .
+
+- For each element parts of partitionedPartsList , do
+- Let string be the empty String.
+
+- For each Record { [[Type]] , [[Value]] , [[Unit]] } part of parts , do
+- Set string to the string-concatenation of string and part . [[Value]] .
+
+- Append string to strings .
+
+- Let formattedPartsList be CreatePartsFromList ( lf , strings ).
+
+- Let partitionedPartsIndex be 0.
+
+- Let partitionedLength be the number of elements in partitionedPartsList .
+
+- Let flattenedPartsList be a new empty List .
+
+- For each Record { [[Type]] , [[Value]] } listPart of formattedPartsList , do
+- If listPart . [[Type]] is "element" , then
+- Assert : partitionedPartsIndex < partitionedLength .
+
+- Let parts be partitionedPartsList [ partitionedPartsIndex ].
+
+- For each Record { [[Type]] , [[Value]] , [[Unit]] } part of parts , do
+- Append part to flattenedPartsList .
+
+- Set partitionedPartsIndex to partitionedPartsIndex + 1.
+
+- Else,
+- Assert : listPart . [[Type]] is "literal" .
+
+- Append the Record { [[Type]] : "literal" , [[Value]] : listPart . [[Value]] , [[Unit]] : empty } to flattenedPartsList .
+
+- Return flattenedPartsList .
+
+13.5.15 PartitionDurationFormatPattern ( durationFormat , duration )
+
+The abstract operation PartitionDurationFormatPattern takes arguments durationFormat (a DurationFormat) and duration (a Duration Record ) and returns a List . It creates the corresponding parts for duration according to the effective locale and the formatting options of durationFormat . It performs the following steps when called:
+
+- Let result be a new empty List .
+
+- Let signDisplayed be true .
+
+- Let numericUnitFound be false .
+
+- While numericUnitFound is false , repeat for each row in Table 24 in table order, except the header row:
+- Let value be the value of duration 's field whose name is the Value Field value of the current row.
+
+- Let unitOptions be the value of durationFormat 's internal slot whose name is the Internal Slot value of the current row.
+
+- Let style be unitOptions . [[Style]] .
+
+- Let display be unitOptions . [[Display]] .
+
+- Let unit be the Unit value of the current row.
+
+- Let numberFormatUnit be the NumberFormat Unit value of the current row.
+
+- If style is "numeric" or "2-digit" , then
+- Let numericPartsList be FormatNumericUnits ( durationFormat , duration , unit , signDisplayed ).
+
+- If numericPartsList is not empty, append numericPartsList to result .
+
+- Set numericUnitFound to true .
+
+- Else,
+- Let nfOptions be OrdinaryObjectCreate ( null ).
+
+- If NextUnitFractional ( durationFormat , unit ) is true , then
+- Set value to value + ComputeFractionalDigits ( durationFormat , duration ).
+
+- Let fractionDigits be durationFormat . [[FractionalDigits]] .
+
+- If fractionDigits is undefined , then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "maximumFractionDigits" , 9 𝔽 ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumFractionDigits" , +0 𝔽 ).
+
+- Else,
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "maximumFractionDigits" , fractionDigits ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "minimumFractionDigits" , fractionDigits ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "roundingMode" , "trunc" ).
+
+- Set numericUnitFound to true .
+
+- If display is "always" or value is not 0, then
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "numberingSystem" , durationFormat . [[NumberingSystem]] ).
+
+- If signDisplayed is true , then
+- Set signDisplayed to false .
+
+- If value is 0 and DurationSign ( duration ) is -1, set value to negative-zero .
+
+- Else,
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "signDisplay" , "never" ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "style" , "unit" ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "unit" , numberFormatUnit ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "unitDisplay" , style ).
+
+- Let nf be ! Construct ( %Intl.NumberFormat% , « durationFormat . [[Locale]] , nfOptions »).
+
+- Let parts be PartitionNumberPattern ( nf , value ).
+
+- Let list be a new empty List .
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Unit]] : numberFormatUnit } to list .
+
+- Append list to result .
+
+- Return ListFormatParts ( durationFormat , result ).
+
+Table 24: DurationFormat instance internal slots and properties relevant to PartitionDurationFormatPattern
+
+Value Field
+Internal Slot
+Unit
+NumberFormat Unit
+
+[[Years]]
+[[YearsOptions]]
+"years"
+"year"
+
+[[Months]]
+[[MonthsOptions]]
+"months"
+"month"
+
+[[Weeks]]
+[[WeeksOptions]]
+"weeks"
+"week"
+
+[[Days]]
+[[DaysOptions]]
+"days"
+"day"
+
+[[Hours]]
+[[HoursOptions]]
+"hours"
+"hour"
+
+[[Minutes]]
+[[MinutesOptions]]
+"minutes"
+"minute"
+
+[[Seconds]]
+[[SecondsOptions]]
+"seconds"
+"second"
+
+[[Milliseconds]]
+[[MillisecondsOptions]]
+"milliseconds"
+"millisecond"
+
+[[Microseconds]]
+[[MicrosecondsOptions]]
+"microseconds"
+"microsecond"
+
+[[Nanoseconds]]
+[[NanosecondsOptions]]
+"nanoseconds"
+"nanosecond"

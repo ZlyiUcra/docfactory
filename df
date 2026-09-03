@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# df — запускач кроків фабрики. Один крок для одного примірника.
+#
+#   ./df <примірник> sources [--why]     перелік джерел і білий список ($0)
+#   ./df <примірник> list                що завантажилося б, без запису ($ мережа)
+#   ./df <примірник> check [--deep]      чи змінилося щось нагорі за джерелом ($ мережа)
+#   ./df <примірник> refresh [id...]     завантажити корпус, лише задекларованим ($ мережа)
+#   ./df <примірник> vectors [--refill]  залити corpus у Qdrant (Docker, локально)
+#   ./df <примірник> serve               HTTP-сервер MCP на порту примірника ($0)
+#   ./df <примірник> status              стан бази й розклад оновлення ($0)
+#   ./df <примірник> smoke               перевірки сервера ($0)
+#   ./df <примірник> tools               MCP-рукостискання, перелік інструментів ($0)
+#   ./df <примірник> ask "питання"       повний прогін агента (платно)
+#
+# Усі кроки біжать із теки docfactory/, щоб пакети `engine`, `server`, `common`
+# були видимі, і venv-ом самого примірника, тож залежності завжди ті, що треба.
+# Який саме примірник — каже змінна DF_INSTANCE_DIR (тека instances/<домен>/),
+# яку df виставляє нижче: спільний код читає дані домену звідти, а не з-під себе.
+
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+INST="${1:-}"; [ -n "$INST" ] || { echo "Вкажіть примірник, напр.: ./df ecmascript sources"; exit 2; }
+shift
+STEP="${1:-}"; [ -n "$STEP" ] || { echo "Вкажіть крок для «$INST», напр.: ./df $INST sources"; exit 2; }
+shift
+
+DIR="$HERE/instances/$INST"
+PY="$DIR/.venv/bin/python"
+[ -d "$DIR" ] || { echo "Немає примірника «$INST»: $DIR"; exit 1; }
+[ -x "$PY" ]  || { echo "Немає venv примірника: $PY (підніміть його за README)"; exit 1; }
+
+# Тека даних цього примірника — для спільного коду, що більше не лежить усередині
+# домену (common/instance.py читає саме цю змінну).
+export DF_INSTANCE_DIR="$DIR"
+
+# Конфіг примірника у оточення: колекція, модель, порт. Код примірника читає ці
+# змінні, тож кожен крок працює саме з цим примірником, а не зі спільним типовим.
+if [ -f "$DIR/config.json" ]; then
+  eval "$("$PY" - "$DIR/config.json" <<'PYCFG'
+import json, sys
+c = json.load(open(sys.argv[1], encoding="utf-8"))
+if c.get("collection"):  print(f'export QDRANT_COLLECTION={c["collection"]}')
+if c.get("embed_model"): print(f'export PRACTICE_EMBED_MODEL={c["embed_model"]}')
+if c.get("port"):        print(f'export DF_PORT={c["port"]}')
+PYCFG
+)"
+fi
+
+# Усі кроки — з теки docfactory/: пакети engine/server/common видимі, дані домену
+# код бере з DF_INSTANCE_DIR. Крок check — це engine --status.
+cd "$HERE"
+case "$STEP" in
+  sources)  exec "$PY" -m engine --instance "$INST" --sources "$@" ;;
+  list)     exec "$PY" -m engine --instance "$INST" --list "$@" ;;
+  check)    exec "$PY" -m engine --instance "$INST" --status "$@" ;;
+  manifest) exec "$PY" -m engine --instance "$INST" --manifest ;;
+  refresh)  exec "$PY" -m engine --instance "$INST" --refresh "$@" ;;
+  vectors)  exec "$PY" -m server.setup --vectors "$@" ;;
+  serve)    exec "$PY" server/spec_mcp.py --serve ;;
+  status)   exec "$PY" -m server.setup --status "$@" ;;
+  smoke)    exec "$PY" -m server.smoke "$@" ;;
+  tools)    exec "$PY" -m server.agent --tools ;;
+  ask)      exec "$PY" -m server.agent "$@" ;;
+  *) echo "Невідомий крок «$STEP». Є: sources list check refresh vectors serve status smoke tools ask"; exit 2 ;;
+esac

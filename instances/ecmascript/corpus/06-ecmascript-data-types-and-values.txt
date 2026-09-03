@@ -1,0 +1,2841 @@
+# 6 ECMAScript Data Types and Values
+# джерело: https://tc39.es/ecma262/multipage/ecmascript-data-types-and-values.html#sec-ecmascript-data-types-and-values
+# отримано: 2026-09-01
+
+6 ECMAScript Data Types and Values
+
+Algorithms within this specification manipulate values each of which has an associated type. The possible value types are exactly those defined in this clause. Types are further classified into ECMAScript language types and specification types.
+
+6.1 ECMAScript Language Types
+
+An ECMAScript language type corresponds to values that are directly manipulated by an ECMAScript programmer using the ECMAScript language. The ECMAScript language types are Undefined, Null, Boolean, String, Symbol, Number, BigInt, and Object. An ECMAScript language value is a value that is characterized by an ECMAScript language type.
+
+6.1.1 The Undefined Type
+
+The Undefined type has exactly one value, called undefined . Any variable that has not been assigned a value has the value undefined .
+
+6.1.2 The Null Type
+
+The Null type has exactly one value, called null .
+
+6.1.3 The Boolean Type
+
+The Boolean type represents a logical entity having two values, called true and false .
+
+6.1.4 The String Type
+
+The String type is the set of all ordered sequences of zero or more 16-bit unsigned integer values (“elements”) up to a maximum length of 2 53 - 1 elements. The String type is generally used to represent textual data in a running ECMAScript program, in which case each element in the String is treated as a UTF-16 code unit value. Each element is regarded as occupying a position within the sequence. These positions are indexed with non-negative integers . The first element (if any) is at index 0, the next element (if any) at index 1, and so on. The length of a String is the number of elements (i.e., 16-bit values) within it. The empty String has length zero and therefore contains no elements.
+
+ECMAScript operations that do not interpret String contents apply no further semantics. Operations that do interpret String values treat each element as a single UTF-16 code unit. However, ECMAScript does not restrict the value of or relationships between these code units, so operations that further interpret String contents as sequences of Unicode code points encoded in UTF-16 must account for ill-formed subsequences. Such operations apply special treatment to every code unit with a numeric value in the inclusive interval from 0xD800 to 0xDBFF (defined by the Unicode Standard as a leading surrogate , or more formally as a high-surrogate code unit ) and every code unit with a numeric value in the inclusive interval from 0xDC00 to 0xDFFF (defined as a trailing surrogate , or more formally as a low-surrogate code unit ) using the following rules:
+
+-
+A code unit that is not a leading surrogate and not a trailing surrogate is interpreted as a code point with the same value.
+
+-
+A sequence of two code units, where the first code unit c1 is a leading surrogate and the second code unit c2 a trailing surrogate , is a surrogate pair and is interpreted as a code point with the value ( c1 - 0xD800) × 0x400 + ( c2 - 0xDC00) + 0x10000. (See 11.1.3 )
+
+-
+A code unit that is a leading surrogate or trailing surrogate , but is not part of a surrogate pair , is interpreted as a code point with the same value.
+
+The function String.prototype.normalize (see 22.1.3.15 ) can be used to explicitly normalize a String value. String.prototype.localeCompare (see 22.1.3.12 ) internally normalizes String values, but no other operations implicitly normalize the strings upon which they operate. Operation results are not language- and/or locale-sensitive unless stated otherwise.
+
+Note
+The rationale behind this design was to keep the implementation of Strings as simple and high-performing as possible. If ECMAScript source text is in Normalized Form C, string literals are guaranteed to also be normalized, as long as they do not contain any Unicode escape sequences.
+
+In this specification, the phrase “the string-concatenation of A , B , ...” (where each argument is a String value, a code unit, or a sequence of code units) denotes the String value whose sequence of code units is the concatenation of the code units (in order) of each of the arguments (in order).
+
+The phrase “the substring of string from inclusiveStart to exclusiveEnd ” (where string is a String value or a sequence of code units and inclusiveStart and exclusiveEnd are integers ) denotes the String value consisting of the consecutive code units of string beginning at index inclusiveStart and ending immediately before index exclusiveEnd (which is the empty String when inclusiveStart = exclusiveEnd ). If the “to” suffix is omitted, the length of string is used as the value of exclusiveEnd .
+
+The phrase “ the ASCII word characters ” denotes the following String value, which consists solely of every letter and number in the Unicode Basic Latin block along with U+005F (LOW LINE):
+
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_" .
+
+For historical reasons, it has significance to various algorithms.
+
+6.1.4.1 StringIndexOf ( string , searchValue , fromIndex )
+
+The abstract operation StringIndexOf takes arguments string (a String), searchValue (a String), and fromIndex (a non-negative integer ) and returns a non-negative integer or not-found . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- If searchValue is the empty String and fromIndex ≤ length , return fromIndex .
+
+- Let searchLength be the length of searchValue .
+
+- For each integer i such that fromIndex ≤ i ≤ length - searchLength , in ascending order, do
+- Let candidate be the substring of string from i to i + searchLength .
+
+- If candidate is searchValue , return i .
+
+- Return not-found .
+
+Note 1
+If searchValue is the empty String and fromIndex ≤ the length of string , this algorithm returns fromIndex . The empty String is effectively found at every position within a string, including after the last code unit.
+
+Note 2
+This algorithm always returns not-found if fromIndex + the length of searchValue > the length of string .
+
+6.1.4.2 StringLastIndexOf ( string , searchValue , fromIndex )
+
+The abstract operation StringLastIndexOf takes arguments string (a String), searchValue (a String), and fromIndex (a non-negative integer ) and returns a non-negative integer or not-found . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Let searchLength be the length of searchValue .
+
+- Assert : fromIndex + searchLength ≤ length .
+
+- For each integer i such that 0 ≤ i ≤ fromIndex , in descending order, do
+- Let candidate be the substring of string from i to i + searchLength .
+
+- If candidate is searchValue , return i .
+
+- Return not-found .
+
+Note
+If searchValue is the empty String, this algorithm returns fromIndex . The empty String is effectively found at every position within a string, including after the last code unit.
+
+6.1.5 The Symbol Type
+
+The Symbol type is the set of all non-String values that may be used as the key of an Object property ( 6.1.7 ).
+
+Each Symbol is unique and immutable.
+
+Each Symbol has an immutable [[Description]] internal slot whose value is either a String or undefined .
+
+6.1.5.1 Well-Known Symbols
+
+Well-known symbols are built-in Symbol values that are explicitly referenced by algorithms of this specification. They are typically used as the keys of properties whose values serve as extension points of a specification algorithm. Unless otherwise specified, well-known symbols values are shared by all realms ( 9.3 ).
+
+Within this specification a well-known symbol is referred to using the standard intrinsic notation where the intrinsic is one of the values listed in Table 1 .
+
+Note Previous editions of this specification used a notation of the form @@name, where the current edition would use %Symbol.name% . In particular, the following names were used: @@asyncIterator, @@hasInstance, @@isConcatSpreadable, @@ iterator , @@match, @@matchAll, @@replace, @@search, @@species, @@split, @@toPrimitive, @@toStringTag, and @@unscopables.
+
+Table 1: Well-known Symbols
+
+Specification Name
+
+[[Description]]
+
+Value and Purpose
+
+%Symbol.asyncDispose%
+
+"Symbol.asyncDispose"
+
+A method that asynchronously performs resource cleanup on an object. Called by AsyncDisposableStack objects and await using declarations when evaluation of their containing scope completes.
+
+%Symbol.asyncIterator%
+
+"Symbol.asyncIterator"
+
+A method that returns the default async iterator for an object. Called by the semantics of the for - await - of statement.
+
+%Symbol.dispose%
+
+"Symbol.dispose"
+
+A method that performs explicit resource cleanup on an object. Called by DisposableStack objects, AsyncDisposableStack objects, and using declarations when evaluation of their containing scope completes.
+
+%Symbol.hasInstance%
+
+"Symbol.hasInstance"
+
+A method that determines if a constructor object recognizes an object as one of the constructor 's instances. Called by the semantics of the instanceof operator.
+
+%Symbol.isConcatSpreadable%
+
+"Symbol.isConcatSpreadable"
+
+A Boolean valued property that if true indicates that an object should be flattened to its array elements by Array.prototype.concat .
+
+%Symbol.iterator%
+
+"Symbol.iterator"
+
+A method that returns the default iterator for an object. Called by the semantics of the for-of statement.
+
+%Symbol.match%
+
+"Symbol.match"
+
+A regular expression method that matches the regular expression against a string. Called by the String.prototype.match method.
+
+%Symbol.matchAll%
+
+"Symbol.matchAll"
+
+A regular expression method that returns an iterator that yields matches of the regular expression against a string. Called by the String.prototype.matchAll method.
+
+%Symbol.replace%
+
+"Symbol.replace"
+
+A regular expression method that replaces matched substrings of a string. Called by the String.prototype.replace method.
+
+%Symbol.search%
+
+"Symbol.search"
+
+A regular expression method that returns the index within a string that matches the regular expression. Called by the String.prototype.search method.
+
+%Symbol.species%
+
+"Symbol.species"
+
+A function valued property that is the constructor function that is used to create derived objects.
+
+%Symbol.split%
+
+"Symbol.split"
+
+A regular expression method that splits a string at the indices that match the regular expression. Called by the String.prototype.split method.
+
+%Symbol.toPrimitive%
+
+"Symbol.toPrimitive"
+
+A method that converts an object to a corresponding primitive value. Called by the ToPrimitive abstract operation.
+
+%Symbol.toStringTag%
+
+"Symbol.toStringTag"
+
+A String valued property that is used in the creation of the default string description of an object. Accessed by the built-in method Object.prototype.toString .
+
+%Symbol.unscopables%
+
+"Symbol.unscopables"
+
+An object valued property whose own and inherited property names are property names that are excluded from the with environment bindings of the associated object.
+
+6.1.6 Numeric Types
+
+ECMAScript has two built-in numeric types: Number and BigInt. The following abstract operations are defined over these numeric types. The “Result” column shows the return type, along with an indication if it is possible for some invocations of the operation to return an abrupt completion .
+
+Table 2: Numeric Type Operations
+
+Operation
+
+Example source
+
+Invoked by the Evaluation semantics of ...
+
+Result
+
+Number::unaryMinus
+
+-x
+
+Unary - Operator
+
+Number
+
+BigInt::unaryMinus
+
+BigInt
+
+Number::bitwiseNOT
+
+~x
+
+Bitwise NOT Operator ( ~ )
+
+Number
+
+BigInt::bitwiseNOT
+
+BigInt
+
+Number::exponentiate
+
+x ** y
+
+Exponentiation Operator
+and Math.pow ( base , exponent )
+
+Number
+
+BigInt::exponentiate
+
+either a normal completion containing a BigInt or a throw completion
+
+Number::multiply
+
+x * y
+
+Multiplicative Operators
+
+Number
+
+BigInt::multiply
+
+BigInt
+
+Number::divide
+
+x / y
+
+Multiplicative Operators
+
+Number
+
+BigInt::divide
+
+either a normal completion containing a BigInt or a throw completion
+
+Number::remainder
+
+x % y
+
+Multiplicative Operators
+
+Number
+
+BigInt::remainder
+
+either a normal completion containing a BigInt or a throw completion
+
+Number::add
+
+x ++
+
+++ x
+
+x + y
+
+Postfix Increment Operator ,
+Prefix Increment Operator ,
+and The Addition Operator ( + )
+
+Number
+
+BigInt::add
+
+BigInt
+
+Number::subtract
+
+x --
+
+-- x
+
+x - y
+
+Postfix Decrement Operator ,
+Prefix Decrement Operator ,
+and The Subtraction Operator ( - )
+
+Number
+
+BigInt::subtract
+
+BigInt
+
+Number::leftShift
+
+x << y
+
+The Left Shift Operator ( << )
+
+Number
+
+BigInt::leftShift
+
+BigInt
+
+Number::signedRightShift
+
+x >> y
+
+The Signed Right Shift Operator ( >> )
+
+Number
+
+BigInt::signedRightShift
+
+BigInt
+
+Number::unsignedRightShift
+
+x >>> y
+
+The Unsigned Right Shift Operator ( >>> )
+
+Number
+
+BigInt::unsignedRightShift
+
+a throw completion
+
+Number::lessThan
+
+x < y
+
+x > y
+
+x <= y
+
+x >= y
+
+Relational Operators ,
+via IsLessThan ( x , y , leftFirst )
+
+Boolean or undefined (for unordered inputs)
+
+BigInt::lessThan
+
+Boolean
+
+Number::equal
+
+x == y
+
+x != y
+
+x === y
+
+x !== y
+
+Equality Operators ,
+via IsStrictlyEqual ( x , y )
+
+Boolean
+
+BigInt::equal
+
+Number::sameValue
+
+Object.is(x, y)
+
+Object internal methods,
+via SameValue ( x , y ) ,
+to test exact value equality
+
+Boolean
+
+Number::sameValueZero
+
+[x].includes(y)
+
+via SameValueZero ( x , y ) ,
+to test value equality, ignoring the difference between +0 𝔽 and -0 𝔽 , as in Array, Map, and Set methods
+
+Boolean
+
+Number::bitwiseAND
+
+x & y
+
+Binary Bitwise Operators
+
+Number
+
+BigInt::bitwiseAND
+
+BigInt
+
+Number::bitwiseXOR
+
+x ^ y
+
+Number
+
+BigInt::bitwiseXOR
+
+BigInt
+
+Number::bitwiseOR
+
+x | y
+
+Number
+
+BigInt::bitwiseOR
+
+BigInt
+
+Number::toString
+
+String(x)
+
+Many expressions and built-in functions, via ToString ( arg )
+
+String
+
+BigInt::toString
+
+Because the numeric types are in general not convertible without loss of precision or truncation, the ECMAScript language provides no implicit conversion among these types. Programmers must explicitly call Number and BigInt functions to convert among types when calling a function which requires another type.
+
+Note
+The first and subsequent editions of ECMAScript have provided, for certain operators, implicit numeric conversions that could lose precision or truncate . These legacy implicit conversions are maintained for backward compatibility, but not provided for BigInt in order to minimize opportunity for programmer error, and to leave open the option of generalized value types in a future edition.
+
+6.1.6.1 The Number Type
+
+The Number type has exactly 18,437,736,874,454,810,627 (that is, 2 64 - 2 53 + 3 ) values, representing the double-precision floating point IEEE 754-2019 binary64 values as specified in the IEEE Standard for Binary Floating-Point Arithmetic, except that the 9,007,199,254,740,990 (that is, 2 53 - 2 ) distinct NaN values of the IEEE Standard are represented in ECMAScript as a single special NaN value. (Note that the NaN value is produced by the program expression NaN .) In some implementations, external code might be able to detect a difference between various NaN values, but such behaviour is implementation-defined ; to ECMAScript code, all NaN values are indistinguishable from each other.
+
+Note
+The bit pattern that might be observed in an ArrayBuffer (see 25.1 ) or a SharedArrayBuffer (see 25.2 ) after a Number value has been stored into it is not necessarily the same as the internal representation of that Number value used by the ECMAScript implementation.
+
+There are two other special values, called positive Infinity and negative Infinity . For brevity, these values are also referred to for expository purposes by the symbols +∞ 𝔽 and -∞ 𝔽 , respectively. (Note that these two infinite Number values are produced by the program expressions +Infinity (or simply Infinity ) and -Infinity .)
+
+The other 18,437,736,874,454,810,624 (that is, 2 64 - 2 53 ) values are called the finite numbers. Half of these are positive numbers and half are negative numbers; for every finite positive Number value there is a corresponding negative value having the same magnitude.
+
+Note that there is both a positive zero and a negative zero . For brevity, these values are also referred to for expository purposes by the symbols +0 𝔽 and -0 𝔽 , respectively. (Note that these two different zero Number values are produced by the program expressions +0 (or simply 0 ) and -0 .)
+
+The 18,437,736,874,454,810,622 (that is, 2 64 - 2 53 - 2 ) finite non-zero values are of two kinds:
+
+18,428,729,675,200,069,632 (that is, 2 64 - 2 54 ) of them are normalized, having the form
+
+s × m × 2 e
+
+where s is 1 or -1, m is an integer in the interval from 2 52 (inclusive) to 2 53 (exclusive), and e is an integer in the inclusive interval from -1074 to 971.
+
+The remaining 9,007,199,254,740,990 (that is, 2 53 - 2 ) values are denormalized, having the form
+
+s × m × 2 e
+
+where s is 1 or -1, m is an integer in the interval from 0 (exclusive) to 2 52 (exclusive), and e is -1074.
+
+Note that all the positive and negative integers whose magnitude is no greater than 2 53 are representable in the Number type. The integer 0 has two representations in the Number type: +0 𝔽 and -0 𝔽 .
+
+A finite number has an odd significand if it is non-zero and the integer m used to express it (in one of the two forms shown above) is odd. Otherwise, it has an even significand .
+
+In this specification, the phrase “the Number value for x ” where x represents an exact real mathematical quantity (which might even be an irrational number such as π) means a Number value chosen in the following manner. Consider the set of all finite values of the Number type, with -0 𝔽 removed and with two additional values added to it that are not representable in the Number type, namely 2 1024 (which is +1 × 2 53 × 2 971 ) and -2 1024 (which is -1 × 2 53 × 2 971 ). Choose the member of this set that is closest in value to x . If two values of the set are equally close, then the one with an even significand is chosen; for this purpose, the two extra values 2 1024 and -2 1024 are considered to have even significands. Finally, if 2 1024 was chosen, replace it with +∞ 𝔽 ; if -2 1024 was chosen, replace it with -∞ 𝔽 ; if +0 𝔽 was chosen, replace it with -0 𝔽 if and only if x < 0; any other chosen value is used unchanged. The result is the Number value for x . (This procedure corresponds exactly to the behaviour of the IEEE 754-2019 roundTiesToEven mode.)
+
+The Number value for +∞ is +∞ 𝔽 , and the Number value for -∞ is -∞ 𝔽 .
+
+Some ECMAScript operators deal only with integers in specific ranges such as the inclusive interval from -2 31 to 2 31 - 1 or the inclusive interval from 0 to 2 16 - 1 . These operators accept any value of the Number type but first convert each such value to an integer value in the expected range. See the descriptions of the numeric conversion operations in 7.1 .
+
+6.1.6.1.1 Number::unaryMinus ( number )
+
+The abstract operation Number::unaryMinus takes argument number (a Number) and returns a Number. It performs the following steps when called:
+
+- If number is NaN , return NaN .
+
+- Return the negation of number ; that is, compute a Number with the same magnitude but opposite sign.
+
+6.1.6.1.2 Number::bitwiseNOT ( number )
+
+The abstract operation Number::bitwiseNOT takes argument number (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Let oldValue be ! ToInt32 ( number ).
+
+- Return the bitwise complement of oldValue . The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+
+6.1.6.1.3 Number::exponentiate ( base , exponent )
+
+The abstract operation Number::exponentiate takes arguments base (a Number) and exponent (a Number) and returns a Number. It returns an implementation-approximated value representing the result of raising base to the exponent power. It performs the following steps when called:
+
+- If exponent is NaN , return NaN .
+
+- If exponent is either +0 𝔽 or -0 𝔽 , return 1 𝔽 .
+
+- If base is NaN , return NaN .
+
+- If base is +∞ 𝔽 , then
+- If exponent > +0 𝔽 , return +∞ 𝔽 .
+
+- Return +0 𝔽 .
+
+- If base is -∞ 𝔽 , then
+- If exponent > +0 𝔽 , then
+- If exponent is an odd integral Number , return -∞ 𝔽 .
+
+- Return +∞ 𝔽 .
+
+- If exponent is an odd integral Number , return -0 𝔽 .
+
+- Return +0 𝔽 .
+
+- If base is +0 𝔽 , then
+- If exponent > +0 𝔽 , return +0 𝔽 .
+
+- Return +∞ 𝔽 .
+
+- If base is -0 𝔽 , then
+- If exponent > +0 𝔽 , then
+- If exponent is an odd integral Number , return -0 𝔽 .
+
+- Return +0 𝔽 .
+
+- If exponent is an odd integral Number , return -∞ 𝔽 .
+
+- Return +∞ 𝔽 .
+
+- Assert : base is finite and is neither +0 𝔽 nor -0 𝔽 .
+
+- If exponent is +∞ 𝔽 , then
+- If abs ( ℝ ( base )) > 1, return +∞ 𝔽 .
+
+- If abs ( ℝ ( base )) = 1, return NaN .
+
+- Return +0 𝔽 .
+
+- If exponent is -∞ 𝔽 , then
+- If abs ( ℝ ( base )) > 1, return +0 𝔽 .
+
+- If abs ( ℝ ( base )) = 1, return NaN .
+
+- Return +∞ 𝔽 .
+
+- Assert : exponent is finite and is neither +0 𝔽 nor -0 𝔽 .
+
+- If base < -0 𝔽 and exponent is not an integral Number , return NaN .
+
+- Return an implementation-approximated Number value representing the result of raising ℝ ( base ) to the ℝ ( exponent ) power.
+
+Note
+The result of base ** exponent when base is 1 𝔽 or -1 𝔽 and exponent is +∞ 𝔽 or -∞ 𝔽 , or when base is 1 𝔽 and exponent is NaN , differs from IEEE 754-2019 . The first edition of ECMAScript specified a result of NaN for this operation, whereas later revisions of IEEE 754 specified 1 𝔽 . The historical ECMAScript behaviour is preserved for compatibility reasons.
+
+6.1.6.1.4 Number::multiply ( x , y )
+
+The abstract operation Number::multiply takes arguments x (a Number) and y (a Number) and returns a Number. It performs multiplication according to the rules of IEEE 754-2019 binary double-precision arithmetic, producing the product of x and y . It performs the following steps when called:
+
+- If x is NaN or y is NaN , return NaN .
+
+- If x is either +∞ 𝔽 or -∞ 𝔽 , then
+- If y is either +0 𝔽 or -0 𝔽 , return NaN .
+
+- If y > +0 𝔽 , return x .
+
+- Return - x .
+
+- If y is either +∞ 𝔽 or -∞ 𝔽 , then
+- If x is either +0 𝔽 or -0 𝔽 , return NaN .
+
+- If x > +0 𝔽 , return y .
+
+- Return - y .
+
+- If x is -0 𝔽 , then
+- If y is -0 𝔽 or y < -0 𝔽 , return +0 𝔽 .
+
+- Return -0 𝔽 .
+
+- If y is -0 𝔽 , then
+- If x < -0 𝔽 , return +0 𝔽 .
+
+- Return -0 𝔽 .
+
+- Return 𝔽 ( ℝ ( x ) × ℝ ( y )).
+
+Note
+Finite -precision multiplication is commutative, but not always associative.
+
+6.1.6.1.5 Number::divide ( x , y )
+
+The abstract operation Number::divide takes arguments x (a Number) and y (a Number) and returns a Number. It performs division according to the rules of IEEE 754-2019 binary double-precision arithmetic, producing the quotient of x and y where x is the dividend and y is the divisor. It performs the following steps when called:
+
+- If x is NaN or y is NaN , return NaN .
+
+- If x is either +∞ 𝔽 or -∞ 𝔽 , then
+- If y is either +∞ 𝔽 or -∞ 𝔽 , return NaN .
+
+- If y is +0 𝔽 or y > +0 𝔽 , return x .
+
+- Return - x .
+
+- If y is +∞ 𝔽 , then
+- If x is +0 𝔽 or x > +0 𝔽 , return +0 𝔽 .
+
+- Return -0 𝔽 .
+
+- If y is -∞ 𝔽 , then
+- If x is +0 𝔽 or x > +0 𝔽 , return -0 𝔽 .
+
+- Return +0 𝔽 .
+
+- If x is either +0 𝔽 or -0 𝔽 , then
+- If y is either +0 𝔽 or -0 𝔽 , return NaN .
+
+- If y > +0 𝔽 , return x .
+
+- Return - x .
+
+- If y is +0 𝔽 , then
+- If x > +0 𝔽 , return +∞ 𝔽 .
+
+- Return -∞ 𝔽 .
+
+- If y is -0 𝔽 , then
+- If x > +0 𝔽 , return -∞ 𝔽 .
+
+- Return +∞ 𝔽 .
+
+- Return 𝔽 ( ℝ ( x ) / ℝ ( y )).
+
+6.1.6.1.6 Number::remainder ( numerator , denominator )
+
+The abstract operation Number::remainder takes arguments numerator (a Number) and denominator (a Number) and returns a Number. It yields the remainder from an implied division of its operands where numerator is the dividend and denominator is the divisor. It performs the following steps when called:
+
+- If numerator is NaN or denominator is NaN , return NaN .
+
+- If numerator is either +∞ 𝔽 or -∞ 𝔽 , return NaN .
+
+- If denominator is either +∞ 𝔽 or -∞ 𝔽 , return numerator .
+
+- If denominator is either +0 𝔽 or -0 𝔽 , return NaN .
+
+- If numerator is either +0 𝔽 or -0 𝔽 , return numerator .
+
+- Assert : numerator and denominator are finite and non-zero.
+
+- Let quotient be ℝ ( numerator ) / ℝ ( denominator ).
+
+- Let truncatedQuotient be truncate ( quotient ).
+
+- Let remainder be ℝ ( numerator ) - ( ℝ ( denominator ) × truncatedQuotient ).
+
+- If remainder = 0 and numerator < -0 𝔽 , return -0 𝔽 .
+
+- Return 𝔽 ( remainder ).
+
+Note 1
+In C and C++, the remainder operator accepts only integral operands; in ECMAScript, it also accepts floating-point operands.
+
+Note 2 The result of a floating-point remainder operation as computed by the % operator is not the same as the “remainder” operation defined by IEEE 754-2019 . The IEEE 754-2019 “remainder” operation computes the remainder from a rounding division, not a truncating division, and so its behaviour is not analogous to that of the usual integer remainder operator. Instead the ECMAScript language defines % on floating-point operations to behave in a manner analogous to that of the Java integer remainder operator; this may be compared with the C library function fmod.
+
+6.1.6.1.7 Number::add ( x , y )
+
+The abstract operation Number::add takes arguments x (a Number) and y (a Number) and returns a Number. It performs addition according to the rules of IEEE 754-2019 binary double-precision arithmetic, producing the sum of its arguments. It performs the following steps when called:
+
+- If x is NaN or y is NaN , return NaN .
+
+- If x is +∞ 𝔽 and y is -∞ 𝔽 , return NaN .
+
+- If x is -∞ 𝔽 and y is +∞ 𝔽 , return NaN .
+
+- If x is either +∞ 𝔽 or -∞ 𝔽 , return x .
+
+- If y is either +∞ 𝔽 or -∞ 𝔽 , return y .
+
+- Assert : x and y are both finite .
+
+- If x is -0 𝔽 and y is -0 𝔽 , return -0 𝔽 .
+
+- Return 𝔽 ( ℝ ( x ) + ℝ ( y )).
+
+Note
+Finite -precision addition is commutative, but not always associative.
+
+6.1.6.1.8 Number::subtract ( x , y )
+
+The abstract operation Number::subtract takes arguments x (a Number) and y (a Number) and returns a Number. It performs subtraction, producing the difference of its operands; x is the minuend and y is the subtrahend. It performs the following steps when called:
+
+- Return Number::add ( x , Number::unaryMinus ( y )).
+
+Note
+It is always the case that x - y produces the same result as x + (-y) .
+
+6.1.6.1.9 Number::leftShift ( x , y )
+
+The abstract operation Number::leftShift takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Let leftNumber be ! ToInt32 ( x ).
+
+- Let rightNumber be ! ToUint32 ( y ).
+
+- Let shiftCount be ℝ ( rightNumber ) modulo 32.
+
+- Return the result of left shifting leftNumber by shiftCount bits. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+
+6.1.6.1.10 Number::signedRightShift ( x , y )
+
+The abstract operation Number::signedRightShift takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Let leftNumber be ! ToInt32 ( x ).
+
+- Let rightNumber be ! ToUint32 ( y ).
+
+- Let shiftCount be ℝ ( rightNumber ) modulo 32.
+
+- Return the result of performing a sign-extending right shift of leftNumber by shiftCount bits. The most significant bit is propagated. The mathematical value of the result is exactly representable as a 32-bit two's complement bit string.
+
+6.1.6.1.11 Number::unsignedRightShift ( x , y )
+
+The abstract operation Number::unsignedRightShift takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Let leftNumber be ! ToUint32 ( x ).
+
+- Let rightNumber be ! ToUint32 ( y ).
+
+- Let shiftCount be ℝ ( rightNumber ) modulo 32.
+
+- Return the result of performing a zero-filling right shift of leftNumber by shiftCount bits. Vacated bits are filled with zero. The mathematical value of the result is exactly representable as a 32-bit unsigned bit string.
+
+6.1.6.1.12 Number::lessThan ( x , y )
+
+The abstract operation Number::lessThan takes arguments x (a Number) and y (a Number) and returns a Boolean or undefined . It performs the following steps when called:
+
+- If x is NaN , return undefined .
+
+- If y is NaN , return undefined .
+
+- If x is y , return false .
+
+- If x is +0 𝔽 and y is -0 𝔽 , return false .
+
+- If x is -0 𝔽 and y is +0 𝔽 , return false .
+
+- If x is +∞ 𝔽 , return false .
+
+- If y is +∞ 𝔽 , return true .
+
+- If y is -∞ 𝔽 , return false .
+
+- If x is -∞ 𝔽 , return true .
+
+- Assert : x and y are finite .
+
+- If ℝ ( x ) < ℝ ( y ), return true .
+
+- Return false .
+
+6.1.6.1.13 Number::equal ( x , y )
+
+The abstract operation Number::equal takes arguments x (a Number) and y (a Number) and returns a Boolean. It performs the following steps when called:
+
+- If x is NaN , return false .
+
+- If y is NaN , return false .
+
+- If x is y , return true .
+
+- If x is +0 𝔽 and y is -0 𝔽 , return true .
+
+- If x is -0 𝔽 and y is +0 𝔽 , return true .
+
+- Return false .
+
+6.1.6.1.14 Number::sameValue ( x , y )
+
+The abstract operation Number::sameValue takes arguments x (a Number) and y (a Number) and returns a Boolean. It performs the following steps when called:
+
+- If x is NaN and y is NaN , return true .
+
+- If x is +0 𝔽 and y is -0 𝔽 , return false .
+
+- If x is -0 𝔽 and y is +0 𝔽 , return false .
+
+- If x is y , return true .
+
+- Return false .
+
+6.1.6.1.15 Number::sameValueZero ( x , y )
+
+The abstract operation Number::sameValueZero takes arguments x (a Number) and y (a Number) and returns a Boolean. It performs the following steps when called:
+
+- If x is NaN and y is NaN , return true .
+
+- If x is +0 𝔽 and y is -0 𝔽 , return true .
+
+- If x is -0 𝔽 and y is +0 𝔽 , return true .
+
+- If x is y , return true .
+
+- Return false .
+
+6.1.6.1.16 NumberBitwiseOp ( op , x , y )
+
+The abstract operation NumberBitwiseOp takes arguments op ( & , ^ , or | ), x (a Number), and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Let leftNumber be ! ToInt32 ( x ).
+
+- Let rightNumber be ! ToInt32 ( y ).
+
+- Let leftBits be the 32-bit two's complement bit string representing ℝ ( leftNumber ).
+
+- Let rightBits be the 32-bit two's complement bit string representing ℝ ( rightNumber ).
+
+- If op is & , then
+- Let result be the result of applying the bitwise AND operation to leftBits and rightBits .
+
+- Else if op is ^ , then
+- Let result be the result of applying the bitwise exclusive OR (XOR) operation to leftBits and rightBits .
+
+- Else,
+- Assert : op is | .
+
+- Let result be the result of applying the bitwise inclusive OR operation to leftBits and rightBits .
+
+- Return the Number value for the integer represented by the 32-bit two's complement bit string result .
+
+6.1.6.1.17 Number::bitwiseAND ( x , y )
+
+The abstract operation Number::bitwiseAND takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Return NumberBitwiseOp ( & , x , y ).
+
+6.1.6.1.18 Number::bitwiseXOR ( x , y )
+
+The abstract operation Number::bitwiseXOR takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Return NumberBitwiseOp ( ^ , x , y ).
+
+6.1.6.1.19 Number::bitwiseOR ( x , y )
+
+The abstract operation Number::bitwiseOR takes arguments x (a Number) and y (a Number) and returns an integral Number . It performs the following steps when called:
+
+- Return NumberBitwiseOp ( | , x , y ).
+
+6.1.6.1.20 Number::toString ( x , radix )
+
+The abstract operation Number::toString takes arguments x (a Number) and radix (an integer in the inclusive interval from 2 to 36) and returns a String. It represents x as a String using a positional numeral system with radix radix . The digits used in the representation of a number using radix r are taken from the first r code units of "0123456789abcdefghijklmnopqrstuvwxyz" in order. The representation of numbers with magnitude greater than or equal to 1 𝔽 never includes leading zeroes. It performs the following steps when called:
+
+- If x is NaN , return "NaN" .
+
+- If x is either +0 𝔽 or -0 𝔽 , return "0" .
+
+- If x < -0 𝔽 , return the string-concatenation of "-" and Number::toString (- x , radix ).
+
+- If x is +∞ 𝔽 , return "Infinity" .
+
+- Let n , k , and s be integers such that k ≥ 1, radix k - 1 ≤ s < radix k , 𝔽 ( s × radix n - k ) is x , and k is as small as possible. Note that k is the number of digits in the representation of s using radix radix , that s is not divisible by radix , and that the least significant digit of s is not necessarily uniquely determined by these criteria.
+
+- If radix ≠ 10 or n is in the inclusive interval from -5 to 21, then
+- If n ≥ k , then
+- Return the string-concatenation of:
+- the code units of the k digits of the representation of s using radix radix
+
+- n - k occurrences of the code unit 0x0030 (DIGIT ZERO)
+
+- If n > 0, then
+- Return the string-concatenation of:
+- the code units of the most significant n digits of the representation of s using radix radix
+
+- the code unit 0x002E (FULL STOP)
+
+- the code units of the remaining k - n digits of the representation of s using radix radix
+
+- Assert : n ≤ 0.
+
+- Return the string-concatenation of:
+- the code unit 0x0030 (DIGIT ZERO)
+
+- the code unit 0x002E (FULL STOP)
+
+- - n occurrences of the code unit 0x0030 (DIGIT ZERO)
+
+- the code units of the k digits of the representation of s using radix radix
+
+- NOTE : In this case, the input will be represented using scientific E notation, such as 1.2e+3 .
+
+- Assert : radix is 10.
+
+- If n < 0, then
+- Let exponentSign be the code unit 0x002D (HYPHEN-MINUS).
+
+- Else,
+- Let exponentSign be the code unit 0x002B (PLUS SIGN).
+
+- If k = 1, then
+- Return the string-concatenation of:
+- the code unit of the single digit of s
+
+- the code unit 0x0065 (LATIN SMALL LETTER E)
+
+- exponentSign
+
+- the code units of the decimal representation of abs ( n - 1)
+
+- Return the string-concatenation of:
+- the code unit of the most significant digit of the decimal representation of s
+
+- the code unit 0x002E (FULL STOP)
+
+- the code units of the remaining k - 1 digits of the decimal representation of s
+
+- the code unit 0x0065 (LATIN SMALL LETTER E)
+
+- exponentSign
+
+- the code units of the decimal representation of abs ( n - 1)
+
+Note 1
+The following observations may be useful as guidelines for implementations, but are not part of the normative requirements of this Standard:
+
+-
+If x is any Number value other than -0 𝔽 , then ToNumber ( ToString (x)) is x.
+
+-
+The least significant digit of s is not always uniquely determined by the requirements listed in step 5 .
+
+Note 2
+For implementations that provide more accurate conversions than required by the rules above, it is recommended that the following alternative version of step 5 be used as a guideline:
+
+- Let n , k , and s be integers such that k ≥ 1, radix k - 1 ≤ s < radix k , 𝔽 ( s × radix n - k ) is x , and k is as small as possible. If there are multiple possibilities for s , choose s such that s × radix n - k is closest to ℝ ( x ). If there are two such possible values of s , choose the one that is even. Note that k is the number of digits in the representation of s using radix radix and that s is not divisible by radix .
+
+Note 3
+Implementers of ECMAScript may find useful the paper and code written by David M. Gay for binary-to-decimal conversion of floating-point numbers:
+
+Gay, David M. Correctly Rounded Binary-Decimal and Decimal-Binary Conversions. Numerical Analysis, Manuscript 90-10. AT&T Bell Laboratories (Murray Hill, New Jersey). 30 November 1990. Available as
+
+https://ampl.com/_archive/first-website/REFS/rounding.pdf . Associated code available as
+
+http://netlib.sandia.gov/fp/dtoa.c and as
+
+http://netlib.sandia.gov/fp/g_fmt.c and may also be found at the various netlib mirror sites.
+
+6.1.6.2 The BigInt Type
+
+The BigInt type represents an integer value. The value may be any size and is not limited to a particular bit-width. Generally, where not otherwise noted, operations are designed to return exact mathematically-based answers. For binary operations, BigInts act as two's complement binary strings, with negative numbers treated as having bits set infinitely to the left.
+
+6.1.6.2.1 BigInt::unaryMinus ( bigint )
+
+The abstract operation BigInt::unaryMinus takes argument bigint (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- If bigint = 0 ℤ , return 0 ℤ .
+
+- Return - bigint .
+
+6.1.6.2.2 BigInt::bitwiseNOT ( bigint )
+
+The abstract operation BigInt::bitwiseNOT takes argument bigint (a BigInt) and returns a BigInt. It returns the one's complement of bigint . It performs the following steps when called:
+
+- Return - bigint - 1 ℤ .
+
+6.1.6.2.3 BigInt::exponentiate ( base , exponent )
+
+The abstract operation BigInt::exponentiate takes arguments base (a BigInt) and exponent (a BigInt) and returns either a normal completion containing a BigInt or a throw completion . It performs the following steps when called:
+
+- If exponent < 0 ℤ , throw a RangeError exception.
+
+- If base = 0 ℤ and exponent = 0 ℤ , return 1 ℤ .
+
+- Return base raised to the power exponent .
+
+6.1.6.2.4 BigInt::multiply ( x , y )
+
+The abstract operation BigInt::multiply takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return x × y .
+
+Note Even if the result has a much larger bit width than the input, the exact mathematical answer is given.
+
+6.1.6.2.5 BigInt::divide ( x , y )
+
+The abstract operation BigInt::divide takes arguments x (a BigInt) and y (a BigInt) and returns either a normal completion containing a BigInt or a throw completion . It performs the following steps when called:
+
+- If y = 0 ℤ , throw a RangeError exception.
+
+- Let quotient be ℝ ( x ) / ℝ ( y ).
+
+- Return ℤ ( truncate ( quotient )).
+
+6.1.6.2.6 BigInt::remainder ( numerator , denominator )
+
+The abstract operation BigInt::remainder takes arguments numerator (a BigInt) and denominator (a BigInt) and returns either a normal completion containing a BigInt or a throw completion . It performs the following steps when called:
+
+- If denominator = 0 ℤ , throw a RangeError exception.
+
+- If numerator = 0 ℤ , return 0 ℤ .
+
+- Let quotient be ℝ ( numerator ) / ℝ ( denominator ).
+
+- Let truncatedQuotient be ℤ ( truncate ( quotient )).
+
+- Return numerator - ( denominator × truncatedQuotient ).
+
+Note The sign of the result is the sign of the dividend.
+
+6.1.6.2.7 BigInt::add ( x , y )
+
+The abstract operation BigInt::add takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return x + y .
+
+6.1.6.2.8 BigInt::subtract ( x , y )
+
+The abstract operation BigInt::subtract takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return x - y .
+
+6.1.6.2.9 BigInt::leftShift ( x , y )
+
+The abstract operation BigInt::leftShift takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- If y < 0 ℤ , then
+- Return ℤ ( floor ( ℝ ( x ) / 2 - ℝ ( y ) )).
+
+- Return x × 2 ℤ y .
+
+Note Semantics here should be equivalent to a bitwise shift, treating the BigInt as an infinite length string of binary two's complement digits.
+
+6.1.6.2.10 BigInt::signedRightShift ( x , y )
+
+The abstract operation BigInt::signedRightShift takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return BigInt::leftShift ( x , - y ).
+
+6.1.6.2.11 BigInt::unsignedRightShift ( x , y )
+
+The abstract operation BigInt::unsignedRightShift takes arguments x (a BigInt) and y (a BigInt) and returns a throw completion . It performs the following steps when called:
+
+- Throw a TypeError exception.
+
+6.1.6.2.12 BigInt::lessThan ( x , y )
+
+The abstract operation BigInt::lessThan takes arguments x (a BigInt) and y (a BigInt) and returns a Boolean. It performs the following steps when called:
+
+- If ℝ ( x ) < ℝ ( y ), return true .
+
+- Return false .
+
+6.1.6.2.13 BigInt::equal ( x , y )
+
+The abstract operation BigInt::equal takes arguments x (a BigInt) and y (a BigInt) and returns a Boolean. It performs the following steps when called:
+
+- If ℝ ( x ) = ℝ ( y ), return true .
+
+- Return false .
+
+6.1.6.2.14 BinaryAnd ( x , y )
+
+The abstract operation BinaryAnd takes arguments x (0 or 1) and y (0 or 1) and returns 0 or 1. It performs the following steps when called:
+
+- If x = 1 and y = 1, return 1.
+
+- Return 0.
+
+6.1.6.2.15 BinaryOr ( x , y )
+
+The abstract operation BinaryOr takes arguments x (0 or 1) and y (0 or 1) and returns 0 or 1. It performs the following steps when called:
+
+- If x = 1 or y = 1, return 1.
+
+- Return 0.
+
+6.1.6.2.16 BinaryXor ( x , y )
+
+The abstract operation BinaryXor takes arguments x (0 or 1) and y (0 or 1) and returns 0 or 1. It performs the following steps when called:
+
+- If x = 1 and y = 0, return 1.
+
+- If x = 0 and y = 1, return 1.
+
+- Return 0.
+
+6.1.6.2.17 BigIntBitwiseOp ( op , x , y )
+
+The abstract operation BigIntBitwiseOp takes arguments op ( & , ^ , or | ), x (a BigInt), and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Set x to ℝ ( x ).
+
+- Set y to ℝ ( y ).
+
+- Let result be 0.
+
+- Let shift be 0.
+
+- Repeat, until ( x = 0 or x = -1) and ( y = 0 or y = -1),
+- Let xDigit be x modulo 2.
+
+- Let yDigit be y modulo 2.
+
+- If op is & , then
+- Set result to result + 2 shift × BinaryAnd ( xDigit , yDigit ).
+
+- Else if op is | , then
+- Set result to result + 2 shift × BinaryOr ( xDigit , yDigit ).
+
+- Else,
+- Assert : op is ^ .
+
+- Set result to result + 2 shift × BinaryXor ( xDigit , yDigit ).
+
+- Set shift to shift + 1.
+
+- Set x to ( x - xDigit ) / 2.
+
+- Set y to ( y - yDigit ) / 2.
+
+- If op is & , then
+- Let signBit be BinaryAnd ( x modulo 2, y modulo 2).
+
+- Else if op is | , then
+- Let signBit be BinaryOr ( x modulo 2, y modulo 2).
+
+- Else,
+- Assert : op is ^ .
+
+- Let signBit be BinaryXor ( x modulo 2, y modulo 2).
+
+- If signBit ≠ 0, then
+- Set result to result - 2 shift .
+
+- NOTE : This extends the sign.
+
+- Return the BigInt value for result .
+
+6.1.6.2.18 BigInt::bitwiseAND ( x , y )
+
+The abstract operation BigInt::bitwiseAND takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return BigIntBitwiseOp ( & , x , y ).
+
+6.1.6.2.19 BigInt::bitwiseXOR ( x , y )
+
+The abstract operation BigInt::bitwiseXOR takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return BigIntBitwiseOp ( ^ , x , y ).
+
+6.1.6.2.20 BigInt::bitwiseOR ( x , y )
+
+The abstract operation BigInt::bitwiseOR takes arguments x (a BigInt) and y (a BigInt) and returns a BigInt. It performs the following steps when called:
+
+- Return BigIntBitwiseOp ( | , x , y ).
+
+6.1.6.2.21 BigInt::toString ( x , radix )
+
+The abstract operation BigInt::toString takes arguments x (a BigInt) and radix (an integer in the inclusive interval from 2 to 36) and returns a String. It represents x as a String using a positional numeral system with radix radix . The digits used in the representation of a BigInt using radix r are taken from the first r code units of "0123456789abcdefghijklmnopqrstuvwxyz" in order. The representation of BigInts other than 0 ℤ never includes leading zeroes. It performs the following steps when called:
+
+- If x < 0 ℤ , return the string-concatenation of "-" and BigInt::toString (- x , radix ).
+
+- Return the String value consisting of the representation of x using radix radix .
+
+6.1.7 The Object Type
+
+Each instance of the Object type , also referred to simply as “an Object”, represents a collection of properties. Each property is either a data property, or an accessor property:
+
+-
+A data property associates a key value with an ECMAScript language value and a set of Boolean attributes.
+
+-
+An accessor property associates a key value with one or two accessor functions, and a set of Boolean attributes. The accessor functions are used to store or retrieve an ECMAScript language value that is associated with the property.
+
+The properties of an object are uniquely identified using property keys . A property key is either a String or a Symbol. All Strings and Symbols, including the empty String, are valid as property keys . A property name is a property key that is a String .
+
+An integer index is a property name n such that CanonicalNumericIndexString ( n ) returns an integral Number in the inclusive interval from +0 𝔽 to 𝔽 (2 53 - 1). An array index is an integer index n such that CanonicalNumericIndexString ( n ) returns an integral Number in the inclusive interval from +0 𝔽 to 𝔽 (2 32 - 2).
+
+Note
+Every non-negative safe integer has a corresponding integer index . Every 32-bit unsigned integer except 2 32 - 1 has a corresponding array index . "-0" is neither an integer index nor an array index .
+
+Property keys are used to access properties and their values. There are two kinds of access for properties: get and set , corresponding to value retrieval and assignment, respectively. The properties accessible via get and set access includes both own properties that are a direct part of an object and inherited properties which are provided by another associated object via a property inheritance relationship. Inherited properties may be either own or inherited properties of the associated object. Each own property of an object must each have a key value that is distinct from the key values of the other own properties of that object.
+
+All objects are logically collections of properties, but there are multiple forms of objects that differ in their semantics for accessing and manipulating their properties. Please see 6.1.7.2 for definitions of the multiple forms of objects.
+
+In addition, some objects are callable; these are referred to as functions or function objects and are described further below. All functions in ECMAScript are members of the Object type.
+
+6.1.7.1 Property Attributes
+
+Attributes are used in this specification to define and explain the state of Object properties as described in Table 3 . Unless specified explicitly, the initial value of each attribute is its Default Value.
+
+Table 3: Attributes of an Object property
+
+Attribute Name
+Types of property for which it is present
+Value Domain
+Default Value
+Description
+
+[[Value]]
+
+data property
+
+an ECMAScript language value
+
+undefined
+
+The value retrieved by a get access of the property.
+
+[[Writable]]
+
+data property
+
+a Boolean
+
+false
+
+If false , attempts by ECMAScript code to change the property's [[Value]] attribute using [[Set]] will not succeed.
+
+[[Getter]]
+
+accessor property
+
+a function object or undefined
+
+undefined
+
+If the value is not undefined , its [[Call]] internal method ( Table 5 ) is called with an empty arguments list to retrieve the property value each time a get access of the property is performed.
+
+[[Setter]]
+
+accessor property
+
+a function object or undefined
+
+undefined
+
+If the value is not undefined , its [[Call]] internal method ( Table 5 ) is called with an arguments list containing the assigned value as its sole argument each time a set access of the property is performed. The effect of a property's [[Setter]] internal method may, but is not required to, have an effect on the value returned by subsequent calls to the property's [[Getter]] internal method.
+
+[[Enumerable]]
+
+data property or accessor property
+
+a Boolean
+
+false
+
+If true , the property will be enumerated by a for-in enumeration (see 14.7.5 ). Otherwise, the property is said to be non-enumerable.
+
+[[Configurable]]
+
+data property or accessor property
+
+a Boolean
+
+false
+
+If false , attempts to delete the property, change it from a data property to an accessor property or from an accessor property to a data property , or make any changes to its attributes (other than replacing an existing [[Value]] or setting [[Writable]] to false ) will fail.
+
+6.1.7.2 Object Internal Methods and Internal Slots
+
+The actual semantics of objects, in ECMAScript, are specified via algorithms called internal methods . Each object in an ECMAScript engine is associated with a set of internal methods that defines its runtime behaviour. These internal methods are not part of the ECMAScript language. They are defined by this specification purely for expository purposes. However, each object within an implementation of ECMAScript must behave as specified by the internal methods associated with it. The exact manner in which this is accomplished is determined by the implementation.
+
+Internal method names are polymorphic. This means that different object values may perform different algorithms when a common internal method name is invoked upon them. That actual object upon which an internal method is invoked is the “target” of the invocation. If, at runtime, the implementation of an algorithm attempts to use an internal method of an object that the object does not support, a TypeError exception is thrown.
+
+Internal slots correspond to internal state that is associated with objects, Symbols, or Private Names and used by various ECMAScript specification algorithms. Internal slots are not object properties and they are not inherited. Depending upon the specific internal slot specification, such state may consist of values of any ECMAScript language type or of specific ECMAScript specification type values. Unless explicitly specified otherwise, internal slots are allocated as part of the process of creating an object, Symbol, or Private Name and may not be dynamically added. Unless specified otherwise, the initial value of an internal slot is the value undefined . Various algorithms within this specification create values that have internal slots. However, the ECMAScript language provides no direct way to manipulate internal slots.
+
+All objects have an internal slot named [[PrivateElements]] , which is a List of PrivateElements . This List represents the values of the private fields, methods, and accessors for the object. Initially, it is an empty List .
+
+Internal methods and internal slots are identified within this specification using names enclosed in double square brackets [[ ]].
+
+Table 4 summarizes the essential internal methods used by this specification that are applicable to all objects created or manipulated by ECMAScript code. Every object must have algorithms for all of the essential internal methods. However, all objects do not necessarily use the same algorithms for those methods.
+
+An ordinary object is an object that satisfies all of the following criteria:
+
+-
+For the internal methods listed in Table 4 , the object uses those defined in 10.1 .
+
+-
+If the object has a [[Call]] internal method, it uses either the one defined in 10.2.1 or the one defined in 10.3.1 .
+
+-
+If the object has a [[Construct]] internal method, it uses either the one defined in 10.2.2 or the one defined in 10.3.2 .
+
+An exotic object is an object that is not an ordinary object .
+
+This specification recognizes different kinds of exotic objects by those objects' internal methods. An object that is behaviourally equivalent to a particular kind of exotic object (such as an Array exotic object or a bound function exotic object ), but does not have the same collection of internal methods specified for that kind, is not recognized as that kind of exotic object .
+
+Table 4 and other similar tables describe the invocation pattern for each internal method. The invocation pattern always includes a parenthesized list of descriptive parameter names.
+
+In addition to its parameters, an internal method always has access to the object that is the target of the method invocation.
+
+An internal method implicitly returns a Completion Record , either a normal completion that wraps a value of the return type shown in its invocation pattern, or a throw completion .
+
+Table 4: Essential Internal Methods
+
+Internal Method
+
+Description
+
+Definitions
+
+[[GetPrototypeOf]] ( )
+The internal method [[GetPrototypeOf]] takes no arguments and returns either a normal completion containing either an Object or null , or a throw completion .
+
+It determines the object that provides inherited properties for this object. A null value indicates that there is no such object.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.1 ordinary object
+
+- 10.4.6.1 module namespace exotic object
+
+- 10.5.1 Proxy exotic object
+
+[[SetPrototypeOf]] ( proto )
+The internal method [[SetPrototypeOf]] takes argument proto (an Object or null ) and returns either a normal completion containing a Boolean or a throw completion .
+
+It associates this object with another object that provides inherited properties. Passing null indicates that there is no object that provides inherited properties. Returns true indicating that the operation was completed successfully or false indicating that the operation was not successful.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.2 ordinary object
+
+- 10.4.6.2 module namespace exotic object
+
+- 10.4.7.1 immutable prototype exotic object
+
+- 10.5.2 Proxy exotic object
+
+[[IsExtensible]] ( )
+The internal method [[IsExtensible]] takes no arguments and returns either a normal completion containing a Boolean or a throw completion .
+
+It determines whether it is permitted to add additional properties to this object.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.3 ordinary object
+
+- 10.4.6.3 module namespace exotic object
+
+- 10.5.3 Proxy exotic object
+
+[[PreventExtensions]] ( )
+The internal method [[PreventExtensions]] takes no arguments and returns either a normal completion containing a Boolean or a throw completion .
+
+It controls whether new properties may be added to this object. Returns true if the operation was successful or false if the operation was unsuccessful.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.4 ordinary object
+
+- 10.4.5.1 TypedArray
+
+- 10.4.6.4 module namespace exotic object
+
+- 10.5.4 Proxy exotic object
+
+[[GetOwnProperty]] ( propertyKey )
+The internal method [[GetOwnProperty]] takes argument propertyKey (a property key ) and returns either a normal completion containing either a Property Descriptor or undefined , or a throw completion .
+
+It returns a Property Descriptor for the own property of this object whose key is propertyKey , or undefined if no such property exists.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.5 ordinary object
+
+- 10.4.3.1 String exotic object
+
+- 10.4.4.1 arguments exotic object
+
+- 10.4.5.2 TypedArray
+
+- 10.4.6.5 module namespace exotic object
+
+- 10.5.5 Proxy exotic object
+
+[[DefineOwnProperty]] ( propertyKey , propertyDesc )
+The internal method [[DefineOwnProperty]] takes arguments propertyKey (a property key ) and propertyDesc (a Property Descriptor ) and returns either a normal completion containing a Boolean or a throw completion .
+
+It creates or alters the own property whose key is propertyKey to have the state described by propertyDesc . Returns true if the operation was successful or false if the property could not be created or updated.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.6 ordinary object
+
+- 10.4.2.1 Array exotic object
+
+- 10.4.3.2 String exotic object
+
+- 10.4.4.2 arguments exotic object
+
+- 10.4.5.4 TypedArray
+
+- 10.4.6.6 module namespace exotic object
+
+- 10.5.6 Proxy exotic object
+
+[[HasProperty]] ( propertyKey )
+The internal method [[HasProperty]] takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion .
+
+It returns a Boolean indicating whether this object already has either an own or inherited property whose key is propertyKey .
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.7 ordinary object
+
+- 10.4.5.3 TypedArray
+
+- 10.4.6.7 module namespace exotic object
+
+- 10.5.7 Proxy exotic object
+
+[[Get]] ( propertyKey , receiver )
+The internal method [[Get]] takes arguments propertyKey (a property key ) and receiver (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion .
+
+It returns the value of the property whose key is propertyKey from this object. If any ECMAScript code must be executed to retrieve the property value, receiver is used as the this value when evaluating the code.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.8 ordinary object
+
+- 10.4.4.3 arguments exotic object
+
+- 10.4.5.5 TypedArray
+
+- 10.4.6.8 module namespace exotic object
+
+- 10.5.8 Proxy exotic object
+
+[[Set]] ( propertyKey , value , receiver )
+The internal method [[Set]] takes arguments propertyKey (a property key ), value (an ECMAScript language value ), and receiver (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion .
+
+It sets the value of the property whose key is propertyKey to value . If any ECMAScript code must be executed to set the property value, receiver is used as the this value when evaluating the code. Returns true if the property value was set or false if it could not be set.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.9 ordinary object
+
+- 10.4.4.4 arguments exotic object
+
+- 10.4.5.6 TypedArray
+
+- 10.4.6.9 module namespace exotic object
+
+- 10.5.9 Proxy exotic object
+
+[[Delete]] ( propertyKey )
+The internal method [[Delete]] takes argument propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion .
+
+It removes the own property whose key is propertyKey from this object. Returns false if the property was not deleted and is still present. Returns true if the property was deleted or is not present.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.10 ordinary object
+
+- 10.4.4.5 arguments exotic object
+
+- 10.4.5.7 TypedArray
+
+- 10.4.6.10 module namespace exotic object
+
+- 10.5.10 Proxy exotic object
+
+[[OwnPropertyKeys]] ( )
+The internal method [[OwnPropertyKeys]] takes no arguments and returns either a normal completion containing a List of property keys or a throw completion .
+
+It returns a List whose elements are all of the own property keys for the object.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.1.11 ordinary object
+
+- 10.4.3.3 String exotic object
+
+- 10.4.5.8 TypedArray
+
+- 10.4.6.11 module namespace exotic object
+
+- 10.5.11 Proxy exotic object
+
+Table 5 summarizes additional essential internal methods that are supported by objects that may be called as functions. A function object is an object that supports the [[Call]] internal method. A constructor is an object that supports the [[Construct]] internal method. Every object that supports [[Construct]] must support [[Call]] ; that is, every constructor must be a function object . Therefore, a constructor may also be referred to as a constructor function or constructor function object .
+
+Table 5: Additional Essential Internal Methods of Function Objects
+
+Internal Method
+
+Description
+
+Definitions
+
+[[Call]] ( thisArg , argList )
+The internal method [[Call]] takes arguments thisArg (an ECMAScript language value ) and argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion .
+
+It executes code associated with this object. Invoked via a function call expression. The arguments to the internal method are a this value and a List whose elements are the arguments passed to the function by a call expression. Objects that implement this internal method are callable .
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.2.1 ECMAScript function object
+
+- 10.3.1 built-in function object
+
+- 10.4.1.1 bound function exotic object
+
+- 10.5.12 Proxy exotic object
+
+[[Construct]] ( argList , newTarget )
+The internal method [[Construct]] takes arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion .
+
+It creates an object. Invoked via the new operator or a super call. The first argument to the internal method is a List whose elements are the arguments of the constructor invocation or the super call. The second argument is the object to which the new operator was initially applied. Objects that implement this internal method are called constructors . A function object is not necessarily a constructor and such non- constructor function objects do not have a [[Construct]] internal method.
+
+Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+
+- 10.2.2 ECMAScript function object
+
+- 10.3.2 built-in function object
+
+- 10.4.1.2 bound function exotic object
+
+- 10.5.13 Proxy exotic object
+
+The semantics of the essential internal methods for ordinary objects and standard exotic objects are specified in clause 10 . If any specified use of an internal method of an exotic object is not supported by an implementation, that usage must throw a TypeError exception when attempted.
+
+6.1.7.3 Invariants of the Essential Internal Methods
+
+The Internal Methods of Objects of an ECMAScript engine must conform to the list of invariants specified below. Ordinary ECMAScript Objects as well as all standard exotic objects in this specification maintain these invariants. ECMAScript Proxy objects maintain these invariants by means of runtime checks on the result of traps invoked on the [[ProxyHandler]] object.
+
+Any implementation provided exotic objects must also maintain these invariants for those objects. Violation of these invariants may cause ECMAScript code to have unpredictable behaviour and create security issues. However, violation of these invariants must never compromise the memory safety of an implementation.
+
+An implementation must not allow these invariants to be circumvented in any manner such as by providing alternative interfaces that implement the functionality of the essential internal methods without enforcing their invariants.
+
+Definitions:
+
+-
+The target of an internal method is the object upon which the internal method is called.
+
+-
+A target is non-extensible if it has been observed to return false from its [[IsExtensible]] internal method, or true from its [[PreventExtensions]] internal method.
+
+-
+A non-existent property is a property that does not exist as an own property on a non-extensible target.
+
+-
+All references to SameValue are according to the definition of the SameValue algorithm.
+
+Return value:
+The value returned by any internal method must be a Completion Record with either:
+
+- [[Type]] = normal , [[Target]] = empty , and [[Value]] = a value of the “normal return type” shown below for that internal method, or
+
+- [[Type]] = throw , [[Target]] = empty , and [[Value]] = any ECMAScript language value .
+
+Note 1
+An internal method must not return a continue completion , a break completion , or a return completion .
+
+[[GetPrototypeOf]] ( )
+
+-
+The normal return type is either Object or Null.
+
+-
+If target is non-extensible, and [[GetPrototypeOf]] returns a value proto , then any future calls to [[GetPrototypeOf]] should return the SameValue as proto .
+
+Note 2
+An object's prototype chain should have finite length (that is, starting from any object, recursively applying the [[GetPrototypeOf]] internal method to its result should eventually lead to the value null ). However, this requirement is not enforceable as an object level invariant if the prototype chain includes any exotic objects that do not use the ordinary object definition of [[GetPrototypeOf]] . Such a circular prototype chain may result in infinite loops when accessing object properties.
+
+[[SetPrototypeOf]] ( proto )
+
+-
+The normal return type is Boolean.
+
+-
+If target is non-extensible, [[SetPrototypeOf]] must return false , unless proto is the SameValue as the target's observed [[GetPrototypeOf]] value.
+
+[[IsExtensible]] ( )
+
+-
+The normal return type is Boolean.
+
+-
+If [[IsExtensible]] returns false , all future calls to [[IsExtensible]] on the target must return false .
+
+[[PreventExtensions]] ( )
+
+-
+The normal return type is Boolean.
+
+-
+If [[PreventExtensions]] returns true , all future calls to [[IsExtensible]] on the target must return false and the target is now considered non-extensible.
+
+[[GetOwnProperty]] ( propertyKey )
+
+-
+The normal return type is either Property Descriptor or Undefined.
+
+-
+If the return value is a Property Descriptor , it must be a fully populated Property Descriptor .
+
+-
+If propertyKey is described as a non-configurable, non-writable own data property , all future calls to [[GetOwnProperty]] ( propertyKey ) must return Property Descriptor whose [[Value]] is SameValue as propertyKey 's [[Value]] attribute.
+
+-
+If propertyKey 's attributes other than [[Writable]] and [[Value]] may change over time, or if the property might be deleted, then propertyKey 's [[Configurable]] attribute must be true .
+
+-
+If the [[Writable]] attribute may change from false to true , then the [[Configurable]] attribute must be true .
+
+-
+If the target is non-extensible and propertyKey is non-existent, then all future calls to [[GetOwnProperty]] ( propertyKey ) on the target must describe propertyKey as non-existent (i.e. [[GetOwnProperty]] ( propertyKey ) must return undefined ).
+
+Note 3
+As a consequence of the third invariant, if a property is described as a data property and it may return different values over time, then either or both of the [[Writable]] and [[Configurable]] attributes must be true even if no mechanism to change the value is exposed via the other essential internal methods.
+
+[[DefineOwnProperty]] ( propertyKey , propertyDesc )
+
+-
+The normal return type is Boolean.
+
+-
+[[DefineOwnProperty]] must return false if propertyKey has previously been observed as a non-configurable own property of the target, unless either:
+
+-
+propertyKey is a writable data property . A non-configurable writable data property can be changed into a non-configurable non-writable data property .
+
+-
+All attributes of propertyDesc are the SameValue as propertyKey 's attributes.
+
+-
+[[DefineOwnProperty]] ( propertyKey , propertyDesc ) must return false if target is non-extensible and propertyKey is a non-existent own property. That is, a non-extensible target object cannot be extended with new properties.
+
+[[HasProperty]] ( propertyKey )
+
+-
+The normal return type is Boolean.
+
+-
+If propertyKey was previously observed as a non-configurable own data or accessor property of the target, [[HasProperty]] must return true .
+
+[[Get]] ( propertyKey , receiver )
+
+-
+The normal return type is any ECMAScript language type .
+
+-
+If propertyKey was previously observed as a non-configurable, non-writable own data property of the target with value value , then [[Get]] must return the SameValue as value .
+
+-
+If propertyKey was previously observed as a non-configurable own accessor property of the target whose [[Getter]] attribute is undefined , the [[Get]] operation must return undefined .
+
+[[Set]] ( propertyKey , value , receiver )
+
+-
+The normal return type is Boolean.
+
+-
+If propertyKey was previously observed as a non-configurable, non-writable own data property of the target, then [[Set]] must return false unless value is the SameValue as propertyKey 's [[Value]] attribute.
+
+-
+If propertyKey was previously observed as a non-configurable own accessor property of the target whose [[Setter]] attribute is undefined , the [[Set]] operation must return false .
+
+[[Delete]] ( propertyKey )
+
+-
+The normal return type is Boolean.
+
+-
+If propertyKey was previously observed as a non-configurable own data or accessor property of the target, [[Delete]] must return false .
+
+[[OwnPropertyKeys]] ( )
+
+-
+The normal return type is List .
+
+-
+The returned List must not contain any duplicate entries.
+
+-
+Each element of the returned List must be a property key .
+
+-
+The returned List must contain at least the keys of all non-configurable own properties that have previously been observed.
+
+-
+If the target is non-extensible, the returned List must contain only the keys of all own properties of the target that are observable using [[GetOwnProperty]] .
+
+[[Call]] ( )
+
+-
+The normal return type is any ECMAScript language type .
+
+[[Construct]] ( )
+
+-
+The normal return type is Object.
+
+-
+The target must also have a [[Call]] internal method.
+
+6.1.7.4 Well-Known Intrinsic Objects
+
+Well-known intrinsics are built-in objects that are explicitly referenced by the algorithms of this specification and which usually have realm -specific identities. Unless otherwise specified each intrinsic object actually corresponds to a set of similar objects, one per realm .
+
+Within this specification a reference such as %name% means the intrinsic object, associated with the current realm , corresponding to the name. A reference such as %name.a.b% means, as if the "b" property of the value of the "a" property of the intrinsic object %name% was accessed prior to any ECMAScript code being evaluated. Determination of the current realm and its intrinsics is described in 9.4 . The well-known intrinsics are listed in Table 6 .
+
+Table 6: Well-Known Intrinsic Objects
+
+Intrinsic Name
+
+Global Name
+
+ECMAScript Language Association
+
+%AggregateError%
+
+"AggregateError"
+
+The AggregateError constructor ( 20.5.7.1 )
+
+%Array%
+
+"Array"
+
+The Array constructor ( 23.1.1 )
+
+%ArrayBuffer%
+
+"ArrayBuffer"
+
+The ArrayBuffer constructor ( 25.1.4 )
+
+%ArrayIteratorPrototype%
+
+The prototype of Array Iterator objects ( 23.1.5 )
+
+%AsyncDisposableStack%
+
+"AsyncDisposableStack"
+
+The AsyncDisposableStack constructor ( 27.4.1 )
+
+%AsyncFromSyncIteratorPrototype%
+
+The prototype of Async-from-Sync Iterator objects ( 27.1.5 )
+
+%AsyncFunction%
+
+The constructor of async function objects ( 27.10.1 )
+
+%AsyncGeneratorFunction%
+
+The constructor of async generator function objects ( 27.7.1 )
+
+%AsyncGeneratorPrototype%
+
+The prototype of async generator objects ( 27.9 )
+
+%AsyncIteratorPrototype%
+
+An object that all standard built-in async iterator objects indirectly inherit from
+
+%Atomics%
+
+"Atomics"
+
+The Atomics object ( 25.4 )
+
+%BigInt%
+
+"BigInt"
+
+The BigInt constructor ( 21.2.1 )
+
+%BigInt64Array%
+
+"BigInt64Array"
+
+The BigInt64Array constructor ( 23.2 )
+
+%BigUint64Array%
+
+"BigUint64Array"
+
+The BigUint64Array constructor ( 23.2 )
+
+%Boolean%
+
+"Boolean"
+
+The Boolean constructor ( 20.3.1 )
+
+%DataView%
+
+"DataView"
+
+The DataView constructor ( 25.3.2 )
+
+%Date%
+
+"Date"
+
+The Date constructor ( 21.4.2 )
+
+%decodeURI%
+
+"decodeURI"
+
+The decodeURI function ( 19.2.6.1 )
+
+%decodeURIComponent%
+
+"decodeURIComponent"
+
+The decodeURIComponent function ( 19.2.6.2 )
+
+%DisposableStack%
+
+"DisposableStack"
+
+The DisposableStack constructor ( 27.3.1 )
+
+%encodeURI%
+
+"encodeURI"
+
+The encodeURI function ( 19.2.6.3 )
+
+%encodeURIComponent%
+
+"encodeURIComponent"
+
+The encodeURIComponent function ( 19.2.6.4 )
+
+%Error%
+
+"Error"
+
+The Error constructor ( 20.5.1 )
+
+%eval%
+
+"eval"
+
+The eval function ( 19.2.1 )
+
+%EvalError%
+
+"EvalError"
+
+The EvalError constructor ( 20.5.5.1 )
+
+%FinalizationRegistry%
+
+"FinalizationRegistry"
+
+The FinalizationRegistry constructor ( 26.2.1 )
+
+%Float16Array%
+
+"Float16Array"
+
+The Float16Array constructor ( 23.2 )
+
+%Float32Array%
+
+"Float32Array"
+
+The Float32Array constructor ( 23.2 )
+
+%Float64Array%
+
+"Float64Array"
+
+The Float64Array constructor ( 23.2 )
+
+%ForInIteratorPrototype%
+
+The prototype of For-In Iterator objects ( 14.7.5.10 )
+
+%Function%
+
+"Function"
+
+The Function constructor ( 20.2.1 )
+
+%GeneratorFunction%
+
+The constructor of generator function objects ( 27.6.1 )
+
+%GeneratorPrototype%
+
+The prototype of generator objects ( 27.8 )
+
+%Int8Array%
+
+"Int8Array"
+
+The Int8Array constructor ( 23.2 )
+
+%Int16Array%
+
+"Int16Array"
+
+The Int16Array constructor ( 23.2 )
+
+%Int32Array%
+
+"Int32Array"
+
+The Int32Array constructor ( 23.2 )
+
+%isFinite%
+
+"isFinite"
+
+The isFinite function ( 19.2.2 )
+
+%isNaN%
+
+"isNaN"
+
+The isNaN function ( 19.2.3 )
+
+%Iterator%
+
+"Iterator"
+
+The Iterator constructor ( 27.1.3.1 )
+
+%IteratorHelperPrototype%
+
+The prototype of Iterator Helper objects ( 27.1.2.1 )
+
+%JSON%
+
+"JSON"
+
+The JSON object ( 25.5 )
+
+%Map%
+
+"Map"
+
+The Map constructor ( 24.1.1 )
+
+%MapIteratorPrototype%
+
+The prototype of Map Iterator objects ( 24.1.5 )
+
+%Math%
+
+"Math"
+
+The Math object ( 21.3 )
+
+%Number%
+
+"Number"
+
+The Number constructor ( 21.1.1 )
+
+%Object%
+
+"Object"
+
+The Object constructor ( 20.1.1 )
+
+%parseFloat%
+
+"parseFloat"
+
+The parseFloat function ( 19.2.4 )
+
+%parseInt%
+
+"parseInt"
+
+The parseInt function ( 19.2.5 )
+
+%Promise%
+
+"Promise"
+
+The Promise constructor ( 27.5.3 )
+
+%Proxy%
+
+"Proxy"
+
+The Proxy constructor ( 28.2.1 )
+
+%RangeError%
+
+"RangeError"
+
+The RangeError constructor ( 20.5.5.2 )
+
+%ReferenceError%
+
+"ReferenceError"
+
+The ReferenceError constructor ( 20.5.5.3 )
+
+%Reflect%
+
+"Reflect"
+
+The Reflect object ( 28.1 )
+
+%RegExp%
+
+"RegExp"
+
+The RegExp constructor ( 22.2.4 )
+
+%RegExpStringIteratorPrototype%
+
+The prototype of RegExp String Iterator objects ( 22.2.9 )
+
+%Set%
+
+"Set"
+
+The Set constructor ( 24.2.2 )
+
+%SetIteratorPrototype%
+
+The prototype of Set Iterator objects ( 24.2.6 )
+
+%SharedArrayBuffer%
+
+"SharedArrayBuffer"
+
+The SharedArrayBuffer constructor ( 25.2.3 )
+
+%String%
+
+"String"
+
+The String constructor ( 22.1.1 )
+
+%StringIteratorPrototype%
+
+The prototype of String Iterator objects ( 22.1.5 )
+
+%SuppressedError%
+
+"SuppressedError"
+
+The SuppressedError constructor ( 20.5.8.1 )
+
+%Symbol%
+
+"Symbol"
+
+The Symbol constructor ( 20.4.1 )
+
+%SyntaxError%
+
+"SyntaxError"
+
+The SyntaxError constructor ( 20.5.5.4 )
+
+%ThrowTypeError%
+
+A function object that unconditionally throws a new instance of %TypeError%
+
+%TypedArray%
+
+The super class of all typed Array constructors ( 23.2.1 )
+
+%TypeError%
+
+"TypeError"
+
+The TypeError constructor ( 20.5.5.5 )
+
+%Uint8Array%
+
+"Uint8Array"
+
+The Uint8Array constructor ( 23.2 )
+
+%Uint8ClampedArray%
+
+"Uint8ClampedArray"
+
+The Uint8ClampedArray constructor ( 23.2 )
+
+%Uint16Array%
+
+"Uint16Array"
+
+The Uint16Array constructor ( 23.2 )
+
+%Uint32Array%
+
+"Uint32Array"
+
+The Uint32Array constructor ( 23.2 )
+
+%URIError%
+
+"URIError"
+
+The URIError constructor ( 20.5.5.6 )
+
+%WeakMap%
+
+"WeakMap"
+
+The WeakMap constructor ( 24.3.1 )
+
+%WeakRef%
+
+"WeakRef"
+
+The WeakRef constructor ( 26.1.1 )
+
+%WeakSet%
+
+"WeakSet"
+
+The WeakSet constructor ( 24.4.1 )
+
+%WrapForValidIteratorPrototype%
+
+The prototype of wrapped iterator objects returned by Iterator.from ( 27.1.3.2.2.1 )
+
+Note
+Additional entries in Table 103 .
+
+6.2 ECMAScript Specification Types
+
+A specification type corresponds to meta-values that are used within algorithms to describe the semantics of ECMAScript language constructs and ECMAScript language types . The specification types include Reference Record , List , Completion Record , Property Descriptor , Environment Record , Abstract Closure , and Data Block . Specification type values are specification artefacts that do not necessarily correspond to any specific entity within an ECMAScript implementation. Specification type values may be used to describe intermediate results of ECMAScript expression evaluation but such values cannot be stored as properties of objects or values of ECMAScript language variables.
+
+6.2.1 The Enum Specification Type
+
+Enums are values which are internal to the specification and not directly observable from ECMAScript code. Enums are denoted in upper kebab case using a sans-serif typeface. For instance, a Completion Record 's [[Type]] field takes on values like normal , return , or throw . Enums have no characteristics other than their name. The name of an enum serves no purpose other than to distinguish it from other enums, and implies nothing about its usage or meaning in context.
+
+6.2.2 The List and Record Specification Types
+
+The List type is used to explain the evaluation of argument lists (see 13.3.8 ) in new expressions, in function calls, and in other algorithms where a simple ordered list of values is needed. Values of the List type are simply ordered sequences of list elements containing the individual values. These sequences may be of any length. The elements of a list may be randomly accessed using 0-origin indices. For notational convenience an array-like syntax can be used to access List elements. For example, args [2] is shorthand for saying the 3 rd element of the List args .
+
+When an algorithm iterates over the elements of a List without specifying an order, the order used is the order of the elements in the List.
+
+For notational convenience within this specification, a literal syntax can be used to express a new List value. For example, « 1, 2 » defines a List value that has two elements each of which is initialized to a specific value. A new empty List can be expressed as « ».
+
+In this specification, the phrase “the list-concatenation of A , B , ...” (where each argument is a possibly empty List) denotes a new List value whose elements are the concatenation of the elements (in order) of each of the arguments (in order).
+
+As applied to a List of Strings, the phrase “sorted according to lexicographic code unit order ” means sorting by the numeric value of each code unit up to the length of the shorter string, and sorting the shorter string before the longer string if all are equal, as described in the abstract operation IsLessThan .
+
+The Record type is used to describe data aggregations within the algorithms of this specification. A Record type value consists of one or more named fields. The value of each field is an ECMAScript language value or specification value. Field names are always enclosed in double brackets, for example [[Value]] .
+
+For notational convenience within this specification, an object literal-like syntax can be used to express a Record. For example, { [[Field1]] : 42, [[Field2]] : false , [[Field3]] : empty } defines a Record that has three fields, each of which is initialized to a specific value. Field name order is not significant. Any fields that are not explicitly listed are considered to be absent.
+
+In specification text and algorithms, dot notation may be used to refer to a specific field of a Record. For example, if R is the record shown in the previous paragraph then R. [[Field2]] is shorthand for “the field of R named [[Field2]] ”.
+
+Schema for commonly used Record field combinations may be named, and that name may be used as a prefix to a literal Record to identify the specific kind of aggregations that is being described. For example: PropertyDescriptor { [[Value]] : 42, [[Writable]] : false , [[Configurable]] : true }.
+
+6.2.3 The Set and Relation Specification Types
+
+The Set type is used to explain a collection of unordered elements for use in the memory model . It is distinct from the ECMAScript collection type of the same name. To disambiguate, instances of the ECMAScript collection are consistently referred to as “ Set objects ” within this specification. Values of the Set type are simple collections of elements, where no element appears more than once. Elements may be added to and removed from Sets. Sets may be unioned, intersected, or subtracted from each other.
+
+The Relation type is used to explain constraints on Sets. Values of the Relation type are Sets of ordered pairs of values from its value domain. For example, a Relation on Memory events is a set of ordered pairs of Memory events . For a Relation R and two values a and b in the value domain of R , a R b is shorthand for saying the ordered pair ( a , b ) is a member of R . A Relation is the least Relation with respect to some conditions when it is the smallest Relation that satisfies those conditions.
+
+A strict partial order is a Relation value R that satisfies the following.
+
+-
+For all a , b , and c in R 's domain:
+
+- It is not the case that a R a , and
+
+- If a R b and b R c , then a R c .
+
+Note 1
+The two properties above are called irreflexivity and transitivity, respectively.
+
+A strict total order is a Relation value R that satisfies the following.
+
+-
+For all a , b , and c in R 's domain:
+
+- a is b or a R b or b R a , and
+
+- It is not the case that a R a , and
+
+- If a R b and b R c , then a R c .
+
+Note 2
+The three properties above are called totality, irreflexivity, and transitivity, respectively.
+
+6.2.4 The Completion Record Specification Type
+
+The Completion Record specification type is used to explain the runtime propagation of values and control flow such as the behaviour of statements ( break , continue , return and throw ) that perform nonlocal transfers of control.
+
+Completion Records have the fields defined in Table 7 .
+
+Table 7: Completion Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Type]]
+
+normal , break , continue , return , or throw
+
+The type of completion that occurred.
+
+[[Value]]
+
+any value except a Completion Record
+
+The value that was produced.
+
+[[Target]]
+
+a String or empty
+
+The target label for directed control transfers.
+
+The following shorthand terms are sometimes used to refer to Completion Records.
+
+- normal completion refers to any Completion Record with a [[Type]] value of normal .
+
+- break completion refers to any Completion Record with a [[Type]] value of break .
+
+- continue completion refers to any Completion Record with a [[Type]] value of continue .
+
+- return completion refers to any Completion Record with a [[Type]] value of return .
+
+- throw completion refers to any Completion Record with a [[Type]] value of throw .
+
+- abrupt completion refers to any Completion Record with a [[Type]] value other than normal .
+
+- a normal completion containing some type of value refers to a normal completion that has a value of that type in its [[Value]] field.
+
+Callable objects that are defined in this specification only return a normal completion or a throw completion. Returning any other kind of Completion Record is considered an editorial error.
+
+Implementation-defined callable objects must return either a normal completion or a throw completion.
+
+6.2.4.1 NormalCompletion ( value )
+
+The abstract operation NormalCompletion takes argument value (any value except a Completion Record ) and returns a normal completion . It performs the following steps when called:
+
+- Return Completion Record { [[Type]] : normal , [[Value]] : value , [[Target]] : empty }.
+
+6.2.4.2 ThrowCompletion ( value )
+
+The abstract operation ThrowCompletion takes argument value (an ECMAScript language value ) and returns a throw completion . It performs the following steps when called:
+
+- Return Completion Record { [[Type]] : throw , [[Value]] : value , [[Target]] : empty }.
+
+6.2.4.3 ReturnCompletion ( value )
+
+The abstract operation ReturnCompletion takes argument value (an ECMAScript language value ) and returns a return completion . It performs the following steps when called:
+
+- Return Completion Record { [[Type]] : return , [[Value]] : value , [[Target]] : empty }.
+
+6.2.4.4 UpdateEmpty ( completionRecord , value )
+
+The abstract operation UpdateEmpty takes arguments completionRecord (a Completion Record ) and value (any value except a Completion Record ) and returns a Completion Record . It performs the following steps when called:
+
+- Assert : If completionRecord is either a return completion or a throw completion , then completionRecord . [[Value]] is not empty .
+
+- If completionRecord . [[Value]] is not empty , return ? completionRecord .
+
+- Return Completion Record { [[Type]] : completionRecord . [[Type]] , [[Value]] : value , [[Target]] : completionRecord . [[Target]] }.
+
+6.2.5 The Reference Record Specification Type
+
+The Reference Record type is used to explain the behaviour of such operators as delete , typeof , the assignment operators, the super keyword and other language features. For example, the left-hand operand of an assignment is expected to produce a Reference Record.
+
+A Reference Record is a resolved name or (possibly not-yet-resolved) property binding; its fields are defined by Table 8 .
+
+Table 8: Reference Record Fields
+
+Field Name
+Value
+Meaning
+
+[[Base]]
+an ECMAScript language value , an Environment Record , or unresolvable
+The value or Environment Record which holds the binding. A [[Base]] of unresolvable indicates that the binding could not be resolved.
+
+[[ReferencedName]]
+an ECMAScript language value or a Private Name
+The name of the binding. Always a String if [[Base]] value is an Environment Record . Otherwise, may be an ECMAScript language value other than a String or a Symbol until ToPropertyKey is performed.
+
+[[Strict]]
+a Boolean
+true if the Reference Record originated in strict mode code , false otherwise.
+
+[[ThisValue]]
+an ECMAScript language value or empty
+If not empty , the Reference Record represents a property binding that was expressed using the super keyword ; it is called a Super Reference Record and its [[Base]] value will never be an Environment Record . In that case, the [[ThisValue]] field holds the this value at the time the Reference Record was created.
+
+The following abstract operations are used in this specification to operate upon Reference Records:
+
+6.2.5.1 IsPropertyReference ( refRecord )
+
+The abstract operation IsPropertyReference takes argument refRecord (a Reference Record ) and returns a Boolean. It performs the following steps when called:
+
+- If refRecord . [[Base]] is unresolvable , return false .
+
+- If refRecord . [[Base]] is an Environment Record , return false .
+
+- Return true .
+
+6.2.5.2 IsUnresolvableReference ( refRecord )
+
+The abstract operation IsUnresolvableReference takes argument refRecord (a Reference Record ) and returns a Boolean. It performs the following steps when called:
+
+- If refRecord . [[Base]] is unresolvable , return true .
+
+- Return false .
+
+6.2.5.3 IsSuperReference ( refRecord )
+
+The abstract operation IsSuperReference takes argument refRecord (a Reference Record ) and returns a Boolean. It performs the following steps when called:
+
+- If refRecord . [[ThisValue]] is empty , return false .
+
+- Return true .
+
+6.2.5.4 IsPrivateReference ( refRecord )
+
+The abstract operation IsPrivateReference takes argument refRecord (a Reference Record ) and returns a Boolean. It performs the following steps when called:
+
+- If refRecord . [[ReferencedName]] is a Private Name , return true .
+
+- Return false .
+
+6.2.5.5 GetValue ( refRecord )
+
+The abstract operation GetValue takes argument refRecord (a Reference Record or an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- If refRecord is not a Reference Record , return refRecord .
+
+- If IsUnresolvableReference ( refRecord ) is true , throw a ReferenceError exception.
+
+- If IsPropertyReference ( refRecord ) is true , then
+- Let baseObj be ? ToObject ( refRecord . [[Base]] ).
+
+- If IsPrivateReference ( refRecord ) is true , then
+- Return ? PrivateGet ( baseObj , refRecord . [[ReferencedName]] ).
+
+- If refRecord . [[ReferencedName]] is not a property key , then
+- Set refRecord . [[ReferencedName]] to ? ToPropertyKey ( refRecord . [[ReferencedName]] ).
+
+- Return ? baseObj . [[Get]] ( refRecord . [[ReferencedName]] , GetThisValue ( refRecord )) .
+
+- Let base be refRecord . [[Base]] .
+
+- Assert : base is an Environment Record .
+
+- Return ? base . GetBindingValue ( refRecord . [[ReferencedName]] , refRecord . [[Strict]] ) (see 9.1 ).
+
+Note
+The object that may be created in step 3.a is not accessible outside of the above abstract operation and the ordinary object [[Get]] internal method. An implementation might choose to avoid the actual creation of the object.
+
+6.2.5.6 PutValue ( refRecord , value )
+
+The abstract operation PutValue takes arguments refRecord (a Reference Record or an ECMAScript language value ) and value (an ECMAScript language value ) and returns either a normal completion containing unused or an abrupt completion . It performs the following steps when called:
+
+- If refRecord is not a Reference Record , throw a ReferenceError exception.
+
+- If IsUnresolvableReference ( refRecord ) is true , then
+- If refRecord . [[Strict]] is true , throw a ReferenceError exception.
+
+- Let globalObj be GetGlobalObject ().
+
+- Perform ? Set ( globalObj , refRecord . [[ReferencedName]] , value , false ).
+
+- Return unused .
+
+- If IsPropertyReference ( refRecord ) is true , then
+- Let baseObj be ? ToObject ( refRecord . [[Base]] ).
+
+- If IsPrivateReference ( refRecord ) is true , then
+- Return ? PrivateSet ( baseObj , refRecord . [[ReferencedName]] , value ).
+
+- If refRecord . [[ReferencedName]] is not a property key , then
+- Set refRecord . [[ReferencedName]] to ? ToPropertyKey ( refRecord . [[ReferencedName]] ).
+
+- Let succeeded be ? baseObj . [[Set]] ( refRecord . [[ReferencedName]] , value , GetThisValue ( refRecord )) .
+
+- If succeeded is false and refRecord . [[Strict]] is true , throw a TypeError exception.
+
+- Return unused .
+
+- Let base be refRecord . [[Base]] .
+
+- Assert : base is an Environment Record .
+
+- Return ? base . SetMutableBinding ( refRecord . [[ReferencedName]] , value , refRecord . [[Strict]] ) (see 9.1 ).
+
+Note
+The object that may be created in step 3.a is not accessible outside of the above abstract operation and the ordinary object [[Set]] internal method. An implementation might choose to avoid the actual creation of that object.
+
+6.2.5.7 GetThisValue ( refRecord )
+
+The abstract operation GetThisValue takes argument refRecord (a Reference Record ) and returns an ECMAScript language value . It performs the following steps when called:
+
+- Assert : IsPropertyReference ( refRecord ) is true .
+
+- If IsSuperReference ( refRecord ) is true , return refRecord . [[ThisValue]] .
+
+- Return refRecord . [[Base]] .
+
+6.2.5.8 InitializeReferencedBinding ( refRecord , value )
+
+The abstract operation InitializeReferencedBinding takes arguments refRecord (a Reference Record ) and value (an ECMAScript language value ) and returns either a normal completion containing unused or an abrupt completion . It performs the following steps when called:
+
+- Assert : IsUnresolvableReference ( refRecord ) is false .
+
+- Let base be refRecord . [[Base]] .
+
+- Assert : base is an Environment Record .
+
+- Return ? base . InitializeBinding ( refRecord . [[ReferencedName]] , value ).
+
+6.2.5.9 MakePrivateReference ( baseValue , privateIdentifier )
+
+The abstract operation MakePrivateReference takes arguments baseValue (an ECMAScript language value ) and privateIdentifier (a String) and returns a Reference Record . It performs the following steps when called:
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Assert : privateEnv is not null .
+
+- Let privateName be ResolvePrivateIdentifier ( privateEnv , privateIdentifier ).
+
+- Return the Reference Record { [[Base]] : baseValue , [[ReferencedName]] : privateName , [[Strict]] : true , [[ThisValue]] : empty }.
+
+6.2.6 The Property Descriptor Specification Type
+
+The Property Descriptor type is used to explain the manipulation and reification of Object property attributes. A Property Descriptor is a Record with zero or more fields, where each field's name is an attribute name and its value is a corresponding attribute value as specified in 6.1.7.1 . The schema name used within this specification to tag literal descriptions of Property Descriptor records is “PropertyDescriptor”.
+
+Property Descriptor values may be further classified as data Property Descriptors and accessor Property Descriptors based upon the existence or use of certain fields. A data Property Descriptor is one that includes any fields named either [[Value]] or [[Writable]] . An accessor Property Descriptor is one that includes any fields named either [[Getter]] or [[Setter]] . Any Property Descriptor may have fields named [[Enumerable]] and [[Configurable]] . A Property Descriptor value may not be both a data Property Descriptor and an accessor Property Descriptor; however, it may be neither (in which case it is a generic Property Descriptor). A fully populated Property Descriptor is one that is either an accessor Property Descriptor or a data Property Descriptor and that has all of the corresponding fields defined in Table 3 .
+
+The following abstract operations are used in this specification to operate upon Property Descriptor values:
+
+6.2.6.1 IsAccessorDescriptor ( propertyDesc )
+
+The abstract operation IsAccessorDescriptor takes argument propertyDesc (a Property Descriptor ) and returns a Boolean. It performs the following steps when called:
+
+- If propertyDesc has a [[Getter]] field, return true .
+
+- If propertyDesc has a [[Setter]] field, return true .
+
+- Return false .
+
+6.2.6.2 IsDataDescriptor ( propertyDesc )
+
+The abstract operation IsDataDescriptor takes argument propertyDesc (a Property Descriptor ) and returns a Boolean. It performs the following steps when called:
+
+- If propertyDesc has a [[Value]] field, return true .
+
+- If propertyDesc has a [[Writable]] field, return true .
+
+- Return false .
+
+6.2.6.3 IsGenericDescriptor ( propertyDesc )
+
+The abstract operation IsGenericDescriptor takes argument propertyDesc (a Property Descriptor ) and returns a Boolean. It performs the following steps when called:
+
+- If IsAccessorDescriptor ( propertyDesc ) is true , return false .
+
+- If IsDataDescriptor ( propertyDesc ) is true , return false .
+
+- Return true .
+
+6.2.6.4 FromPropertyDescriptor ( propertyDesc )
+
+The abstract operation FromPropertyDescriptor takes argument propertyDesc (a Property Descriptor or undefined ) and returns an Object or undefined . It performs the following steps when called:
+
+- If propertyDesc is undefined , return undefined .
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Assert : obj is an extensible ordinary object with no own properties.
+
+- If propertyDesc has a [[Value]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "value" , propertyDesc . [[Value]] ).
+
+- If propertyDesc has a [[Writable]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "writable" , propertyDesc . [[Writable]] ).
+
+- If propertyDesc has a [[Getter]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "get" , propertyDesc . [[Getter]] ).
+
+- If propertyDesc has a [[Setter]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "set" , propertyDesc . [[Setter]] ).
+
+- If propertyDesc has an [[Enumerable]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "enumerable" , propertyDesc . [[Enumerable]] ).
+
+- If propertyDesc has a [[Configurable]] field, then
+- Perform ! CreateDataPropertyOrThrow ( obj , "configurable" , propertyDesc . [[Configurable]] ).
+
+- Return obj .
+
+6.2.6.5 ToPropertyDescriptor ( obj )
+
+The abstract operation ToPropertyDescriptor takes argument obj (an ECMAScript language value ) and returns either a normal completion containing a Property Descriptor or a throw completion . It performs the following steps when called:
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let propertyDesc be a new Property Descriptor that initially has no fields.
+
+- Let hasEnumerable be ? HasProperty ( obj , "enumerable" ).
+
+- If hasEnumerable is true , then
+- Let enumerable be ToBoolean (? Get ( obj , "enumerable" )).
+
+- Set propertyDesc . [[Enumerable]] to enumerable .
+
+- Let hasConfigurable be ? HasProperty ( obj , "configurable" ).
+
+- If hasConfigurable is true , then
+- Let configurable be ToBoolean (? Get ( obj , "configurable" )).
+
+- Set propertyDesc . [[Configurable]] to configurable .
+
+- Let hasValue be ? HasProperty ( obj , "value" ).
+
+- If hasValue is true , then
+- Let value be ? Get ( obj , "value" ).
+
+- Set propertyDesc . [[Value]] to value .
+
+- Let hasWritable be ? HasProperty ( obj , "writable" ).
+
+- If hasWritable is true , then
+- Let writable be ToBoolean (? Get ( obj , "writable" )).
+
+- Set propertyDesc . [[Writable]] to writable .
+
+- Let hasGet be ? HasProperty ( obj , "get" ).
+
+- If hasGet is true , then
+- Let getter be ? Get ( obj , "get" ).
+
+- If IsCallable ( getter ) is false and getter is not undefined , throw a TypeError exception.
+
+- Set propertyDesc . [[Getter]] to getter .
+
+- Let hasSet be ? HasProperty ( obj , "set" ).
+
+- If hasSet is true , then
+- Let setter be ? Get ( obj , "set" ).
+
+- If IsCallable ( setter ) is false and setter is not undefined , throw a TypeError exception.
+
+- Set propertyDesc . [[Setter]] to setter .
+
+- If propertyDesc has a [[Getter]] field or propertyDesc has a [[Setter]] field, then
+- If propertyDesc has a [[Value]] field or propertyDesc has a [[Writable]] field, throw a TypeError exception.
+
+- Return propertyDesc .
+
+6.2.6.6 CompletePropertyDescriptor ( propertyDesc )
+
+The abstract operation CompletePropertyDescriptor takes argument propertyDesc (a Property Descriptor ) and returns unused . It performs the following steps when called:
+
+- Let like be the Record { [[Value]] : undefined , [[Writable]] : false , [[Getter]] : undefined , [[Setter]] : undefined , [[Enumerable]] : false , [[Configurable]] : false }.
+
+- If IsGenericDescriptor ( propertyDesc ) is true or IsDataDescriptor ( propertyDesc ) is true , then
+- If propertyDesc does not have a [[Value]] field, set propertyDesc . [[Value]] to like . [[Value]] .
+
+- If propertyDesc does not have a [[Writable]] field, set propertyDesc . [[Writable]] to like . [[Writable]] .
+
+- Else,
+- If propertyDesc does not have a [[Getter]] field, set propertyDesc . [[Getter]] to like . [[Getter]] .
+
+- If propertyDesc does not have a [[Setter]] field, set propertyDesc . [[Setter]] to like . [[Setter]] .
+
+- If propertyDesc does not have an [[Enumerable]] field, set propertyDesc . [[Enumerable]] to like . [[Enumerable]] .
+
+- If propertyDesc does not have a [[Configurable]] field, set propertyDesc . [[Configurable]] to like . [[Configurable]] .
+
+- Return unused .
+
+6.2.7 The Environment Record Specification Type
+
+The Environment Record type is used to explain the behaviour of name resolution in nested functions and blocks. This type and the operations upon it are defined in 9.1 .
+
+6.2.8 The Abstract Closure Specification Type
+
+The Abstract Closure specification type is used to refer to algorithm steps together with a collection of values. Abstract Closures are meta-values and are invoked using function application style such as closure ( arg1 , arg2 ). Like abstract operations , invocations perform the algorithm steps described by the Abstract Closure.
+
+In algorithm steps that create an Abstract Closure, values are captured with the verb “capture” followed by a list of aliases. When an Abstract Closure is created, it captures the value that is associated with each alias at that time. In steps that specify the algorithm to be performed when an Abstract Closure is called, each captured value is referred to by the alias that was used to capture the value.
+
+If an Abstract Closure returns a Completion Record , that Completion Record must be either a normal completion or a throw completion .
+
+Abstract Closures are created inline as part of other algorithms, shown in the following example.
+
+- Let addend be 41.
+
+- Let closure be a new Abstract Closure with parameters ( x ) that captures addend and performs the following steps when called:
+- Return x + addend .
+
+- Let value be closure (1).
+
+- Assert : value is 42.
+
+6.2.9 Data Blocks
+
+The Data Block specification type is used to describe a distinct and mutable sequence of byte-sized (8 bit) numeric values. A byte value is an integer in the inclusive interval from 0 to 255. A Data Block value is created with a fixed number of bytes that each have the initial value 0.
+
+For notational convenience within this specification, an array-like syntax can be used to access the individual bytes of a Data Block value. This notation presents a Data Block value as a 0-based integer-indexed sequence of bytes. For example, if dataBlock is a 5 byte Data Block value then dataBlock [2] can be used to access its 3 rd byte.
+
+A data block that resides in memory that can be referenced from multiple agents concurrently is designated a Shared Data Block . A Shared Data Block has an identity (for the purposes of equality testing Shared Data Block values) that is address-free : it is tied not to the virtual addresses the block is mapped to in any process, but to the set of locations in memory that the block represents. Two data blocks are equal only if the sets of the locations they contain are equal; otherwise, they are not equal and the intersection of the sets of locations they contain is empty. Finally, Shared Data Blocks can be distinguished from Data Blocks.
+
+The semantics of Shared Data Blocks is defined using Shared Data Block events by the memory model . Abstract operations below introduce Shared Data Block events and act as the interface between evaluation semantics and the event semantics of the memory model . The events form a candidate execution , on which the memory model acts as a filter. Please consult the memory model for full semantics.
+
+Shared Data Block events are modelled by Records , defined in the memory model .
+
+The following abstract operations are used in this specification to operate upon Data Block values:
+
+6.2.9.1 CreateByteDataBlock ( size )
+
+The abstract operation CreateByteDataBlock takes argument size (a non-negative integer ) and returns either a normal completion containing a Data Block or a throw completion . It performs the following steps when called:
+
+- If size > 2 53 - 1, throw a RangeError exception.
+
+- Let dataBlock be a new Data Block value consisting of size bytes. If it is impossible to create such a Data Block , throw a RangeError exception.
+
+- Set all of the bytes of dataBlock to 0.
+
+- Return dataBlock .
+
+6.2.9.2 CreateSharedByteDataBlock ( size )
+
+The abstract operation CreateSharedByteDataBlock takes argument size (a non-negative integer ) and returns either a normal completion containing a Shared Data Block or a throw completion . It performs the following steps when called:
+
+- Let dataBlock be a new Shared Data Block value consisting of size bytes. If it is impossible to create such a Shared Data Block , throw a RangeError exception.
+
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let zero be « 0 ».
+
+- For each index index of dataBlock , do
+- Append WriteSharedMemory { [[Order]] : init , [[NoTear]] : true , [[Block]] : dataBlock , [[ByteIndex]] : index , [[ElementSize]] : 1, [[Payload]] : zero } to eventsRecord . [[EventList]] .
+
+- Return dataBlock .
+
+6.2.9.3 CopyDataBlockBytes ( toBlock , toIndex , fromBlock , fromIndex , count )
+
+The abstract operation CopyDataBlockBytes takes arguments toBlock (a Data Block or a Shared Data Block ), toIndex (a non-negative integer ), fromBlock (a Data Block or a Shared Data Block ), fromIndex (a non-negative integer ), and count (a non-negative integer ) and returns unused . It performs the following steps when called:
+
+- Assert : fromBlock and toBlock are distinct values.
+
+- Let fromSize be the number of bytes in fromBlock .
+
+- Assert : fromIndex + count ≤ fromSize .
+
+- Let toSize be the number of bytes in toBlock .
+
+- Assert : toIndex + count ≤ toSize .
+
+- Repeat, while count > 0,
+- If fromBlock is a Shared Data Block , then
+- Let agentRecord be the Agent Record of the surrounding agent .
+
+- Let execution be agentRecord . [[CandidateExecution]] .
+
+- Let eventsRecord be the Agent Events Record of execution . [[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier ().
+
+- Let bytes be a List whose sole element is a nondeterministically chosen byte value .
+
+- NOTE : In implementations, bytes is the result of a non-atomic read instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency.
+
+- Let readEvent be ReadSharedMemory { [[Order]] : unordered , [[NoTear]] : true , [[Block]] : fromBlock , [[ByteIndex]] : fromIndex , [[ElementSize]] : 1 }.
+
+- Append readEvent to eventsRecord . [[EventList]] .
+
+- Append Chosen Value Record { [[Event]] : readEvent , [[ChosenValue]] : bytes } to execution . [[ChosenValues]] .
+
+- If toBlock is a Shared Data Block , then
+- Append WriteSharedMemory { [[Order]] : unordered , [[NoTear]] : true , [[Block]] : toBlock , [[ByteIndex]] : toIndex , [[ElementSize]] : 1, [[Payload]] : bytes } to eventsRecord . [[EventList]] .
+
+- Else,
+- Set toBlock [ toIndex ] to bytes [0].
+
+- Else,
+- Assert : toBlock is not a Shared Data Block .
+
+- Set toBlock [ toIndex ] to fromBlock [ fromIndex ].
+
+- Set toIndex to toIndex + 1.
+
+- Set fromIndex to fromIndex + 1.
+
+- Set count to count - 1.
+
+- Return unused .
+
+6.2.10 The PrivateElement Specification Type
+
+The PrivateElement type is a Record used in the specification of private class fields, methods, and accessors. Although private elements are not associated with Property Descriptors , and are not properties, the runtime semantics of expressions that refer to them are in some ways similar to those of non-configurable properties (private fields are analogous to writable data properties , private methods are analogous to non-writable data properties , and private accessors are analogous to accessor properties ) and the corresponding Record fields are used for similar purposes.
+
+Values of the PrivateElement type are Records whose fields are defined by Table 9 . Such values are referred to as PrivateElements .
+
+Table 9: PrivateElement Fields
+
+Field Name
+
+Values of the [[Kind]] field for which it is present
+
+Value
+
+Meaning
+
+[[Key]]
+
+All
+
+a Private Name
+
+The name of the field, method, or accessor.
+
+[[Kind]]
+
+All
+
+field , method , or accessor
+
+The kind of the element.
+
+[[Value]]
+
+field and method
+
+an ECMAScript language value
+
+The value of the field.
+
+[[Getter]]
+
+accessor
+
+a function object or undefined
+
+The getter for a private accessor.
+
+[[Setter]]
+
+accessor
+
+a function object or undefined
+
+The setter for a private accessor.
+
+6.2.11 The ClassFieldDefinition Record Specification Type
+
+The ClassFieldDefinition type is a Record used in the specification of class fields.
+
+Values of the ClassFieldDefinition type are Records whose fields are defined by Table 10 . Such values are referred to as ClassFieldDefinition Records .
+
+Table 10: ClassFieldDefinition Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Name]]
+
+a Private Name , a String, or a Symbol
+
+The name of the field.
+
+[[Initializer]]
+
+an ECMAScript function object or empty
+
+The initializer of the field, if any.
+
+6.2.12 Private Names
+
+The Private Name specification type is used to describe a globally unique value (one which differs from any other Private Name, even if they are otherwise indistinguishable) which represents the key of a private class element (field, method, or accessor). Each Private Name has an immutable [[Description]] internal slot which is a String . A Private Name may be installed on any ECMAScript object with PrivateFieldAdd or PrivateMethodOrAccessorAdd , and then read or written using PrivateGet and PrivateSet .
+
+6.2.13 The ClassStaticBlockDefinition Record Specification Type
+
+A ClassStaticBlockDefinition Record is a Record used to encapsulate the executable code for a class static initialization block.
+
+ClassStaticBlockDefinition Records have the fields listed in Table 11 .
+
+Table 11: ClassStaticBlockDefinition Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[BodyFunction]]
+
+an ECMAScript function object
+
+The function object to be called during static initialization of a class.

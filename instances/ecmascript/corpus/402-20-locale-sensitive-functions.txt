@@ -1,0 +1,233 @@
+# 20 Locale Sensitive Functions of the ECMAScript Language Specification
+# джерело: https://tc39.es/ecma402/#locale-sensitive-functions
+# отримано: 2026-09-01
+
+20 Locale Sensitive Functions of the ECMAScript Language Specification
+
+ECMA-262 describes several locale-sensitive functions. An ECMAScript implementation that implements this specification shall implement these functions as described here.
+
+Note
+The Collator, NumberFormat, or DateTimeFormat objects created in the algorithms in this clause are only used within these algorithms. They are never directly accessed by ECMAScript code and need not actually exist within an implementation.
+
+20.1 Properties of the String Prototype Object
+
+20.1.1 String.prototype.localeCompare ( that [ , locales [ , options ] ] )
+
+This definition supersedes the definition provided in ECMA-262 , 22.1.3.12 .
+
+When the localeCompare method is called with argument that and optional arguments locales , and options , the following steps are taken:
+
+- Let thisValue be ? RequireObjectCoercible ( this value).
+
+- Let string be ? ToString ( thisValue ).
+
+- Let thatValue be ? ToString ( that ).
+
+- Let collator be ? Construct ( %Intl.Collator% , « locales , options »).
+
+- Return CompareStrings ( collator , string , thatValue ).
+
+The "length" property of this function is 1 𝔽 .
+
+Note 1
+The localeCompare method itself is not directly suitable as an argument to Array.prototype.sort because the latter requires a function of two arguments.
+
+Note 2
+The localeCompare function is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+20.1.2 String.prototype.toLocaleLowerCase ( [ locales ] )
+
+This definition supersedes the definition provided in ECMA-262 , 22.1.3.26 .
+
+This function interprets a String value as a sequence of code points, as described in ECMA-262 , 6.1.4 . The following steps are taken:
+
+- Let thisValue be ? RequireObjectCoercible ( this value).
+
+- Let string be ? ToString ( thisValue ).
+
+- Return ? TransformCase ( string , locales , lower ).
+
+Note
+The toLocaleLowerCase function is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+20.1.2.1 TransformCase ( string , locales , targetCase )
+
+The abstract operation TransformCase takes arguments string (a String), locales (an ECMAScript language value ), and targetCase ( lower or upper ). It interprets string as a sequence of UTF-16 encoded code points, as described in ECMA-262 , 6.1.4 , and returns the result of ILD transformation into targetCase as a new String value. It performs the following steps when called:
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- If requestedLocales is not an empty List , then
+- Let requestedLocale be requestedLocales [0].
+
+- Else,
+- Let requestedLocale be DefaultLocale ().
+
+- Let availableLocales be an Available Locales List which includes the language tags for which the Unicode Character Database contains language-sensitive case mappings. If the implementation supports additional locale-sensitive case mappings, availableLocales should also include their corresponding language tags .
+
+- Let match be LookupMatchingLocaleByPrefix ( availableLocales , « requestedLocale »).
+
+- If match is not undefined , let locale be match . [[locale]] ; else let locale be "und" .
+
+- Let codePoints be StringToCodePoints ( string ).
+
+- If targetCase is lower , then
+- Let newCodePoints be a List whose elements are the result of a lowercase transformation of codePoints according to an implementation-derived algorithm using locale or the Unicode Default Case Conversion algorithm.
+
+- Else,
+- Assert : targetCase is upper .
+
+- Let newCodePoints be a List whose elements are the result of an uppercase transformation of codePoints according to an implementation-derived algorithm using locale or the Unicode Default Case Conversion algorithm.
+
+- Return CodePointsToString ( newCodePoints ).
+
+Code point mappings may be derived according to a tailored version of the Default Case Conversion Algorithms of the Unicode Standard. Implementations may use locale-sensitive tailoring defined in the file SpecialCasing.txt of the Unicode Character Database and/or CLDR and/or any other custom tailoring. Regardless of tailoring, a conforming implementation's case transformation algorithm must always yield the same result given the same input code points, locale, and target case.
+
+Note
+The case mapping of some code points may produce multiple code points, and therefore the result may not be the same length as the input. Because both toLocaleUpperCase and toLocaleLowerCase have context-sensitive behaviour, the functions are not symmetrical. In other words, s.toLocaleUpperCase().toLocaleLowerCase() is not necessarily equal to s.toLocaleLowerCase() and s.toLocaleLowerCase().toLocaleUpperCase() is not necessarily equal to s.toLocaleUpperCase() .
+
+20.1.3 String.prototype.toLocaleUpperCase ( [ locales ] )
+
+This definition supersedes the definition provided in ECMA-262 , 22.1.3.27 .
+
+This function interprets a String value as a sequence of code points, as described in ECMA-262 , 6.1.4 . The following steps are taken:
+
+- Let thisValue be ? RequireObjectCoercible ( this value).
+
+- Let string be ? ToString ( thisValue ).
+
+- Return ? TransformCase ( string , locales , upper ).
+
+Note
+The toLocaleUpperCase function is intentionally generic; it does not require that its this value be a String object. Therefore, it can be transferred to other kinds of objects for use as a method.
+
+20.2 Properties of the Number Prototype Object
+
+The following definition(s) refer to the abstract operation thisNumberValue as defined in ECMA-262 , 21.1.3 .
+
+20.2.1 Number.prototype.toLocaleString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in ECMA-262 , 21.1.3.4 .
+
+When the toLocaleString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let x be ? ThisNumberValue ( this value).
+
+- Let numberFormat be ? Construct ( %Intl.NumberFormat% , « locales , options »).
+
+- Return FormatNumeric ( numberFormat , ! ToIntlMathematicalValue ( x )).
+
+20.3 Properties of the BigInt Prototype Object
+
+The following definition(s) refer to the abstract operation thisBigIntValue as defined in ECMA-262 , 21.2.3 .
+
+20.3.1 BigInt.prototype.toLocaleString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in ECMA-262 , 21.2.3.2 .
+
+When the toLocaleString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let x be ? ThisBigIntValue ( this value).
+
+- Let numberFormat be ? Construct ( %Intl.NumberFormat% , « locales , options »).
+
+- Return FormatNumeric ( numberFormat , ℝ ( x )).
+
+20.4 Properties of the Date Prototype Object
+
+The following definition(s) refer to the abstract operation thisTimeValue as defined in ECMA-262 , 21.4.4 .
+
+20.4.1 Date.prototype.toLocaleString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in ECMA-262 , 21.4.4.39 .
+
+When the toLocaleString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let dateObj be the this value.
+
+- Perform ? RequireInternalSlot ( dateObj , [[DateValue]] ).
+
+- Let x be dateObj . [[DateValue]] .
+
+- If x is NaN , return "Invalid Date" .
+
+- Let dateFormat be ? CreateDateTimeFormat ( %Intl.DateTimeFormat% , locales , options , any , all ).
+
+- Return ! FormatDateTime ( dateFormat , x ).
+
+20.4.2 Date.prototype.toLocaleDateString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in Date.prototype.toLocaleDateString ( [ reserved1 [ , reserved2 ] ] ) .
+
+When the toLocaleDateString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let dateObj be the this value.
+
+- Perform ? RequireInternalSlot ( dateObj , [[DateValue]] ).
+
+- Let x be dateObj . [[DateValue]] .
+
+- If x is NaN , return "Invalid Date" .
+
+- Let dateFormat be ? CreateDateTimeFormat ( %Intl.DateTimeFormat% , locales , options , date , date ).
+
+- Return ! FormatDateTime ( dateFormat , x ).
+
+20.4.3 Date.prototype.toLocaleTimeString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in Date.prototype.toLocaleTimeString ( [ reserved1 [ , reserved2 ] ] ) .
+
+When the toLocaleTimeString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let dateObj be the this value.
+
+- Perform ? RequireInternalSlot ( dateObj , [[DateValue]] ).
+
+- Let x be dateObj . [[DateValue]] .
+
+- If x is NaN , return "Invalid Date" .
+
+- Let timeFormat be ? CreateDateTimeFormat ( %Intl.DateTimeFormat% , locales , options , time , time ).
+
+- Return ! FormatDateTime ( timeFormat , x ).
+
+20.5 Properties of the Array Prototype Object
+
+20.5.1 Array.prototype.toLocaleString ( [ locales [ , options ] ] )
+
+This definition supersedes the definition provided in Array.prototype.toLocaleString ( [ reserved1 [ , reserved2 ] ] ) .
+
+When the toLocaleString method is called with optional arguments locales and options , the following steps are taken:
+
+- Let array be ? ToObject ( this value).
+
+- Let length be ? LengthOfArrayLike ( array ).
+
+- Let separator be the implementation-defined list-separator String value appropriate for the host environment 's current locale (such as ", " ).
+
+- Let result be the empty String.
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- If k > 0, then
+- Set result to the string-concatenation of result and separator .
+
+- Let element be ? Get ( array , ! ToString ( 𝔽 ( k ))).
+
+- If element is neither undefined nor null , then
+- Let elementString be ? ToString (? Invoke ( element , "toLocaleString" , « locales , options »)).
+
+- Set result to the string-concatenation of result and elementString .
+
+- Set k to k + 1.
+
+- Return result .
+
+Note 1
+This algorithm's steps mirror the steps taken in Array.prototype.toLocaleString ( [ reserved1 [ , reserved2 ] ] ) , with the exception that Invoke ( nextElement , "toLocaleString" ) now takes locales and options as arguments.
+
+Note 2
+The elements of the array are converted to Strings using their toLocaleString methods, and these Strings are then concatenated, separated by occurrences of an implementation-defined locale-sensitive separator String. This function is analogous to toString except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment 's current locale.
+
+Note 3
+The toLocaleString function is intentionally generic; it does not require that its this value be an Array object. Therefore it can be transferred to other kinds of objects for use as a method.

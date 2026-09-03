@@ -1,0 +1,2096 @@
+# 7 Abstract Operations
+# джерело: https://tc39.es/ecma262/multipage/abstract-operations.html#sec-abstract-operations
+# отримано: 2026-09-01
+
+7 Abstract Operations
+
+These operations are not a part of the ECMAScript language; they are defined here solely to aid the specification of the semantics of the ECMAScript language. Other, more specialized abstract operations are defined throughout this specification.
+
+7.1 Type Conversion
+
+The ECMAScript language implicitly performs automatic type conversion as needed. To clarify the semantics of certain constructs it is useful to define a set of conversion abstract operations . The conversion abstract operations are polymorphic; they can accept a value of any ECMAScript language type . But no other specification types are used with these operations.
+
+The BigInt type has no implicit conversions in the ECMAScript language; programmers must call BigInt explicitly to convert values from other types.
+
+7.1.1 ToPrimitive ( input [ , preferredType ] )
+
+The abstract operation ToPrimitive takes argument input (an ECMAScript language value ) and optional argument preferredType ( string or number ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It converts its input argument to a non- Object type . If an object is capable of converting to more than one primitive type, it may use the optional hint preferredType to favour that type. It performs the following steps when called:
+
+- If input is an Object , then
+- Let exoticToPrimitive be ? GetMethod ( input , %Symbol.toPrimitive% ).
+
+- If exoticToPrimitive is not undefined , then
+- If preferredType is not present, then
+- Let hint be "default" .
+
+- Else if preferredType is string , then
+- Let hint be "string" .
+
+- Else,
+- Assert : preferredType is number .
+
+- Let hint be "number" .
+
+- Let result be ? Call ( exoticToPrimitive , input , « hint »).
+
+- If result is not an Object , return result .
+
+- Throw a TypeError exception.
+
+- If preferredType is not present, set preferredType to number .
+
+- Return ? OrdinaryToPrimitive ( input , preferredType ).
+
+- Return input .
+
+Note
+When ToPrimitive is called without a hint, then it generally behaves as if the hint were number . However, objects may over-ride this behaviour by defining a %Symbol.toPrimitive% method. Of the objects defined in this specification only Dates (see 21.4.4.45 ) and Symbol objects (see 20.4.3.5 ) over-ride the default ToPrimitive behaviour. Dates treat the absence of a hint as if the hint were string .
+
+7.1.1.1 OrdinaryToPrimitive ( obj , hint )
+
+The abstract operation OrdinaryToPrimitive takes arguments obj (an Object) and hint ( string or number ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- If hint is string , then
+- Let methodNames be « "toString" , "valueOf" ».
+
+- Else,
+- Let methodNames be « "valueOf" , "toString" ».
+
+- For each element name of methodNames , do
+- Let method be ? Get ( obj , name ).
+
+- If IsCallable ( method ) is true , then
+- Let result be ? Call ( method , obj ).
+
+- If result is not an Object , return result .
+
+- Throw a TypeError exception.
+
+7.1.2 ToBoolean ( arg )
+
+The abstract operation ToBoolean takes argument arg (an ECMAScript language value ) and returns a Boolean. It converts arg to a value of type Boolean. It performs the following steps when called:
+
+- If arg is a Boolean , return arg .
+
+- If arg is one of undefined , null , +0 𝔽 , -0 𝔽 , NaN , 0 ℤ , or the empty String, return false .
+
+- Normative Optional
+If the host is a web browser or otherwise supports The [[IsHTMLDDA]] Internal Slot , then
+- If arg is an Object and arg has an [[IsHTMLDDA]] internal slot, return false .
+
+- Return true .
+
+7.1.3 ToNumeric ( arg )
+
+The abstract operation ToNumeric takes argument arg (an ECMAScript language value ) and returns either a normal completion containing either a Number or a BigInt, or a throw completion . It returns arg converted to a Number or a BigInt. It performs the following steps when called:
+
+- Let primitiveValue be ? ToPrimitive ( arg , number ).
+
+- If primitiveValue is a BigInt , return primitiveValue .
+
+- Return ? ToNumber ( primitiveValue ).
+
+7.1.4 ToNumber ( arg )
+
+The abstract operation ToNumber takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a Number or a throw completion . It converts arg to a value of type Number. It performs the following steps when called:
+
+- If arg is a Number , return arg .
+
+- If arg is either a Symbol or a BigInt, throw a TypeError exception.
+
+- If arg is undefined , return NaN .
+
+- If arg is either null or false , return +0 𝔽 .
+
+- If arg is true , return 1 𝔽 .
+
+- If arg is a String , return StringToNumber ( arg ).
+
+- Assert : arg is an Object .
+
+- Let primitiveValue be ? ToPrimitive ( arg , number ).
+
+- Assert : primitiveValue is not an Object .
+
+- Return ? ToNumber ( primitiveValue ).
+
+7.1.4.1 ToNumber Applied to the String Type
+
+The abstract operation StringToNumber specifies how to convert a String value to a Number value, using the following grammar.
+
+Syntax
+
+StringNumericLiteral :::
+StrWhiteSpace opt
+
+StrWhiteSpace opt
+StrNumericLiteral
+StrWhiteSpace opt
+
+StrWhiteSpace :::
+StrWhiteSpaceChar
+StrWhiteSpace opt
+
+StrWhiteSpaceChar :::
+WhiteSpace
+
+LineTerminator
+
+StrNumericLiteral :::
+StrDecimalLiteral
+
+NonDecimalIntegerLiteral [~Sep]
+
+StrDecimalLiteral :::
+StrUnsignedDecimalLiteral
+
++
+StrUnsignedDecimalLiteral
+
+-
+StrUnsignedDecimalLiteral
+
+StrUnsignedDecimalLiteral :::
+Infinity
+
+DecimalDigits [~Sep]
+.
+DecimalDigits [~Sep] opt
+ExponentPart [~Sep] opt
+
+.
+DecimalDigits [~Sep]
+ExponentPart [~Sep] opt
+
+DecimalDigits [~Sep]
+ExponentPart [~Sep] opt
+
+All grammar symbols not explicitly defined above have the definitions used in the Lexical Grammar for numeric literals ( 12.9.3 )
+
+Note
+Some differences should be noted between the syntax of a StringNumericLiteral and a NumericLiteral :
+
+-
+A StringNumericLiteral may include leading and/or trailing white space and/or line terminators.
+
+-
+A StringNumericLiteral that is decimal may have any number of leading 0 digits.
+
+-
+A StringNumericLiteral that is decimal may include a + or - to indicate its sign.
+
+-
+A StringNumericLiteral that is empty or contains only white space is converted to +0 𝔽 .
+
+-
+Infinity and -Infinity are recognized as a StringNumericLiteral but not as a NumericLiteral .
+
+-
+A StringNumericLiteral cannot include a BigIntLiteralSuffix .
+
+-
+A StringNumericLiteral cannot include a NumericLiteralSeparator .
+
+7.1.4.1.1 StringToNumber ( string )
+
+The abstract operation StringToNumber takes argument string (a String) and returns a Number. It performs the following steps when called:
+
+- Let literal be ParseText ( string , StringNumericLiteral ).
+
+- If literal is a List of errors, return NaN .
+
+- Return the StringNumericValue of literal .
+
+7.1.4.1.2 Runtime Semantics: StringNumericValue
+
+The syntax-directed operation StringNumericValue takes no arguments and returns a Number.
+
+Note
+The conversion of a StringNumericLiteral to a Number value is similar overall to the determination of the NumericValue of a NumericLiteral (see 12.9.3 ), but some of the details are different.
+
+It is defined piecewise over the following productions:
+
+StringNumericLiteral ::: StrWhiteSpace opt
+
+- Return +0 𝔽 .
+
+StringNumericLiteral :::
+StrWhiteSpace opt
+StrNumericLiteral
+StrWhiteSpace opt
+
+- Return the StringNumericValue of StrNumericLiteral .
+
+StrNumericLiteral ::: NonDecimalIntegerLiteral
+
+- Return 𝔽 (MV of NonDecimalIntegerLiteral ).
+
+StrDecimalLiteral :::
+-
+StrUnsignedDecimalLiteral
+
+- Let a be the StringNumericValue of StrUnsignedDecimalLiteral .
+
+- If a is +0 𝔽 , return -0 𝔽 .
+
+- Return - a .
+
+StrUnsignedDecimalLiteral ::: Infinity
+
+- Return +∞ 𝔽 .
+
+StrUnsignedDecimalLiteral :::
+DecimalDigits
+.
+DecimalDigits opt
+ExponentPart opt
+
+- Let a be the MV of the first DecimalDigits .
+
+- If the second DecimalDigits is present, then
+- Let b be the MV of the second DecimalDigits .
+
+- Let n be the number of code points in the second DecimalDigits .
+
+- Else,
+- Let b be 0.
+
+- Let n be 0.
+
+- If ExponentPart is present, let e be the MV of ExponentPart ; else let e be 0.
+
+- Return RoundMVResult (( a + ( b × 10 - n )) × 10 e ).
+
+StrUnsignedDecimalLiteral :::
+.
+DecimalDigits
+ExponentPart opt
+
+- Let b be the MV of DecimalDigits .
+
+- If ExponentPart is present, let e be the MV of ExponentPart ; else let e be 0.
+
+- Let n be the number of code points in DecimalDigits .
+
+- Return RoundMVResult ( b × 10 e - n ).
+
+StrUnsignedDecimalLiteral :::
+DecimalDigits
+ExponentPart opt
+
+- Let a be the MV of DecimalDigits .
+
+- If ExponentPart is present, let e be the MV of ExponentPart ; else let e be 0.
+
+- Return RoundMVResult ( a × 10 e ).
+
+7.1.4.1.3 RoundMVResult ( n )
+
+The abstract operation RoundMVResult takes argument n (a mathematical value ) and returns a Number. It converts n to a Number in an implementation-defined manner. For the purposes of this abstract operation, a digit is significant if it is not zero or there is a non-zero digit to its left and there is a non-zero digit to its right. For the purposes of this abstract operation, “the mathematical value denoted by” a representation of a mathematical value is the inverse of “the decimal representation of” a mathematical value . It performs the following steps when called:
+
+- If the decimal representation of n has 20 or fewer significant digits, return 𝔽 ( n ).
+
+- Let option1 be the mathematical value denoted by the result of replacing each significant digit in the decimal representation of n after the 20th with a 0 digit.
+
+- Let option2 be the mathematical value denoted by the result of replacing each significant digit in the decimal representation of n after the 20th with a 0 digit and then incrementing it at the 20th position (with carrying as necessary).
+
+- Let chosen be an implementation-defined choice of either option1 or option2 .
+
+- Return 𝔽 ( chosen ).
+
+7.1.5 ToIntegerOrInfinity ( arg )
+
+The abstract operation ToIntegerOrInfinity takes argument arg (an ECMAScript language value ) and returns either a normal completion containing either an integer , +∞, or -∞, or a throw completion . It converts arg to an integer representing its Number value with fractional part truncated, or to +∞ or -∞ when that Number value is infinite. It performs the following steps when called:
+
+- Let number be ? ToNumber ( arg ).
+
+- If number is one of NaN , +0 𝔽 , or -0 𝔽 , return 0.
+
+- If number is +∞ 𝔽 , return +∞.
+
+- If number is -∞ 𝔽 , return -∞.
+
+- Return truncate ( ℝ ( number )).
+
+Note
+𝔽 (ToIntegerOrInfinity( x )) never returns -0 𝔽 for any value of x . The truncation of the fractional part is performed after converting x to a mathematical value .
+
+7.1.6 SnapToInteger ( arg , nonIntHandling [ , minimum [ , maximum ] ] )
+
+The abstract operation SnapToInteger takes arguments arg (an ECMAScript language value ) and nonIntHandling ( reject or truncate ) and optional arguments minimum (an integer ) and maximum (an integer ) and returns either a normal completion containing an integer or a throw completion . It converts arg to an integer representing its Number value, rejecting a non- finite value and handling a finite non- integral value by either rejecting or truncating it, and optionally imposes inclusive constraining bounds. It performs the following steps when called:
+
+- Let number be ? ToNumber ( arg ).
+
+- If number is one of NaN , +∞ 𝔽 , or -∞ 𝔽 , throw a RangeError exception.
+
+- Let mv be ℝ ( number ).
+
+- If nonIntHandling is truncate , set mv to truncate ( mv ).
+
+- If mv is not an integer , throw a RangeError exception.
+
+- If minimum is present and mv < minimum , throw a RangeError exception.
+
+- If maximum is present and mv > maximum , throw a RangeError exception.
+
+- Return mv .
+
+7.1.7 ToFixedSizeInteger ( int , signed , bitWidth )
+
+The abstract operation ToFixedSizeInteger takes arguments int (an integer , +∞, or -∞), signed ( unsigned or signed ), and bitWidth (a positive integer ) and returns an integer . It maps int to one of 2 bitWidth integers in the inclusive interval from 0 to 2 bitWidth - 1 (if signed is unsigned ) or -2 bitWidth - 1 to 2 bitWidth - 1 - 1 (if signed is signed ). It performs the following steps when called:
+
+- If int = +∞ or int = -∞, return 0.
+
+- Let fixedInt be int modulo 2 bitWidth .
+
+- NOTE : The following step does not change the two's complement representation of fixedInt .
+
+- If signed is signed and fixedInt ≥ 2 bitWidth - 1 , set fixedInt to fixedInt - 2 bitWidth .
+
+- Return fixedInt .
+
+Note
+ToFixedSizeInteger is idempotent: for any ECMAScript language value x , ToFixedSizeInteger(ToFixedSizeInteger( x , signed , bitWidth ), signed , bitWidth ) is the same as ToFixedSizeInteger( x , signed , bitWidth ). In fact, because +∞ and -∞ are mapped to 0, this invariant even survives inversion of signed (e.g., ToFixedSizeInteger(ToFixedSizeInteger( x , signed , 32), unsigned , 32) is the same as ToFixedSizeInteger( x , unsigned , 32)).
+
+7.1.8 ToInt32 ( arg )
+
+The abstract operation ToInt32 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 32 integral Number values in the inclusive interval from 𝔽 (-2 31 ) to 𝔽 (2 31 - 1), excluding -0 𝔽 . It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , signed , 32)).
+
+7.1.9 ToUint32 ( arg )
+
+The abstract operation ToUint32 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 32 integral Number values in the inclusive interval from +0 𝔽 to 𝔽 (2 32 - 1). It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , unsigned , 32)).
+
+7.1.10 ToInt16 ( arg )
+
+The abstract operation ToInt16 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 16 integral Number values in the inclusive interval from 𝔽 (-2 15 ) to 𝔽 (2 15 - 1), excluding -0 𝔽 . It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , signed , 16)).
+
+7.1.11 ToUint16 ( arg )
+
+The abstract operation ToUint16 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 16 integral Number values in the inclusive interval from +0 𝔽 to 𝔽 (2 16 - 1). It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , unsigned , 16)).
+
+7.1.12 ToInt8 ( arg )
+
+The abstract operation ToInt8 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 8 integral Number values in the inclusive interval from -128 𝔽 to 127 𝔽 , excluding -0 𝔽 . It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , signed , 8)).
+
+7.1.13 ToUint8 ( arg )
+
+The abstract operation ToUint8 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It converts arg to one of 2 8 integral Number values in the inclusive interval from +0 𝔽 to 255 𝔽 . It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- Return 𝔽 ( ToFixedSizeInteger ( int , unsigned , 8)).
+
+7.1.14 ToUint8Clamp ( arg )
+
+The abstract operation ToUint8Clamp takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an integral Number or a throw completion . It clamps and rounds arg to one of 2 8 integral Number values in the inclusive interval from +0 𝔽 to 255 𝔽 . It performs the following steps when called:
+
+- Let number be ? ToNumber ( arg ).
+
+- If number is NaN , return +0 𝔽 .
+
+- Let mv be the extended mathematical value of number .
+
+- Let clamped be the result of clamping mv between 0 and 255.
+
+- Let f be floor ( clamped ).
+
+- If clamped < f + 0.5, return 𝔽 ( f ).
+
+- If clamped > f + 0.5, return 𝔽 ( f + 1).
+
+- If f is even, return 𝔽 ( f ).
+
+- Return 𝔽 ( f + 1).
+
+Note
+Unlike most other ECMAScript integer conversion operations, ToUint8Clamp rounds rather than truncates non-integral values. It also uses “round half to even” tie-breaking, which differs from the “round half up” tie-breaking of Math.round .
+
+7.1.15 ToBigInt ( arg )
+
+The abstract operation ToBigInt takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a BigInt or a throw completion . It converts arg to a BigInt value, or throws if an implicit conversion from Number would be required. It performs the following steps when called:
+
+- Let primitive be ? ToPrimitive ( arg , number ).
+
+- Return the value that primitive corresponds to in Table 12 .
+
+Table 12: BigInt Conversions
+
+Argument Type
+
+Result
+
+Undefined
+
+Throw a TypeError exception.
+
+Null
+
+Throw a TypeError exception.
+
+Boolean
+
+Return 1n if primitive is true and 0n if primitive is false .
+
+BigInt
+
+Return primitive .
+
+Number
+
+Throw a TypeError exception.
+
+String
+
+- Let n be StringToBigInt ( primitive ).
+
+- If n is undefined , throw a SyntaxError exception.
+
+- Return n .
+
+Symbol
+
+Throw a TypeError exception.
+
+7.1.16 StringToBigInt ( string )
+
+The abstract operation StringToBigInt takes argument string (a String) and returns a BigInt or undefined . It performs the following steps when called:
+
+- Let literal be ParseText ( string , StringIntegerLiteral ).
+
+- If literal is a List of errors, return undefined .
+
+- Let mv be the MV of literal .
+
+- Assert : mv is an integer .
+
+- Return ℤ ( mv ).
+
+7.1.16.1 StringIntegerLiteral Grammar
+
+StringToBigInt uses the following grammar.
+
+Syntax
+
+StringIntegerLiteral :::
+StrWhiteSpace opt
+
+StrWhiteSpace opt
+StrIntegerLiteral
+StrWhiteSpace opt
+
+StrIntegerLiteral :::
+SignedInteger [~Sep]
+
+NonDecimalIntegerLiteral [~Sep]
+
+7.1.16.2 Runtime Semantics: MV
+
+-
+The MV of
+StringIntegerLiteral ::: StrWhiteSpace opt
+
+is 0.
+
+-
+The MV of
+StringIntegerLiteral :::
+StrWhiteSpace opt
+StrIntegerLiteral
+StrWhiteSpace opt
+
+is the MV of StrIntegerLiteral .
+
+7.1.17 ToBigInt64 ( arg )
+
+The abstract operation ToBigInt64 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a BigInt or a throw completion . It converts arg to one of 2 64 BigInt values in the inclusive interval from ℤ (-2 63 ) to ℤ (2 63 - 1). It performs the following steps when called:
+
+- Let int be ℝ (? ToBigInt ( arg )).
+
+- Return ℤ ( ToFixedSizeInteger ( int , signed , 64)).
+
+7.1.18 ToBigUint64 ( arg )
+
+The abstract operation ToBigUint64 takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a BigInt or a throw completion . It converts arg to one of 2 64 BigInt values in the inclusive interval from 0 ℤ to ℤ (2 64 - 1). It performs the following steps when called:
+
+- Let int be ℝ (? ToBigInt ( arg )).
+
+- Return ℤ ( ToFixedSizeInteger ( int , unsigned , 64)).
+
+7.1.19 ToString ( arg )
+
+The abstract operation ToString takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a String or a throw completion . It converts arg to a value of type String. It performs the following steps when called:
+
+- If arg is a String , return arg .
+
+- If arg is a Symbol , throw a TypeError exception.
+
+- If arg is undefined , return "undefined" .
+
+- If arg is null , return "null" .
+
+- If arg is true , return "true" .
+
+- If arg is false , return "false" .
+
+- If arg is a Number , return Number::toString ( arg , 10).
+
+- If arg is a BigInt , return BigInt::toString ( arg , 10).
+
+- Assert : arg is an Object .
+
+- Let primitiveValue be ? ToPrimitive ( arg , string ).
+
+- Assert : primitiveValue is not an Object .
+
+- Return ? ToString ( primitiveValue ).
+
+7.1.20 ToObject ( arg )
+
+The abstract operation ToObject takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It converts arg to a value of type Object. It performs the following steps when called:
+
+- If arg is either undefined or null , throw a TypeError exception.
+
+- If arg is a Boolean , return a new Boolean object whose [[BooleanData]] internal slot is set to arg . See 20.3 for a description of Boolean objects.
+
+- If arg is a Number , return a new Number object whose [[NumberData]] internal slot is set to arg . See 21.1 for a description of Number objects.
+
+- If arg is a String , return a new String object whose [[StringData]] internal slot is set to arg . See 22.1 for a description of String objects.
+
+- If arg is a Symbol , return a new Symbol object whose [[SymbolData]] internal slot is set to arg . See 20.4 for a description of Symbol objects.
+
+- If arg is a BigInt , return a new BigInt object whose [[BigIntData]] internal slot is set to arg . See 21.2 for a description of BigInt objects.
+
+- Assert : arg is an Object .
+
+- Return arg .
+
+7.1.21 ToPropertyKey ( arg )
+
+The abstract operation ToPropertyKey takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a property key or a throw completion . It converts arg to a value that can be used as a property key . It performs the following steps when called:
+
+- Let key be ? ToPrimitive ( arg , string ).
+
+- If key is a Symbol , then
+- Return key .
+
+- Return ! ToString ( key ).
+
+7.1.22 ToLength ( arg )
+
+The abstract operation ToLength takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a non-negative integral Number or a throw completion . It clamps and truncates arg to a non-negative integral Number suitable for use as the length of an array-like object . It performs the following steps when called:
+
+- Let length be ? ToIntegerOrInfinity ( arg ).
+
+- Let clampedLength be the result of clamping length between 0 and 2 53 - 1.
+
+- Return 𝔽 ( clampedLength ).
+
+7.1.23 CanonicalNumericIndexString ( arg )
+
+The abstract operation CanonicalNumericIndexString takes argument arg (a String) and returns a Number or undefined . If arg is either "-0" or exactly matches ToString ( n ) for some Number value n , it returns the respective Number value. Otherwise, it returns undefined . It performs the following steps when called:
+
+- If arg is "-0" , return -0 𝔽 .
+
+- Let n be ! ToNumber ( arg ).
+
+- If ! ToString ( n ) is arg , return n .
+
+- Return undefined .
+
+A canonical numeric string is any String for which the CanonicalNumericIndexString abstract operation does not return undefined .
+
+7.1.24 ToIndex ( arg )
+
+The abstract operation ToIndex takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a non-negative integer or a throw completion . It converts arg to an integer and returns that integer if it is non-negative and corresponds with an integer index . Otherwise, it throws an exception. It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( arg ).
+
+- If int is not in the inclusive interval from 0 to 2 53 - 1, throw a RangeError exception.
+
+- Return int .
+
+7.1.25 ToAbsoluteIndex ( value , length )
+
+The abstract operation ToAbsoluteIndex takes arguments value (an ECMAScript language value ) and length (a non-negative integer ) and returns either a normal completion containing either an integer , +∞, or -∞, or a throw completion . It converts value to an integer , +∞, or -∞, interpreting negative values relative to length . It performs the following steps when called:
+
+- Let int be ? ToIntegerOrInfinity ( value ).
+
+- If int is finite and int < 0, set int to length + int .
+
+- Return int .
+
+7.1.26 ToClampedIndex ( value , length )
+
+The abstract operation ToClampedIndex takes arguments value (an ECMAScript language value ) and length (a non-negative integer ) and returns either a normal completion containing a non-negative integer or a throw completion . It converts value to an integer (interpreting negative values relative to length ) and clamps the result to the inclusive interval from 0 to length . It performs the following steps when called:
+
+- Let index be ? ToAbsoluteIndex ( value , length ).
+
+- Return the result of clamping index between 0 and length .
+
+7.2 Testing and Comparison Operations
+
+7.2.1 RequireObjectCoercible ( arg )
+
+The abstract operation RequireObjectCoercible takes argument arg (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It throws an error if arg is a value that cannot be converted to an Object using ToObject . It performs the following steps when called:
+
+- If arg is either undefined or null , throw a TypeError exception.
+
+- Return unused .
+
+7.2.2 IsArray ( arg )
+
+The abstract operation IsArray takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg is an Array exotic object , return true .
+
+- If arg is a Proxy exotic object , then
+- Perform ? ValidateNonRevokedProxy ( arg ).
+
+- Let proxyTarget be arg . [[ProxyTarget]] .
+
+- Return ? IsArray ( proxyTarget ).
+
+- Return false .
+
+7.2.3 IsCallable ( arg )
+
+The abstract operation IsCallable takes argument arg (an ECMAScript language value ) and returns a Boolean. It determines if arg is a callable function with a [[Call]] internal method. It performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg has a [[Call]] internal method, return true .
+
+- Return false .
+
+7.2.4 IsConstructor ( arg )
+
+The abstract operation IsConstructor takes argument arg (an ECMAScript language value ) and returns a Boolean. It determines if arg is a function object with a [[Construct]] internal method. It performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg has a [[Construct]] internal method, return true .
+
+- Return false .
+
+7.2.5 IsExtensible ( obj )
+
+The abstract operation IsExtensible takes argument obj (an Object) and returns either a normal completion containing a Boolean or a throw completion . It is used to determine whether additional properties can be added to obj . It performs the following steps when called:
+
+- Return ? obj . [[IsExtensible]] () .
+
+7.2.6 IsRegExp ( arg )
+
+The abstract operation IsRegExp takes argument arg (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- Let matcher be ? Get ( arg , %Symbol.match% ).
+
+- If matcher is not undefined , return ToBoolean ( matcher ).
+
+- If arg has a [[RegExpMatcher]] internal slot, return true .
+
+- Return false .
+
+7.2.7 Static Semantics: IsStringWellFormedUnicode ( string )
+
+The abstract operation IsStringWellFormedUnicode takes argument string (a String) and returns a Boolean. It interprets string as a sequence of UTF-16 encoded code points, as described in 6.1.4 , and determines whether it is a well formed UTF-16 sequence. It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- Let codePoint be CodePointAt ( string , k ).
+
+- If codePoint . [[IsUnpairedSurrogate]] is true , return false .
+
+- Set k to k + codePoint . [[CodeUnitCount]] .
+
+- Return true .
+
+7.2.8 SameType ( x , y )
+
+The abstract operation SameType takes arguments x (an ECMAScript language value ) and y (an ECMAScript language value ) and returns a Boolean. It determines whether or not the two arguments are the same type. It performs the following steps when called:
+
+- If x is undefined and y is undefined , return true .
+
+- If x is null and y is null , return true .
+
+- If x is a Boolean and y is a Boolean , return true .
+
+- If x is a Number and y is a Number , return true .
+
+- If x is a BigInt and y is a BigInt , return true .
+
+- If x is a Symbol and y is a Symbol , return true .
+
+- If x is a String and y is a String , return true .
+
+- If x is an Object and y is an Object , return true .
+
+- Return false .
+
+7.2.9 SameValue ( x , y )
+
+The abstract operation SameValue takes arguments x (an ECMAScript language value ) and y (an ECMAScript language value ) and returns a Boolean. It determines whether or not the two arguments are the same value. It performs the following steps when called:
+
+- If SameType ( x , y ) is false , return false .
+
+- If x is a Number , then
+- Return Number::sameValue ( x , y ).
+
+- Return SameValueNonNumber ( x , y ).
+
+Note
+This algorithm differs from the IsStrictlyEqual Algorithm by treating all NaN values as equivalent and by differentiating +0 𝔽 from -0 𝔽 .
+
+7.2.10 SameValueZero ( x , y )
+
+The abstract operation SameValueZero takes arguments x (an ECMAScript language value ) and y (an ECMAScript language value ) and returns a Boolean. It determines whether or not the two arguments are the same value (ignoring the difference between +0 𝔽 and -0 𝔽 ). It performs the following steps when called:
+
+- If SameType ( x , y ) is false , return false .
+
+- If x is a Number , then
+- Return Number::sameValueZero ( x , y ).
+
+- Return SameValueNonNumber ( x , y ).
+
+Note
+SameValueZero differs from SameValue only in that it treats +0 𝔽 and -0 𝔽 as equivalent.
+
+7.2.11 SameValueNonNumber ( x , y )
+
+The abstract operation SameValueNonNumber takes arguments x (an ECMAScript language value , but not a Number) and y (an ECMAScript language value , but not a Number) and returns a Boolean. It performs the following steps when called:
+
+- Assert : SameType ( x , y ) is true .
+
+- If x is either undefined or null , return true .
+
+- If x is a BigInt , then
+- Return BigInt::equal ( x , y ).
+
+- If x is a String , then
+- If x and y have the same length and the same code units in the same positions, return true .
+
+- Return false .
+
+- If x is a Boolean , then
+- If x is true and y is true , return true .
+
+- If x is false and y is false , return true .
+
+- Return false .
+
+- NOTE : All other ECMAScript language values are compared by identity.
+
+- If x is y , return true .
+
+- Return false .
+
+Note 1
+For expository purposes, some cases are handled separately within this algorithm even if it is unnecessary to do so.
+
+Note 2
+The specifics of what “ x is y ” means are detailed in 5.2.8 .
+
+7.2.12 IsLessThan ( x , y , leftFirst )
+
+The abstract operation IsLessThan takes arguments x (an ECMAScript language value ), y (an ECMAScript language value ), and leftFirst (a Boolean) and returns either a normal completion containing either a Boolean or undefined , or a throw completion . It provides the semantics for the comparison x < y , returning true , false , or undefined (which indicates that the operands could not be coerced to comparable values of the same numeric type). The leftFirst flag is used to control the order in which operations with potentially visible side-effects are performed upon x and y . It is necessary because ECMAScript specifies left to right evaluation of expressions. If leftFirst is true , the x parameter corresponds to an expression that occurs to the left of the y parameter's corresponding expression. If leftFirst is false , the reverse is the case and operations must be performed upon y before x . It performs the following steps when called:
+
+- If leftFirst is true , then
+- Let px be ? ToPrimitive ( x , number ).
+
+- Let py be ? ToPrimitive ( y , number ).
+
+- Else,
+- NOTE : The order of evaluation needs to be reversed to preserve left to right evaluation.
+
+- Let py be ? ToPrimitive ( y , number ).
+
+- Let px be ? ToPrimitive ( x , number ).
+
+- If px is a String and py is a String , then
+- Let lx be the length of px .
+
+- Let ly be the length of py .
+
+- For each integer i such that 0 ≤ i < min ( lx , ly ), in ascending order, do
+- Let cx be the numeric value of the code unit at index i within px .
+
+- Let cy be the numeric value of the code unit at index i within py .
+
+- If cx < cy , return true .
+
+- If cx > cy , return false .
+
+- If lx < ly , return true .
+
+- Return false .
+
+- If px is a BigInt and py is a String , then
+- Let ny be StringToBigInt ( py ).
+
+- If ny is undefined , return undefined .
+
+- Return BigInt::lessThan ( px , ny ).
+
+- If px is a String and py is a BigInt , then
+- Let nx be StringToBigInt ( px ).
+
+- If nx is undefined , return undefined .
+
+- Return BigInt::lessThan ( nx , py ).
+
+- NOTE : Because px and py are primitive values, evaluation order is not important.
+
+- Let nx be ? ToNumeric ( px ).
+
+- Let ny be ? ToNumeric ( py ).
+
+- If SameType ( nx , ny ) is true , then
+- If nx is a Number , return Number::lessThan ( nx , ny ).
+
+- Assert : nx is a BigInt .
+
+- Return BigInt::lessThan ( nx , ny ).
+
+- Assert : nx is a BigInt and ny is a Number , or nx is a Number and ny is a BigInt .
+
+- If nx is NaN or ny is NaN , return undefined .
+
+- If nx is -∞ 𝔽 or ny is +∞ 𝔽 , return true .
+
+- If nx is +∞ 𝔽 or ny is -∞ 𝔽 , return false .
+
+- If ℝ ( nx ) < ℝ ( ny ), return true .
+
+- Return false .
+
+Note 1
+Step 3 differs from step 1.c in the algorithm that handles the addition operator + ( 13.15.3 ) by using the logical-and operation instead of the logical-or operation.
+
+Note 2
+The comparison of Strings uses a simple lexicographic ordering on sequences of UTF-16 code unit values. There is no attempt to use the more complex, semantically oriented definitions of character or string equality and collating order defined in the Unicode specification. Therefore String values that are canonically equal according to the Unicode Standard but not in the same normalization form could test as unequal. Also note that lexicographic ordering by code unit differs from ordering by code point for Strings containing surrogate pairs .
+
+7.2.13 IsLooselyEqual ( x , y )
+
+The abstract operation IsLooselyEqual takes arguments x (an ECMAScript language value ) and y (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It provides the semantics for the == operator. It performs the following steps when called:
+
+- If SameType ( x , y ) is true , then
+- Return IsStrictlyEqual ( x , y ).
+
+- If x is null and y is undefined , return true .
+
+- If x is undefined and y is null , return true .
+
+- Normative Optional
+If the host is a web browser or otherwise supports The [[IsHTMLDDA]] Internal Slot , then
+- If x is an Object , x has an [[IsHTMLDDA]] internal slot, and y is either undefined or null , return true .
+
+- If x is either undefined or null , y is an Object , and y has an [[IsHTMLDDA]] internal slot, return true .
+
+- If x is a Number and y is a String , return ! IsLooselyEqual ( x , ! ToNumber ( y )).
+
+- If x is a String and y is a Number , return ! IsLooselyEqual (! ToNumber ( x ), y ).
+
+- If x is a BigInt and y is a String , then
+- Let n be StringToBigInt ( y ).
+
+- If n is undefined , return false .
+
+- Return ! IsLooselyEqual ( x , n ).
+
+- If x is a String and y is a BigInt , return ! IsLooselyEqual ( y , x ).
+
+- If x is a Boolean , return ! IsLooselyEqual (! ToNumber ( x ), y ).
+
+- If y is a Boolean , return ! IsLooselyEqual ( x , ! ToNumber ( y )).
+
+- If x is either a String, a Number, a BigInt, or a Symbol and y is an Object , return ! IsLooselyEqual ( x , ? ToPrimitive ( y )).
+
+- If x is an Object and y is either a String, a Number, a BigInt, or a Symbol, return ! IsLooselyEqual (? ToPrimitive ( x ), y ).
+
+- If x is a BigInt and y is a Number , or if x is a Number and y is a BigInt , then
+- If x is not finite or y is not finite , return false .
+
+- If ℝ ( x ) = ℝ ( y ), return true .
+
+- Return false .
+
+- Return false .
+
+7.2.14 IsStrictlyEqual ( x , y )
+
+The abstract operation IsStrictlyEqual takes arguments x (an ECMAScript language value ) and y (an ECMAScript language value ) and returns a Boolean. It provides the semantics for the === operator. It performs the following steps when called:
+
+- If SameType ( x , y ) is false , return false .
+
+- If x is a Number , then
+- Return Number::equal ( x , y ).
+
+- Return SameValueNonNumber ( x , y ).
+
+Note
+This algorithm differs from the SameValue Algorithm in its treatment of signed zeroes and NaNs.
+
+7.3 Operations on Objects
+
+7.3.1 MakeBasicObject ( internalSlotsList )
+
+The abstract operation MakeBasicObject takes argument internalSlotsList (a List of internal slot names) and returns an Object. It is the source of all ECMAScript objects that are created algorithmically, including both ordinary objects and exotic objects . It factors out common steps used in creating all objects, and centralizes object creation. It performs the following steps when called:
+
+- Set internalSlotsList to the list-concatenation of internalSlotsList and « [[PrivateElements]] ».
+
+- Let obj be a newly created object with an internal slot for each name in internalSlotsList .
+
+- NOTE : As described in Object Internal Methods and Internal Slots , the initial value of each such internal slot is undefined unless specified otherwise.
+
+- Set obj . [[PrivateElements]] to a new empty List .
+
+- Set obj 's essential internal methods to the default ordinary object definitions specified in 10.1 .
+
+- Assert : If the caller will not be overriding both obj 's [[GetPrototypeOf]] and [[SetPrototypeOf]] essential internal methods, then internalSlotsList contains [[Prototype]] .
+
+- Assert : If the caller will not be overriding all of obj 's [[SetPrototypeOf]] , [[IsExtensible]] , and [[PreventExtensions]] essential internal methods, then internalSlotsList contains [[Extensible]] .
+
+- If internalSlotsList contains [[Extensible]] , set obj . [[Extensible]] to true .
+
+- Return obj .
+
+Note
+Within this specification, exotic objects are created in abstract operations such as ArrayCreate and BoundFunctionCreate by first calling MakeBasicObject to obtain a basic, foundational object, and then overriding some or all of that object's internal methods. In order to encapsulate exotic object creation, the object's essential internal methods are never modified outside those operations.
+
+7.3.2 Get ( obj , propertyKey )
+
+The abstract operation Get takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It is used to retrieve the value of a specific property of an object. It performs the following steps when called:
+
+- Return ? obj . [[Get]] ( propertyKey , obj ) .
+
+7.3.3 GetV ( value , propertyKey )
+
+The abstract operation GetV takes arguments value (an ECMAScript language value ) and propertyKey (a property key ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It is used to retrieve the value of a specific property of an ECMAScript language value . If the value is not an object, the property lookup is performed using a wrapper object appropriate for the type of the value. It performs the following steps when called:
+
+- Let obj be ? ToObject ( value ).
+
+- Return ? obj . [[Get]] ( propertyKey , value ) .
+
+7.3.4 Set ( obj , propertyKey , value , throw )
+
+The abstract operation Set takes arguments obj (an Object), propertyKey (a property key ), value (an ECMAScript language value ), and throw (a Boolean) and returns either a normal completion containing unused or a throw completion . It is used to set the value of a specific property of an object. value is the new value for the property. It performs the following steps when called:
+
+- Let success be ? obj . [[Set]] ( propertyKey , value , obj ) .
+
+- If success is false and throw is true , throw a TypeError exception.
+
+- Return unused .
+
+7.3.5 CreateDataProperty ( obj , propertyKey , value )
+
+The abstract operation CreateDataProperty takes arguments obj (an Object), propertyKey (a property key ), and value (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It is used to create a new own property of an object. It performs the following steps when called:
+
+- Let newDesc be the PropertyDescriptor { [[Value]] : value , [[Writable]] : true , [[Enumerable]] : true , [[Configurable]] : true }.
+
+- Return ? obj . [[DefineOwnProperty]] ( propertyKey , newDesc ) .
+
+Note
+This abstract operation creates a property whose attributes are set to the same defaults used for properties created by the ECMAScript language assignment operator. Normally, the property will not already exist. If it does exist and is not configurable or if obj is not extensible, [[DefineOwnProperty]] will return false .
+
+7.3.6 CreateDataPropertyOrThrow ( obj , propertyKey , value )
+
+The abstract operation CreateDataPropertyOrThrow takes arguments obj (an Object), propertyKey (a property key ), and value (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It is used to create a new own property of an object. It throws a TypeError exception if the requested property update cannot be performed. It performs the following steps when called:
+
+- Let success be ? CreateDataProperty ( obj , propertyKey , value ).
+
+- If success is false , throw a TypeError exception.
+
+- Return unused .
+
+Note
+This abstract operation creates a property whose attributes are set to the same defaults used for properties created by the ECMAScript language assignment operator. Normally, the property will not already exist. If it does exist and is not configurable or if obj is not extensible, [[DefineOwnProperty]] will return false causing this operation to throw a TypeError exception.
+
+7.3.7 CreateNonEnumerableDataPropertyOrThrow ( obj , propertyKey , value )
+
+The abstract operation CreateNonEnumerableDataPropertyOrThrow takes arguments obj (an Object), propertyKey (a property key ), and value (an ECMAScript language value ) and returns unused . It is used to create a new non-enumerable own property of an ordinary object . It performs the following steps when called:
+
+- Assert : obj is an ordinary, extensible object with no non-configurable properties.
+
+- Let newDesc be the PropertyDescriptor { [[Value]] : value , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }.
+
+- Perform ! DefinePropertyOrThrow ( obj , propertyKey , newDesc ).
+
+- Return unused .
+
+Note
+This abstract operation creates a property whose attributes are set to the same defaults used for properties created by the ECMAScript language assignment operator except it is not enumerable. Normally, the property will not already exist. If it does exist, DefinePropertyOrThrow is guaranteed to complete normally.
+
+7.3.8 DefinePropertyOrThrow ( obj , propertyKey , propertyDesc )
+
+The abstract operation DefinePropertyOrThrow takes arguments obj (an Object), propertyKey (a property key ), and propertyDesc (a Property Descriptor ) and returns either a normal completion containing unused or a throw completion . It is used to call the [[DefineOwnProperty]] internal method of an object in a manner that will throw a TypeError exception if the requested property update cannot be performed. It performs the following steps when called:
+
+- Let success be ? obj . [[DefineOwnProperty]] ( propertyKey , propertyDesc ) .
+
+- If success is false , throw a TypeError exception.
+
+- Return unused .
+
+7.3.9 DeletePropertyOrThrow ( obj , propertyKey )
+
+The abstract operation DeletePropertyOrThrow takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing unused or a throw completion . It is used to remove a specific own property of an object. It throws an exception if the property is not configurable. It performs the following steps when called:
+
+- Let success be ? obj . [[Delete]] ( propertyKey ) .
+
+- If success is false , throw a TypeError exception.
+
+- Return unused .
+
+7.3.10 GetMethod ( value , propertyKey )
+
+The abstract operation GetMethod takes arguments value (an ECMAScript language value ) and propertyKey (a property key ) and returns either a normal completion containing either a function object or undefined , or a throw completion . It is used to get the value of a specific property of an ECMAScript language value when the value of the property is expected to be a function. It performs the following steps when called:
+
+- Let func be ? GetV ( value , propertyKey ).
+
+- If func is either undefined or null , return undefined .
+
+- If IsCallable ( func ) is false , throw a TypeError exception.
+
+- Return func .
+
+7.3.11 HasProperty ( obj , propertyKey )
+
+The abstract operation HasProperty takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It is used to determine whether an object has a property with the specified property key . The property may be either own or inherited. It performs the following steps when called:
+
+- Return ? obj . [[HasProperty]] ( propertyKey ) .
+
+7.3.12 HasOwnProperty ( obj , propertyKey )
+
+The abstract operation HasOwnProperty takes arguments obj (an Object) and propertyKey (a property key ) and returns either a normal completion containing a Boolean or a throw completion . It is used to determine whether an object has an own property with the specified property key . It performs the following steps when called:
+
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( propertyKey ) .
+
+- If propertyDesc is undefined , return false .
+
+- Return true .
+
+7.3.13 Call ( func , thisValue [ , argList ] )
+
+The abstract operation Call takes arguments func (an ECMAScript language value ) and thisValue (an ECMAScript language value ) and optional argument argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It is used to call the [[Call]] internal method of a function object . func is the function object , thisValue is an ECMAScript language value that is the this value of the [[Call]] , and argList is the value passed to the corresponding argument of the internal method. If argList is not present, a new empty List is used as its value. It performs the following steps when called:
+
+- If argList is not present, set argList to a new empty List .
+
+- If IsCallable ( func ) is false , throw a TypeError exception.
+
+- Return ? func . [[Call]] ( thisValue , argList ) .
+
+7.3.14 Construct ( ctor [ , argList [ , newTarget ] ] )
+
+The abstract operation Construct takes argument ctor (a constructor ) and optional arguments argList (a List of ECMAScript language values ) and newTarget (a constructor ) and returns either a normal completion containing an Object or a throw completion . It is used to call the [[Construct]] internal method of a function object . argList and newTarget are the values to be passed as the corresponding arguments of the internal method. If argList is not present, a new empty List is used as its value. If newTarget is not present, ctor is used as its value. It performs the following steps when called:
+
+- If newTarget is not present, set newTarget to ctor .
+
+- If argList is not present, set argList to a new empty List .
+
+- Return ? ctor . [[Construct]] ( argList , newTarget ) .
+
+Note
+If newTarget is not present, this operation is equivalent to: new F(...argumentsList)
+
+7.3.15 SetIntegrityLevel ( obj , level )
+
+The abstract operation SetIntegrityLevel takes arguments obj (an Object) and level ( sealed or frozen ) and returns either a normal completion containing a Boolean or a throw completion . It is used to fix the set of own properties of an object. It performs the following steps when called:
+
+- Let status be ? obj . [[PreventExtensions]] ().
+
+- If status is false , return false .
+
+- Let keys be ? obj . [[OwnPropertyKeys]] ().
+
+- If level is sealed , then
+- For each element key of keys , do
+- Perform ? DefinePropertyOrThrow ( obj , key , PropertyDescriptor { [[Configurable]] : false }).
+
+- Else,
+- Assert : level is frozen .
+
+- For each element key of keys , do
+- Let currentDesc be ? obj . [[GetOwnProperty]] ( key ) .
+
+- If currentDesc is not undefined , then
+- If IsAccessorDescriptor ( currentDesc ) is true , then
+- Let propertyDesc be the PropertyDescriptor { [[Configurable]] : false }.
+
+- Else,
+- Let propertyDesc be the PropertyDescriptor { [[Configurable]] : false , [[Writable]] : false }.
+
+- Perform ? DefinePropertyOrThrow ( obj , key , propertyDesc ).
+
+- Return true .
+
+7.3.16 TestIntegrityLevel ( obj , level )
+
+The abstract operation TestIntegrityLevel takes arguments obj (an Object) and level ( sealed or frozen ) and returns either a normal completion containing a Boolean or a throw completion . It is used to determine if the set of own properties of an object are fixed. It performs the following steps when called:
+
+- Let extensible be ? IsExtensible ( obj ).
+
+- If extensible is true , return false .
+
+- NOTE : If the object is extensible, none of its properties are examined.
+
+- Let keys be ? obj . [[OwnPropertyKeys]] ().
+
+- For each element key of keys , do
+- Let currentDesc be ? obj . [[GetOwnProperty]] ( key ) .
+
+- If currentDesc is not undefined , then
+- If currentDesc . [[Configurable]] is true , return false .
+
+- If level is frozen and IsDataDescriptor ( currentDesc ) is true , then
+- If currentDesc . [[Writable]] is true , return false .
+
+- Return true .
+
+7.3.17 CreateArrayFromList ( elements )
+
+The abstract operation CreateArrayFromList takes argument elements (a List of ECMAScript language values ) and returns an Array. It is used to create an Array whose elements are provided by elements . It performs the following steps when called:
+
+- Let array be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each element element of elements , do
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( n )), element ).
+
+- Set n to n + 1.
+
+- Return array .
+
+7.3.18 LengthOfArrayLike ( obj )
+
+The abstract operation LengthOfArrayLike takes argument obj (an Object) and returns either a normal completion containing a non-negative integer or a throw completion . It returns the value of the "length" property of an array-like object. It performs the following steps when called:
+
+- Return ℝ (? ToLength (? Get ( obj , "length" ))).
+
+An array-like object is any object for which this operation returns a normal completion .
+
+Note 1
+Typically, an array-like object would also have some properties with integer index names. However, that is not a requirement of this definition.
+
+Note 2
+Arrays and String objects are examples of array-like objects.
+
+7.3.19 CreateListFromArrayLike ( obj [ , validElementTypes ] )
+
+The abstract operation CreateListFromArrayLike takes argument obj (an ECMAScript language value ) and optional argument validElementTypes ( all or property-key ) and returns either a normal completion containing a List of ECMAScript language values or a throw completion . It is used to create a List value whose elements are provided by the indexed properties of obj . validElementTypes indicates the types of values that are allowed as elements. It performs the following steps when called:
+
+- If validElementTypes is not present, set validElementTypes to all .
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let length be ? LengthOfArrayLike ( obj ).
+
+- Let list be a new empty List .
+
+- Let index be 0.
+
+- Repeat, while index < length ,
+- Let indexName be ! ToString ( 𝔽 ( index )).
+
+- Let next be ? Get ( obj , indexName ).
+
+- If validElementTypes is property-key and next is not a property key , throw a TypeError exception.
+
+- Append next to list .
+
+- Set index to index + 1.
+
+- Return list .
+
+7.3.20 Invoke ( value , propertyKey [ , argList ] )
+
+The abstract operation Invoke takes arguments value (an ECMAScript language value ) and propertyKey (a property key ) and optional argument argList (a List of ECMAScript language values ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It is used to call a method property of an ECMAScript language value . value serves as both the lookup point for the property and the this value of the call. argList is the list of arguments values passed to the method. If argList is not present, a new empty List is used as its value. It performs the following steps when called:
+
+- If argList is not present, set argList to a new empty List .
+
+- Let func be ? GetV ( value , propertyKey ).
+
+- Return ? Call ( func , value , argList ).
+
+7.3.21 OrdinaryHasInstance ( ctor , instance )
+
+The abstract operation OrdinaryHasInstance takes arguments ctor (an ECMAScript language value ) and instance (an ECMAScript language value ) and returns either a normal completion containing a Boolean or a throw completion . It implements the default algorithm for determining if instance inherits from the instance object inheritance path provided by ctor . It performs the following steps when called:
+
+- If IsCallable ( ctor ) is false , return false .
+
+- If ctor has a [[BoundTargetFunction]] internal slot, then
+- Let boundCtor be ctor . [[BoundTargetFunction]] .
+
+- Return ? InstanceofOperator ( instance , boundCtor ).
+
+- If instance is not an Object , return false .
+
+- Let proto be ? Get ( ctor , "prototype" ).
+
+- If proto is not an Object , throw a TypeError exception.
+
+- Repeat,
+- Set instance to ? instance . [[GetPrototypeOf]] () .
+
+- If instance is null , return false .
+
+- If SameValue ( proto , instance ) is true , return true .
+
+7.3.22 SpeciesConstructor ( obj , defaultCtor )
+
+The abstract operation SpeciesConstructor takes arguments obj (an Object) and defaultCtor (a constructor ) and returns either a normal completion containing a constructor or a throw completion . It is used to retrieve the constructor that should be used to create new objects that are derived from obj . defaultCtor is the constructor to use if a constructor %Symbol.species% property cannot be found starting from obj . It performs the following steps when called:
+
+- Let ctor be ? Get ( obj , "constructor" ).
+
+- If ctor is undefined , return defaultCtor .
+
+- If ctor is not an Object , throw a TypeError exception.
+
+- Let species be ? Get ( ctor , %Symbol.species% ).
+
+- If species is either undefined or null , return defaultCtor .
+
+- If IsConstructor ( species ) is true , return species .
+
+- Throw a TypeError exception.
+
+7.3.23 EnumerableOwnProperties ( obj , kind )
+
+The abstract operation EnumerableOwnProperties takes arguments obj (an Object) and kind ( key , value , or key+value ) and returns either a normal completion containing a List of ECMAScript language values or a throw completion . It performs the following steps when called:
+
+- Let ownKeys be ? obj . [[OwnPropertyKeys]] () .
+
+- Let results be a new empty List .
+
+- For each element key of ownKeys , do
+- If key is a String , then
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( key ) .
+
+- If propertyDesc is not undefined and propertyDesc . [[Enumerable]] is true , then
+- If kind is key , then
+- Append key to results .
+
+- Else,
+- Let value be ? Get ( obj , key ).
+
+- If kind is value , then
+- Append value to results .
+
+- Else,
+- Assert : kind is key+value .
+
+- Let entry be CreateArrayFromList (« key , value »).
+
+- Append entry to results .
+
+- Return results .
+
+7.3.24 GetFunctionRealm ( func )
+
+The abstract operation GetFunctionRealm takes argument func (a function object ) and returns either a normal completion containing a Realm Record or a throw completion . It performs the following steps when called:
+
+- If func has a [[Realm]] internal slot, then
+- Return func . [[Realm]] .
+
+- If func is a bound function exotic object , then
+- Let boundTargetFunc be func . [[BoundTargetFunction]] .
+
+- Return ? GetFunctionRealm ( boundTargetFunc ).
+
+- If func is a Proxy exotic object , then
+- Perform ? ValidateNonRevokedProxy ( func ).
+
+- Let proxyTarget be func . [[ProxyTarget]] .
+
+- Assert : proxyTarget is a function object .
+
+- Return ? GetFunctionRealm ( proxyTarget ).
+
+- Return the current Realm Record .
+
+Note
+Step 4 will only be reached if func is a non-standard function exotic object that does not have a [[Realm]] internal slot.
+
+7.3.25 CopyDataProperties ( target , source , excludedItems )
+
+The abstract operation CopyDataProperties takes arguments target (an Object), source (an ECMAScript language value ), and excludedItems (a List of property keys ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If source is either undefined or null , return unused .
+
+- Let from be ! ToObject ( source ).
+
+- Let keys be ? from . [[OwnPropertyKeys]] () .
+
+- For each element nextKey of keys , do
+- Let excluded be false .
+
+- For each element element of excludedItems , do
+- If SameValue ( element , nextKey ) is true , then
+- Set excluded to true .
+
+- If excluded is false , then
+- Let propertyDesc be ? from . [[GetOwnProperty]] ( nextKey ) .
+
+- If propertyDesc is not undefined and propertyDesc . [[Enumerable]] is true , then
+- Let propertyValue be ? Get ( from , nextKey ).
+
+- Perform ! CreateDataPropertyOrThrow ( target , nextKey , propertyValue ).
+
+- Return unused .
+
+Note
+The target passed in here is always a newly created object which is not directly accessible in case of an error being thrown.
+
+7.3.26 PrivateElementFind ( obj , privateName )
+
+The abstract operation PrivateElementFind takes arguments obj (an Object) and privateName (a Private Name ) and returns a PrivateElement or empty . It performs the following steps when called:
+
+- If obj . [[PrivateElements]] contains a PrivateElement entry such that entry . [[Key]] is privateName , then
+- Return entry .
+
+- Return empty .
+
+7.3.27 PrivateFieldAdd ( obj , privateName , value )
+
+The abstract operation PrivateFieldAdd takes arguments obj (an Object), privateName (a Private Name ), and value (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If the host is a web browser, then
+- Perform ? HostEnsureCanAddPrivateElement ( obj ).
+
+- Let entry be PrivateElementFind ( obj , privateName ).
+
+- If entry is not empty , throw a TypeError exception.
+
+- Append PrivateElement { [[Key]] : privateName , [[Kind]] : field , [[Value]] : value } to obj . [[PrivateElements]] .
+
+- Return unused .
+
+7.3.28 PrivateMethodOrAccessorAdd ( obj , method )
+
+The abstract operation PrivateMethodOrAccessorAdd takes arguments obj (an Object) and method (a PrivateElement ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Assert : method . [[Kind]] is either method or accessor .
+
+- If the host is a web browser, then
+- Perform ? HostEnsureCanAddPrivateElement ( obj ).
+
+- Let entry be PrivateElementFind ( obj , method . [[Key]] ).
+
+- If entry is not empty , throw a TypeError exception.
+
+- Append method to obj . [[PrivateElements]] .
+
+- Return unused .
+
+Note
+The values for private methods and accessors are shared across instances. This operation does not create a new copy of the method or accessor.
+
+7.3.29 HostEnsureCanAddPrivateElement ( obj )
+
+The host-defined abstract operation HostEnsureCanAddPrivateElement takes argument obj (an Object) and returns either a normal completion containing unused or a throw completion . It allows host environments to prevent the addition of private elements to particular host-defined exotic objects .
+
+An implementation of HostEnsureCanAddPrivateElement must conform to the following requirements:
+
+- If obj is not a host-defined exotic object , this abstract operation must return NormalCompletion ( unused ) and perform no other steps.
+
+- Any two calls of this abstract operation with the same argument must return the same kind of Completion Record .
+
+The default implementation of HostEnsureCanAddPrivateElement is to return NormalCompletion ( unused ).
+
+This abstract operation is only invoked by ECMAScript hosts that are web browsers.
+
+7.3.30 PrivateGet ( obj , privateName )
+
+The abstract operation PrivateGet takes arguments obj (an Object) and privateName (a Private Name ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let entry be PrivateElementFind ( obj , privateName ).
+
+- If entry is empty , throw a TypeError exception.
+
+- If entry . [[Kind]] is either field or method , then
+- Return entry . [[Value]] .
+
+- Assert : entry . [[Kind]] is accessor .
+
+- If entry . [[Getter]] is undefined , throw a TypeError exception.
+
+- Let getter be entry . [[Getter]] .
+
+- Return ? Call ( getter , obj ).
+
+7.3.31 PrivateSet ( obj , privateName , value )
+
+The abstract operation PrivateSet takes arguments obj (an Object), privateName (a Private Name ), and value (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Let entry be PrivateElementFind ( obj , privateName ).
+
+- If entry is empty , throw a TypeError exception.
+
+- If entry . [[Kind]] is method , throw a TypeError exception.
+
+- If entry . [[Kind]] is field , then
+- Set entry . [[Value]] to value .
+
+- Else,
+- Assert : entry . [[Kind]] is accessor .
+
+- If entry . [[Setter]] is undefined , throw a TypeError exception.
+
+- Let setter be entry . [[Setter]] .
+
+- Perform ? Call ( setter , obj , « value »).
+
+- Return unused .
+
+7.3.32 DefineField ( receiver , fieldRecord )
+
+The abstract operation DefineField takes arguments receiver (an Object) and fieldRecord (a ClassFieldDefinition Record ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Let fieldName be fieldRecord . [[Name]] .
+
+- Let initializer be fieldRecord . [[Initializer]] .
+
+- If initializer is not empty , then
+- Let initValue be ? Call ( initializer , receiver ).
+
+- Else,
+- Let initValue be undefined .
+
+- If fieldName is a Private Name , then
+- Perform ? PrivateFieldAdd ( receiver , fieldName , initValue ).
+
+- Else,
+- Assert : fieldName is a property key .
+
+- Perform ? CreateDataPropertyOrThrow ( receiver , fieldName , initValue ).
+
+- Return unused .
+
+7.3.33 InitializeInstanceElements ( obj , ctor )
+
+The abstract operation InitializeInstanceElements takes arguments obj (an Object) and ctor (an ECMAScript function object or a built-in function object ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Let methods be ctor . [[PrivateMethods]] .
+
+- For each PrivateElement method of methods , do
+- Perform ? PrivateMethodOrAccessorAdd ( obj , method ).
+
+- Let fields be ctor . [[Fields]] .
+
+- For each element fieldRecord of fields , do
+- Perform ? DefineField ( obj , fieldRecord ).
+
+- Return unused .
+
+7.3.34 AddValueToKeyedGroup ( groups , key , value )
+
+The abstract operation AddValueToKeyedGroup takes arguments groups (a List of Records with fields [[Key]] (an ECMAScript language value ) and [[Elements]] (a List of ECMAScript language values )), key (an ECMAScript language value ), and value (an ECMAScript language value ) and returns unused . It performs the following steps when called:
+
+- For each Record { [[Key]] , [[Elements]] } group of groups , do
+- If SameValue ( group . [[Key]] , key ) is true , then
+- Assert : Exactly one element of groups meets this criterion.
+
+- Append value to group . [[Elements]] .
+
+- Return unused .
+
+- Let group be the Record { [[Key]] : key , [[Elements]] : « value » }.
+
+- Append group to groups .
+
+- Return unused .
+
+7.3.35 GroupBy ( items , callback , keyCoercion )
+
+The abstract operation GroupBy takes arguments items (an ECMAScript language value ), callback (an ECMAScript language value ), and keyCoercion ( property or collection ) and returns either a normal completion containing a List of Records with fields [[Key]] (an ECMAScript language value ) and [[Elements]] (a List of ECMAScript language values ), or a throw completion . It performs the following steps when called:
+
+- Perform ? RequireObjectCoercible ( items ).
+
+- If IsCallable ( callback ) is false , throw a TypeError exception.
+
+- Let groups be a new empty List .
+
+- Let iteratorRecord be ? GetIterator ( items , sync ).
+
+- Let k be 0.
+
+- Repeat,
+- If k ≥ 2 53 - 1, then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iteratorRecord , error ).
+
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Return groups .
+
+- Let value be next .
+
+- Let key be Completion ( Call ( callback , undefined , « value , 𝔽 ( k ) »)).
+
+- IfAbruptCloseIterator ( key , iteratorRecord ).
+
+- If keyCoercion is property , then
+- Set key to Completion ( ToPropertyKey ( key )).
+
+- IfAbruptCloseIterator ( key , iteratorRecord ).
+
+- Else,
+- Assert : keyCoercion is collection .
+
+- Set key to CanonicalizeKeyedCollectionKey ( key ).
+
+- Perform AddValueToKeyedGroup ( groups , key , value ).
+
+- Set k to k + 1.
+
+7.3.36 GetOptionsObject ( options )
+
+The abstract operation GetOptionsObject takes argument options (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- If options is undefined , then
+- Return OrdinaryObjectCreate ( null ).
+
+- If options is an Object , then
+- Return options .
+
+- Throw a TypeError exception.
+
+7.3.37 SetterThatIgnoresPrototypeProperties ( thisValue , home , propertyKey , value )
+
+The abstract operation SetterThatIgnoresPrototypeProperties takes arguments thisValue (an ECMAScript language value ), home (an Object), propertyKey (a property key ), and value (an ECMAScript language value ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If thisValue is not an Object , then
+- Throw a TypeError exception.
+
+- If SameValue ( thisValue , home ) is true , then
+- NOTE : Throwing here emulates assignment to a non-writable data property on the home object in strict mode code .
+
+- Throw a TypeError exception.
+
+- Let propertyDesc be ? thisValue . [[GetOwnProperty]] ( propertyKey ).
+
+- If propertyDesc is undefined , then
+- Perform ? CreateDataPropertyOrThrow ( thisValue , propertyKey , value ).
+
+- Else,
+- Perform ? Set ( thisValue , propertyKey , value , true ).
+
+- Return unused .
+
+7.4 Operations on Iterator Objects
+
+See Common Iteration Interfaces ( 27.1 ).
+
+7.4.1 Iterator Records
+
+An Iterator Record is a Record used to encapsulate an iterator or async iterator along with the next method.
+
+Iterator Records have the fields listed in Table 13 .
+
+Table 13: Iterator Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Iterator]]
+
+an Object
+
+An object that conforms to the iterator interface or the async iterator interface .
+
+[[NextMethod]]
+
+an ECMAScript language value
+
+The next method of the [[Iterator]] object.
+
+[[Done]]
+
+a Boolean
+
+Whether the iterator has completed or been closed.
+
+7.4.2 GetIteratorDirect ( obj )
+
+The abstract operation GetIteratorDirect takes argument obj (an Object) and returns either a normal completion containing an Iterator Record or a throw completion . It performs the following steps when called:
+
+- Let nextMethod be ? Get ( obj , "next" ).
+
+- Let iteratorRecord be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : nextMethod , [[Done]] : false }.
+
+- Return iteratorRecord .
+
+7.4.3 GetIteratorFromMethod ( obj , method )
+
+The abstract operation GetIteratorFromMethod takes arguments obj (an ECMAScript language value ) and method (a function object ) and returns either a normal completion containing an Iterator Record or a throw completion . It performs the following steps when called:
+
+- Let iterator be ? Call ( method , obj ).
+
+- If iterator is not an Object , throw a TypeError exception.
+
+- Return ? GetIteratorDirect ( iterator ).
+
+7.4.4 GetIterator ( obj , kind )
+
+The abstract operation GetIterator takes arguments obj (an ECMAScript language value ) and kind ( sync or async ) and returns either a normal completion containing an Iterator Record or a throw completion . It performs the following steps when called:
+
+- If kind is async , then
+- Let method be ? GetMethod ( obj , %Symbol.asyncIterator% ).
+
+- If method is undefined , then
+- Let syncMethod be ? GetMethod ( obj , %Symbol.iterator% ).
+
+- If syncMethod is undefined , throw a TypeError exception.
+
+- Let syncIteratorRecord be ? GetIteratorFromMethod ( obj , syncMethod ).
+
+- Return CreateAsyncFromSyncIterator ( syncIteratorRecord ).
+
+- Else,
+- Let method be ? GetMethod ( obj , %Symbol.iterator% ).
+
+- If method is undefined , throw a TypeError exception.
+
+- Return ? GetIteratorFromMethod ( obj , method ).
+
+7.4.5 GetIteratorFlattenable ( obj , primitiveHandling )
+
+The abstract operation GetIteratorFlattenable takes arguments obj (an ECMAScript language value ) and primitiveHandling ( iterate-string-primitives or reject-primitives ) and returns either a normal completion containing an Iterator Record or a throw completion . It performs the following steps when called:
+
+- If obj is not an Object , then
+- If primitiveHandling is reject-primitives , throw a TypeError exception.
+
+- Assert : primitiveHandling is iterate-string-primitives .
+
+- If obj is not a String , throw a TypeError exception.
+
+- Let method be ? GetMethod ( obj , %Symbol.iterator% ).
+
+- If method is undefined , then
+- Let iterator be obj .
+
+- Else,
+- Let iterator be ? Call ( method , obj ).
+
+- If iterator is not an Object , throw a TypeError exception.
+
+- Return ? GetIteratorDirect ( iterator ).
+
+7.4.6 IteratorNext ( iteratorRecord [ , value ] )
+
+The abstract operation IteratorNext takes argument iteratorRecord (an Iterator Record ) and optional argument value (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- If value is not present, then
+- Let result be Completion ( Call ( iteratorRecord . [[NextMethod]] , iteratorRecord . [[Iterator]] )).
+
+- Else,
+- Let result be Completion ( Call ( iteratorRecord . [[NextMethod]] , iteratorRecord . [[Iterator]] , « value »)).
+
+- If result is a throw completion , then
+- Set iteratorRecord . [[Done]] to true .
+
+- Return ? result .
+
+- Set result to ! result .
+
+- If result is not an Object , then
+- Set iteratorRecord . [[Done]] to true .
+
+- Throw a TypeError exception.
+
+- Return result .
+
+7.4.7 IteratorComplete ( iteratorResult )
+
+The abstract operation IteratorComplete takes argument iteratorResult (an Object) and returns either a normal completion containing a Boolean or a throw completion . It performs the following steps when called:
+
+- Return ToBoolean (? Get ( iteratorResult , "done" )).
+
+7.4.8 IteratorValue ( iteratorResult )
+
+The abstract operation IteratorValue takes argument iteratorResult (an Object) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Return ? Get ( iteratorResult , "value" ).
+
+7.4.9 IteratorStep ( iteratorRecord )
+
+The abstract operation IteratorStep takes argument iteratorRecord (an Iterator Record ) and returns either a normal completion containing either an Object or done , or a throw completion . It requests the next value from iteratorRecord . [[Iterator]] by calling iteratorRecord . [[NextMethod]] and returns either done indicating that the iterator has reached its end or the IteratorResult object if a next value is available. It performs the following steps when called:
+
+- Let result be ? IteratorNext ( iteratorRecord ).
+
+- Let done be Completion ( IteratorComplete ( result )).
+
+- If done is a throw completion , then
+- Set iteratorRecord . [[Done]] to true .
+
+- Return ? done .
+
+- Set done to ! done .
+
+- If done is true , then
+- Set iteratorRecord . [[Done]] to true .
+
+- Return done .
+
+- Return result .
+
+7.4.10 IteratorStepValue ( iteratorRecord )
+
+The abstract operation IteratorStepValue takes argument iteratorRecord (an Iterator Record ) and returns either a normal completion containing either an ECMAScript language value or done , or a throw completion . It requests the next value from iteratorRecord . [[Iterator]] by calling iteratorRecord . [[NextMethod]] and returns either done indicating that the iterator has reached its end or the value from the IteratorResult object if a next value is available. It performs the following steps when called:
+
+- Let result be ? IteratorStep ( iteratorRecord ).
+
+- If result is done , then
+- Return done .
+
+- Let value be Completion ( IteratorValue ( result )).
+
+- If value is a throw completion , then
+- Set iteratorRecord . [[Done]] to true .
+
+- Return ? value .
+
+7.4.11 IteratorClose ( iteratorRecord , completion )
+
+The abstract operation IteratorClose takes arguments iteratorRecord (an Iterator Record ) and completion (a Completion Record ) and returns a Completion Record . It is used to notify an iterator that it should perform any actions it would normally perform when it has reached its completed state. It performs the following steps when called:
+
+- Assert : iteratorRecord . [[Iterator]] is an Object .
+
+- Let iterator be iteratorRecord . [[Iterator]] .
+
+- Let innerResult be Completion ( GetMethod ( iterator , "return" )).
+
+- If innerResult is a normal completion , then
+- Let return be innerResult . [[Value]] .
+
+- If return is undefined , return ? completion .
+
+- Set innerResult to Completion ( Call ( return , iterator )).
+
+- If completion is a throw completion , return ? completion .
+
+- If innerResult is a throw completion , return ? innerResult .
+
+- If innerResult . [[Value]] is not an Object , throw a TypeError exception.
+
+- Return ? completion .
+
+7.4.12 IteratorCloseAll ( iterators , completion )
+
+The abstract operation IteratorCloseAll takes arguments iterators (a List of Iterator Records ) and completion (a Completion Record ) and returns a Completion Record . It performs the following steps when called:
+
+- For each element iterator of iterators , in reverse List order, do
+- Set completion to Completion ( IteratorClose ( iterator , completion )).
+
+- Return ? completion .
+
+7.4.13 IfAbruptCloseIterator ( value , iteratorRecord )
+
+IfAbruptCloseIterator is a shorthand for a sequence of algorithm steps that use an Iterator Record . An algorithm step of the form:
+
+- IfAbruptCloseIterator ( value , iteratorRecord ).
+
+means the same thing as:
+
+- Assert : value is a Completion Record .
+
+- If value is an abrupt completion , return ? IteratorClose ( iteratorRecord , value ).
+
+- Set value to ! value .
+
+7.4.14 IfAbruptCloseIterators ( value , iteratorRecords )
+
+IfAbruptCloseIterators is a shorthand for a sequence of algorithm steps that use a list of Iterator Records . An algorithm step of the form:
+
+- IfAbruptCloseIterators ( value , iteratorRecords ).
+
+means the same thing as:
+
+- Assert : value is a Completion Record .
+
+- If value is an abrupt completion , return ? IteratorCloseAll ( iteratorRecords , value ).
+
+- Set value to ! value .
+
+7.4.15 AsyncIteratorClose ( iteratorRecord , completion )
+
+The abstract operation AsyncIteratorClose takes arguments iteratorRecord (an Iterator Record ) and completion (a Completion Record ) and returns a Completion Record . It is used to notify an async iterator that it should perform any actions it would normally perform when it has reached its completed state. It performs the following steps when called:
+
+- Assert : iteratorRecord . [[Iterator]] is an Object .
+
+- Let iterator be iteratorRecord . [[Iterator]] .
+
+- Let innerResult be Completion ( GetMethod ( iterator , "return" )).
+
+- If innerResult is a normal completion , then
+- Let return be innerResult . [[Value]] .
+
+- If return is undefined , return ? completion .
+
+- Set innerResult to Completion ( Call ( return , iterator )).
+
+- If innerResult is a normal completion , set innerResult to Completion ( Await ( innerResult . [[Value]] )).
+
+- If completion is a throw completion , return ? completion .
+
+- If innerResult is a throw completion , return ? innerResult .
+
+- If innerResult . [[Value]] is not an Object , throw a TypeError exception.
+
+- Return ? completion .
+
+7.4.16 IfAbruptCloseAsyncIterator ( value , iteratorRecord )
+
+IfAbruptCloseAsyncIterator is a shorthand for a sequence of algorithm steps that use an Iterator Record . An algorithm step of the form:
+
+- IfAbruptCloseAsyncIterator ( value , iteratorRecord ).
+
+means the same thing as:
+
+- Assert : value is a Completion Record .
+
+- If value is an abrupt completion , return ? AsyncIteratorClose ( iteratorRecord , value ).
+
+- Set value to ! value .
+
+7.4.17 CreateIteratorResultObject ( value , done )
+
+The abstract operation CreateIteratorResultObject takes arguments value (an ECMAScript language value ) and done (a Boolean) and returns an Object that conforms to the IteratorResult interface . It creates an object that conforms to the IteratorResult interface . It performs the following steps when called:
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "value" , value ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "done" , done ).
+
+- Return obj .
+
+7.4.18 CreateListIteratorRecord ( list )
+
+The abstract operation CreateListIteratorRecord takes argument list (a List of ECMAScript language values ) and returns an Iterator Record . It creates an Iterator Record whose [[NextMethod]] returns the successive elements of list . It performs the following steps when called:
+
+- Let closure be a new Abstract Closure with no parameters that captures list and performs the following steps when called:
+- For each element value of list , do
+- Perform ? GeneratorYield ( CreateIteratorResultObject ( value , false )).
+
+- Return NormalCompletion ( undefined ).
+
+- Let iterator be CreateIteratorFromClosure ( closure , empty , %Iterator.prototype% ).
+
+- Return the Iterator Record { [[Iterator]] : iterator , [[NextMethod]] : %GeneratorPrototype.next%, [[Done]] : false }.
+
+Note
+The list iterator object is never directly accessible to ECMAScript code.
+
+7.4.19 IteratorToList ( iteratorRecord )
+
+The abstract operation IteratorToList takes argument iteratorRecord (an Iterator Record ) and returns either a normal completion containing a List of ECMAScript language values or a throw completion . It performs the following steps when called:
+
+- Let values be a new empty List .
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Return values .
+
+- Append next to values .
+
+7.5 Operations on Disposable Objects
+
+See Common Resource Management Interfaces ( 27.2.1 ).
+
+7.5.1 DisposableResource Records
+
+A DisposableResource Record is a Record value used to encapsulate a disposable object along with the method used to dispose the object. DisposableResource Records are produced by the CreateDisposableResource abstract operation.
+
+DisposableResource Records have the fields listed in Table 14 :
+
+Table 14: DisposableResource Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[ResourceValue]]
+
+an Object or undefined
+
+The value to be disposed.
+
+[[Kind]]
+
+sync-dispose or async-dispose
+
+Indicates whether the resource was added by a using declaration or DisposableStack object ( sync-dispose ) or by an await using declaration or AsyncDisposableStack object ( async-dispose ).
+
+[[DisposeMethod]]
+
+a function object or undefined
+
+A function object that will be called with [[ResourceValue]] as its this value when the resource is disposed.
+
+7.5.2 AddDisposableResource ( disposableResourceStack , value , kind [ , method ] )
+
+The abstract operation AddDisposableResource takes arguments disposableResourceStack (a List of DisposableResource Records ), value (an ECMAScript language value ), and kind ( sync-dispose or async-dispose ) and optional argument method (a function object ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If method is present, then
+- Assert : value is undefined .
+
+- Let resource be ? CreateDisposableResource ( undefined , kind , method ).
+
+- Else,
+- If value is either null or undefined and kind is sync-dispose , return unused .
+
+- NOTE : When value is either null or undefined and kind is async-dispose , we record that the resource was evaluated to ensure we will still perform an Await when resources are later disposed.
+
+- Let resource be ? CreateDisposableResource ( value , kind ).
+
+- Append resource to disposableResourceStack .
+
+- Return unused .
+
+7.5.3 CreateDisposableResource ( value , kind [ , method ] )
+
+The abstract operation CreateDisposableResource takes arguments value (an ECMAScript language value ) and kind ( sync-dispose or async-dispose ) and optional argument method (a function object ) and returns either a normal completion containing a DisposableResource Record or a throw completion . It performs the following steps when called:
+
+- If method is not present, then
+- If value is either null or undefined , then
+- Set value to undefined .
+
+- Set method to undefined .
+
+- Else,
+- Set method to ? GetDisposeMethod ( value , kind ).
+
+- If method is undefined , throw a TypeError exception.
+
+- Return the DisposableResource Record { [[ResourceValue]] : value , [[Kind]] : kind , [[DisposeMethod]] : method }.
+
+7.5.4 GetDisposeMethod ( value , kind )
+
+The abstract operation GetDisposeMethod takes arguments value (an ECMAScript language value ) and kind ( sync-dispose or async-dispose ) and returns either a normal completion containing either a function object or undefined , or a throw completion . It performs the following steps when called:
+
+- If value is not an Object , throw a TypeError exception.
+
+- If kind is sync-dispose , return ? GetMethod ( value , %Symbol.dispose% ).
+
+- Assert : kind is async-dispose .
+
+- Let asyncMethod be ? GetMethod ( value , %Symbol.asyncDispose% ).
+
+- If asyncMethod is not undefined , return asyncMethod .
+
+- Let syncMethod be ? GetMethod ( value , %Symbol.dispose% ).
+
+- If syncMethod is undefined , return undefined .
+
+- Let closure be a new Abstract Closure with no parameters that captures syncMethod and performs the following steps when called:
+- Let obj be the this value.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let result be Completion ( Call ( syncMethod , obj )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « undefined »).
+
+- Return promiseCapability . [[Promise]] .
+
+- NOTE : This function is not observable to user code. It is used to ensure that a Promise returned from a synchronous %Symbol.dispose% method will not be awaited and that a synchronous exception will be translated to a rejected Promise.
+
+- Return CreateBuiltinFunction ( closure , 0, "" , « »).
+
+7.5.5 DisposeResources ( disposableResourceStack , completion )
+
+The abstract operation DisposeResources takes arguments disposableResourceStack (a List of DisposableResource Records ) and completion (either a normal completion containing either an ECMAScript language value or empty , or an abrupt completion ) and returns either a normal completion containing either an ECMAScript language value or empty , or an abrupt completion . It performs the following steps when called:
+
+- Let needsAwait be false .
+
+- Let hasAwaited be false .
+
+- Let outputCompletion be completion .
+
+- For each element resource of disposableResourceStack , in reverse List order, do
+- Let value be resource . [[ResourceValue]] .
+
+- Let kind be resource . [[Kind]] .
+
+- Let method be resource . [[DisposeMethod]] .
+
+- If kind is sync-dispose , needsAwait is true , and hasAwaited is false , then
+- Perform ! Await ( undefined ).
+
+- Set needsAwait to false .
+
+- If method is not undefined , then
+- Let result be Completion ( Call ( method , value )).
+
+- If result is a normal completion and kind is async-dispose , then
+- Set result to Completion ( Await ( result . [[Value]] )).
+
+- Set hasAwaited to true .
+
+- If result is a throw completion , then
+- If outputCompletion is a throw completion , then
+- Set result to result . [[Value]] .
+
+- Let suppressed be outputCompletion . [[Value]] .
+
+- Let error be a newly created SuppressedError object.
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( error , "error" , result ).
+
+- Perform CreateNonEnumerableDataPropertyOrThrow ( error , "suppressed" , suppressed ).
+
+- Set outputCompletion to ThrowCompletion ( error ).
+
+- Else,
+- Set outputCompletion to result .
+
+- Else,
+- Assert : kind is async-dispose .
+
+- Set needsAwait to true .
+
+- NOTE : This can only indicate a case where either null or undefined was the initialized value of an await using declaration.
+
+- If needsAwait is true and hasAwaited is false , then
+- Perform ! Await ( undefined ).
+
+- NOTE : At this point disposableResourceStack will never be used again. The contents of disposableResourceStack can be discarded in implementations, such as by garbage collection.
+
+- Return ? outputCompletion .

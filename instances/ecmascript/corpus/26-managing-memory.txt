@@ -1,0 +1,260 @@
+# 26 Managing Memory
+# джерело: https://tc39.es/ecma262/multipage/managing-memory.html#sec-managing-memory
+# отримано: 2026-09-01
+
+26 Managing Memory
+
+26.1 WeakRef Objects
+
+A WeakRef is an object that is used to refer to a target object or symbol without preserving it from garbage collection. WeakRefs can be dereferenced to allow access to the target value, if the target hasn't been reclaimed by garbage collection.
+
+26.1.1 The WeakRef Constructor
+
+The WeakRef constructor :
+
+- is %WeakRef% .
+
+-
+is the initial value of the "WeakRef" property of the global object .
+
+-
+creates and initializes a new WeakRef when called as a constructor .
+
+-
+is not intended to be called as a function and will throw an exception when called in that manner.
+
+-
+may be used as the value in an extends clause of a class definition. Subclass constructors that intend to inherit the specified WeakRef behaviour must include a super call to the WeakRef constructor to create and initialize the subclass instance with the internal state necessary to support the built-in methods of WeakRef.prototype .
+
+26.1.1.1 WeakRef ( target )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- If CanBeHeldWeakly ( target ) is false , throw a TypeError exception.
+
+- Let weakRef be ? OrdinaryCreateFromConstructor (NewTarget, "%WeakRef.prototype%" , « [[WeakRefTarget]] »).
+
+- Perform AddToKeptObjects ( target ).
+
+- Set weakRef . [[WeakRefTarget]] to target .
+
+- Return weakRef .
+
+26.1.2 Properties of the WeakRef Constructor
+
+The WeakRef constructor :
+
+-
+has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+26.1.2.1 WeakRef.prototype
+
+The initial value of WeakRef.prototype is the WeakRef prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+26.1.3 Properties of the WeakRef Prototype Object
+
+The WeakRef prototype object :
+
+- is %WeakRef.prototype% .
+
+-
+has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have a [[WeakRefTarget]] internal slot.
+
+Normative Optional
+
+26.1.3.1 WeakRef.prototype.constructor
+
+The initial value of WeakRef.prototype.constructor is %WeakRef% .
+
+26.1.3.2 WeakRef.prototype.deref ( )
+
+This method performs the following steps when called:
+
+- Let weakRef be the this value.
+
+- Perform ? RequireInternalSlot ( weakRef , [[WeakRefTarget]] ).
+
+- Return WeakRefDeref ( weakRef ).
+
+Note
+If the WeakRef returns a target value that is not undefined , then this target value should not be garbage collected until the current execution of ECMAScript code has completed. The AddToKeptObjects operation makes sure read consistency is maintained.
+
+let target = { foo ( ) {} };
+let weakRef = new WeakRef (target);
+
+// ... later ...
+
+if (weakRef. deref ()) {
+weakRef. deref (). foo ();
+}
+
+In the above example, if the first deref does not evaluate to undefined then the second deref cannot either.
+
+26.1.3.3 WeakRef.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "WeakRef" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+26.1.4 WeakRef Abstract Operations
+
+26.1.4.1 WeakRefDeref ( weakRef )
+
+The abstract operation WeakRefDeref takes argument weakRef (a WeakRef ) and returns an ECMAScript language value . It performs the following steps when called:
+
+- Let target be weakRef . [[WeakRefTarget]] .
+
+- If target is not empty , then
+- Perform AddToKeptObjects ( target ).
+
+- Return target .
+
+- Return undefined .
+
+Note
+This abstract operation is defined separately from WeakRef.prototype.deref strictly to make it possible to succinctly define liveness.
+
+26.1.5 Properties of WeakRef Instances
+
+WeakRef instances are ordinary objects that inherit properties from the WeakRef prototype object . WeakRef instances also have a [[WeakRefTarget]] internal slot.
+
+26.2 FinalizationRegistry Objects
+
+A FinalizationRegistry is an object that manages registration and unregistration of cleanup operations that are performed when target objects and symbols are garbage collected.
+
+26.2.1 The FinalizationRegistry Constructor
+
+The FinalizationRegistry constructor :
+
+- is %FinalizationRegistry% .
+
+-
+is the initial value of the "FinalizationRegistry" property of the global object .
+
+-
+creates and initializes a new FinalizationRegistry when called as a constructor .
+
+-
+is not intended to be called as a function and will throw an exception when called in that manner.
+
+-
+may be used as the value in an extends clause of a class definition. Subclass constructors that intend to inherit the specified FinalizationRegistry behaviour must include a super call to the FinalizationRegistry constructor to create and initialize the subclass instance with the internal state necessary to support the built-in methods of FinalizationRegistry.prototype .
+
+26.2.1.1 FinalizationRegistry ( cleanupCallback )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- If IsCallable ( cleanupCallback ) is false , throw a TypeError exception.
+
+- Let finalizationRegistry be ? OrdinaryCreateFromConstructor (NewTarget, "%FinalizationRegistry.prototype%" , « [[Realm]] , [[CleanupCallback]] , [[Cells]] »).
+
+- Let activeFunc be the active function object .
+
+- Set finalizationRegistry . [[Realm]] to activeFunc . [[Realm]] .
+
+- Set finalizationRegistry . [[CleanupCallback]] to HostMakeJobCallback ( cleanupCallback ).
+
+- Set finalizationRegistry . [[Cells]] to a new empty List .
+
+- Return finalizationRegistry .
+
+26.2.2 Properties of the FinalizationRegistry Constructor
+
+The FinalizationRegistry constructor :
+
+-
+has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+26.2.2.1 FinalizationRegistry.prototype
+
+The initial value of FinalizationRegistry.prototype is the FinalizationRegistry prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+26.2.3 Properties of the FinalizationRegistry Prototype Object
+
+The FinalizationRegistry prototype object :
+
+- is %FinalizationRegistry.prototype% .
+
+-
+has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+-
+does not have [[Cells]] and [[CleanupCallback]] internal slots.
+
+26.2.3.1 FinalizationRegistry.prototype.constructor
+
+The initial value of FinalizationRegistry.prototype.constructor is %FinalizationRegistry% .
+
+26.2.3.2 FinalizationRegistry.prototype.register ( target , heldValue [ , unregisterToken ] )
+
+This method performs the following steps when called:
+
+- Let finalizationRegistry be the this value.
+
+- Perform ? RequireInternalSlot ( finalizationRegistry , [[Cells]] ).
+
+- If CanBeHeldWeakly ( target ) is false , throw a TypeError exception.
+
+- If SameValue ( target , heldValue ) is true , throw a TypeError exception.
+
+- If CanBeHeldWeakly ( unregisterToken ) is false , then
+- If unregisterToken is not undefined , throw a TypeError exception.
+
+- Set unregisterToken to empty .
+
+- Let cell be the Record { [[WeakRefTarget]] : target , [[HeldValue]] : heldValue , [[UnregisterToken]] : unregisterToken }.
+
+- Append cell to finalizationRegistry . [[Cells]] .
+
+- Return undefined .
+
+Note
+Based on the algorithms and definitions in this specification, cell . [[HeldValue]] is live when finalizationRegistry . [[Cells]] contains cell ; however, this does not necessarily mean that cell . [[UnregisterToken]] or cell . [[Target]] are live . For example, registering an object with itself as its unregister token would not keep the object alive forever.
+
+26.2.3.3 FinalizationRegistry.prototype.unregister ( unregisterToken )
+
+This method performs the following steps when called:
+
+- Let finalizationRegistry be the this value.
+
+- Perform ? RequireInternalSlot ( finalizationRegistry , [[Cells]] ).
+
+- If CanBeHeldWeakly ( unregisterToken ) is false , throw a TypeError exception.
+
+- Let removed be false .
+
+- For each Record { [[WeakRefTarget]] , [[HeldValue]] , [[UnregisterToken]] } cell of finalizationRegistry . [[Cells]] , do
+- If cell . [[UnregisterToken]] is not empty and SameValue ( cell . [[UnregisterToken]] , unregisterToken ) is true , then
+- Remove cell from finalizationRegistry . [[Cells]] .
+
+- Set removed to true .
+
+- Return removed .
+
+26.2.3.4 FinalizationRegistry.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "FinalizationRegistry" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+26.2.4 Properties of FinalizationRegistry Instances
+
+FinalizationRegistry instances are ordinary objects that inherit properties from the FinalizationRegistry prototype object . FinalizationRegistry instances also have [[Cells]] and [[CleanupCallback]] internal slots.

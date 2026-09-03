@@ -1,0 +1,171 @@
+# Annex A (informative) Implementation Dependent Behaviour
+# джерело: https://tc39.es/ecma402/#annex-implementation-dependent-behaviour
+# отримано: 2026-09-01
+
+Annex A (informative) Implementation Dependent Behaviour
+
+The following aspects of this specification are implementation dependent:
+
+-
+In all functionality:
+
+-
+Additional values for some properties of options arguments ( 2 )
+
+-
+The default locale ( 6.2.3 )
+
+-
+The set of available locales for each constructor ( 9.1 )
+
+-
+The LookupMatchingLocaleByBestFit algorithm ( 9.2.4 )
+
+-
+In Collator:
+
+-
+Support for the Unicode extensions keys "kf" , "kn" and the parallel options properties "caseFirst" , "numeric" ( 10.1.1 )
+
+-
+The set of supported "co" key values (collations) per locale beyond a default collation ( 10.2.3 )
+
+-
+The set of supported "kf" key values (case order) per locale ( 10.2.3 )
+
+-
+The set of supported "kn" key values (numeric collation) per locale ( 10.2.3 )
+
+-
+The default search sensitivity per locale ( 10.2.3 )
+
+-
+The default ignore punctuation value per locale ( 10.2.3 )
+
+-
+The sort order for each supported locale and options combination ( 10.3.3.1 )
+
+- In DateTimeFormat:
+
+-
+The BestFitFormatMatcher algorithm ( 11.1.2 )
+
+-
+The set of supported "ca" key values (calendars) per locale ( 11.2.3 )
+
+-
+The set of supported "nu" key values (numbering systems) per locale ( 11.2.3 )
+
+-
+The default hourCycle setting per locale ( 11.2.3 )
+
+-
+The set of supported date-time formats per locale beyond a core set, including the representations used for each component and the associated patterns ( 11.2.3 )
+
+-
+Localized weekday names, era names, month names, day period names, am/pm indicators, and time zone names ( 11.5.5 )
+
+-
+The calendric calculations used for calendars other than "gregory" ( 11.5.12 )
+
+-
+The set of all known registered Zone and Link names of the IANA Time Zone Database and the information about their offsets from UTC and their daylight saving time rules ( 21.4.1.19 )
+
+-
+In DisplayNames:
+
+-
+The localized names ( 12.2.3 )
+
+-
+In DurationFormat:
+
+-
+The set of supported "nu" key values (numbering systems) per locale ( 13.2.3 )
+
+-
+The digital formatting configuration (use of two-digit hours with style "numeric" and separators for numeric hours, minutes, and seconds) per locale ( 13.2.3 )
+
+-
+In ListFormat:
+
+-
+The patterns used for formatting values ( 14.2.3 )
+
+-
+In Locale:
+
+-
+Support for the Unicode extensions keys "kf" , "kn" and the parallel options properties "caseFirst" , "numeric" ( 15.1.1 )
+
+-
+The set of preferred calendars ( 15.5.9 ), collations ( 15.5.10 ), hour cycles ( 15.5.11 ), numbering systems ( 15.5.12 ), and time zones ( 15.5.13 ) per locale
+
+-
+The default general ordering of characters within a line per locale ( 15.5.14 )
+
+-
+The first day of each week and which days of the week are considered as part of the weekend, for calendar purposes, per locale ( 15.5.17 )
+
+-
+In NumberFormat:
+
+-
+The set of supported "nu" key values (numbering systems) per locale ( 16.2.3 )
+
+-
+The patterns used for formatting values as decimal, percent, currency, or unit values per locale, with or without the sign, with or without accounting format for currencies, and in standard, compact, or scientific notation ( 16.5.6 )
+
+-
+The number of fractional digits used when formatting currency values ( 16.5.6 )
+
+-
+Localized representations of NaN and Infinity ( 16.5.6 )
+
+-
+The implementation of numbering systems not listed in Table 30 ( 16.5.6 )
+
+-
+Localized decimal and grouping separators ( 16.5.6 )
+
+-
+Localized plus and minus signs ( 16.5.6 )
+
+-
+Localized digit grouping schemata ( 16.5.6 )
+
+-
+Localized magnitude thresholds for compact notation ( 16.5.6 )
+
+-
+Localized symbols for compact and scientific notation ( 16.5.6 )
+
+-
+Localized narrow, short, and long currency symbols and names ( 16.5.6 )
+
+-
+Localized narrow, short, and long unit symbols ( 16.5.6 )
+
+-
+In PluralRules:
+
+-
+List of Strings representing the possible results of plural selection and their corresponding order per locale. ( 17.1.1 )
+
+-
+In RelativeTimeFormat:
+
+-
+The set of supported "nu" key values (numbering systems) per locale ( 18.2.3 )
+
+-
+The patterns used for formatting values ( 18.2.3 )
+
+-
+In Segmenter:
+
+-
+Boundary determination algorithms ( 19.8.1 )
+
+-
+Classification of segments as "word-like" ( 19.7.1 )

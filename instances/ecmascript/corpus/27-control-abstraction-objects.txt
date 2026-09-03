@@ -1,0 +1,3996 @@
+# 27 Control Abstraction Objects
+# джерело: https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-control-abstraction-objects
+# отримано: 2026-09-01
+
+27 Control Abstraction Objects
+
+27.1 Iteration
+
+27.1.1 Common Iteration Interfaces
+
+An interface is a set of property keys whose associated values match a specific specification. Any object that provides all the properties as described by an interface's specification conforms to that interface. An interface is not represented by a distinct object. There may be many separately implemented objects that conform to any interface. An individual object may conform to multiple interfaces.
+
+27.1.1.1 The Iterable Interface
+
+The iterable interface includes the properties described in Table 79 :
+
+Table 79: Iterable Interface Required Properties
+
+Property
+
+Value
+
+Requirements
+
+%Symbol.iterator%
+
+a function that returns an iterator object
+
+The returned object must conform to the iterator interface .
+
+27.1.1.2 The Iterator Interface
+
+An object that implements the iterator interface must include the property in Table 80 . Such objects may also implement the properties in Table 81 .
+
+Table 80: Iterator Interface Required Properties
+
+Property
+
+Value
+
+Requirements
+
+"next"
+
+a function that returns an IteratorResult object
+
+The returned object must conform to the IteratorResult interface . If a previous call to the next method of an iterator has returned an IteratorResult object whose "done" property is true , then all subsequent calls to the next method of that object should also return an IteratorResult object whose "done" property is true . However, this requirement is not enforced.
+
+Note 1
+Arguments may be passed to the next function but their interpretation and validity is dependent upon the target iterator. The for-of statement and other common users of iterators do not pass any arguments, so iterator objects that expect to be used in such a manner must be prepared to deal with being called with no arguments.
+
+Table 81: Iterator Interface Optional Properties
+
+Property
+
+Value
+
+Requirements
+
+"return"
+
+a function that returns an IteratorResult object
+
+The returned object must conform to the IteratorResult interface . Invoking this method notifies the iterator object that the caller does not intend to make any more next method calls to the iterator . The returned IteratorResult object will typically have a "done" property whose value is true , and a "value" property with the value passed as the argument of the return method. However, this requirement is not enforced.
+
+"throw"
+
+a function that returns an IteratorResult object
+
+The returned object must conform to the IteratorResult interface . Invoking this method notifies the iterator object that the caller has detected an error condition. The argument may be used to identify the error condition and typically will be an exception object. A typical response is to throw the value passed as the argument. If the method does not throw , the returned IteratorResult object will typically have a "done" property whose value is true .
+
+Note 2
+Typically callers of these methods should check for their existence before invoking them. Certain ECMAScript language features including for - of , yield* , and array destructuring call these methods after performing an existence check. Most ECMAScript library functions that accept iterable objects as arguments also conditionally call them.
+
+27.1.1.3 The Async Iterable Interface
+
+The async iterable interface includes the properties described in Table 82 :
+
+Table 82: Async Iterable Interface Required Properties
+
+Property
+Value
+Requirements
+
+%Symbol.asyncIterator%
+a function that returns an async iterator object
+The returned object must conform to the async iterator interface .
+
+27.1.1.4 The Async Iterator Interface
+
+An object that implements the async iterator interface must include the properties in Table 83 . Such objects may also implement the properties in Table 84 .
+
+Table 83: Async Iterator Interface Required Properties
+
+Property
+Value
+Requirements
+
+"next"
+a function that returns a promise for an IteratorResult object
+
+The returned promise, when fulfilled, must fulfill with an object that conforms to the IteratorResult interface . If a previous call to the next method of an async iterator has returned a promise for an IteratorResult object whose "done" property is true , then all subsequent calls to the next method of that object should also return a promise for an IteratorResult object whose "done" property is true . However, this requirement is not enforced.
+
+Additionally, the IteratorResult object that serves as a fulfillment value should have a "value" property whose value is not a promise (or “ thenable ”). However, this requirement is also not enforced.
+
+Note 1
+Arguments may be passed to the next function but their interpretation and validity is dependent upon the target async iterator. The for - await - of statement and other common users of async iterators do not pass any arguments, so async iterator objects that expect to be used in such a manner must be prepared to deal with being called with no arguments.
+
+Table 84: Async Iterator Interface Optional Properties
+
+Property
+Value
+Requirements
+
+"return"
+a function that returns a promise for an IteratorResult object
+
+The returned promise, when fulfilled, must fulfill with an object that conforms to the IteratorResult interface . Invoking this method notifies the async iterator object that the caller does not intend to make any more next method calls to the async iterator . The returned promise will fulfill with an IteratorResult object which will typically have a "done" property whose value is true , and a "value" property with the value passed as the argument of the return method. However, this requirement is not enforced.
+
+Additionally, the IteratorResult object that serves as a fulfillment value should have a "value" property whose value is not a promise (or “ thenable ”). If the argument value is used in the typical manner, then if it is a rejected promise, a promise rejected with the same reason should be returned; if it is a fulfilled promise, then its fulfillment value should be used as the "value" property of the returned promise's IteratorResult object fulfillment value. However, these requirements are also not enforced.
+
+"throw"
+a function that returns a promise for an IteratorResult object
+
+The returned promise, when fulfilled, must fulfill with an object that conforms to the IteratorResult interface . Invoking this method notifies the async iterator object that the caller has detected an error condition. The argument may be used to identify the error condition and typically will be an exception object. A typical response is to return a rejected promise which rejects with the value passed as the argument.
+
+If the returned promise is fulfilled, the IteratorResult object fulfillment value will typically have a "done" property whose value is true . Additionally, it should have a "value" property whose value is not a promise (or “ thenable ”), but this requirement is not enforced.
+
+Note 2
+Typically callers of these methods should check for their existence before invoking them. Certain ECMAScript language features including for - await - of and yield* call these methods after performing an existence check.
+
+27.1.1.5 The IteratorResult Interface
+
+The IteratorResult interface includes the properties listed in Table 85 :
+
+Table 85: IteratorResult Interface Properties
+
+Property
+
+Value
+
+Requirements
+
+"done"
+
+a Boolean
+
+This is the result status of an iterator next method call. If the end of the iterator was reached "done" is true . If the end was not reached "done" is false and a value is available. If a "done" property (either own or inherited) does not exist, it is considered to have the value false .
+
+"value"
+
+an ECMAScript language value
+
+If done is false , this is the current iteration element value. If done is true , this is the return value of the iterator , if it supplied one. If the iterator does not have a return value, "value" is undefined . In that case, the "value" property may be absent from the conforming object if it does not inherit an explicit "value" property.
+
+27.1.2 Iterator Helper Objects
+
+An Iterator Helper object is an ordinary object that represents a lazy transformation of some specific source iterator object . There is not a named constructor for Iterator Helper objects. Instead, Iterator Helper objects are created by calling certain methods of Iterator instance objects.
+
+27.1.2.1 The %IteratorHelperPrototype% Object
+
+The %IteratorHelperPrototype% object:
+
+- has properties that are inherited by all Iterator Helper objects .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- has the following properties:
+
+27.1.2.1.1 %IteratorHelperPrototype%.next ( )
+
+- Return ? GeneratorResume ( this value, undefined , "Iterator Helper" ).
+
+27.1.2.1.2 %IteratorHelperPrototype%.return ( )
+
+- Let obj be this value.
+
+- Perform ? RequireInternalSlot ( obj , [[UnderlyingIterators]] ).
+
+- Assert : obj has a [[GeneratorState]] internal slot.
+
+- If obj . [[GeneratorState]] is suspended-start , then
+- Set obj . [[GeneratorState]] to completed .
+
+- NOTE : Once a generator enters the completed state it never leaves it and its associated execution context is never resumed. Any execution state associated with obj can be discarded at this point.
+
+- Perform ? IteratorCloseAll ( obj . [[UnderlyingIterators]] , NormalCompletion ( unused )).
+
+- Return CreateIteratorResultObject ( undefined , true ).
+
+- Let completion be ReturnCompletion ( undefined ).
+
+- Return ? GeneratorResumeAbrupt ( obj , completion , "Iterator Helper" ).
+
+27.1.2.1.3 %IteratorHelperPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Iterator Helper" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.1.3 Iterator Objects
+
+27.1.3.1 The Iterator Constructor
+
+The Iterator constructor :
+
+- is %Iterator% .
+
+- is the initial value of the "Iterator" property of the global object .
+
+- is designed to be subclassable. It may be used as the value of an extends clause of a class definition.
+
+27.1.3.1.1 Iterator ( )
+
+This function performs the following steps when called:
+
+- If NewTarget is either undefined or the active function object , throw a TypeError exception.
+
+- Return ? OrdinaryCreateFromConstructor (NewTarget, "%Iterator.prototype%" ).
+
+27.1.3.2 Properties of the Iterator Constructor
+
+The Iterator constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+27.1.3.2.1 Iterator.concat ( ... items )
+
+- Let iterables be a new empty List .
+
+- For each element item of items , do
+- If item is not an Object , throw a TypeError exception.
+
+- Let method be ? GetMethod ( item , %Symbol.iterator% ).
+
+- If method is undefined , throw a TypeError exception.
+
+- Append the Record { [[OpenMethod]] : method , [[Iterable]] : item } to iterables .
+
+- Let closure be a new Abstract Closure with no parameters that captures iterables and performs the following steps when called:
+- For each Record iterable of iterables , do
+- Let iterator be ? Call ( iterable . [[OpenMethod]] , iterable . [[Iterable]] ).
+
+- If iterator is not an Object , throw a TypeError exception.
+
+- Let iteratorRecord be ? GetIteratorDirect ( iterator ).
+
+- Let innerAlive be true .
+
+- Repeat, while innerAlive is true ,
+- Let innerValue be ? IteratorStepValue ( iteratorRecord ).
+
+- If innerValue is done , then
+- Set innerAlive to false .
+
+- Else,
+- Let completion be Completion ( Yield ( innerValue )).
+
+- If completion is an abrupt completion , then
+- Return ? IteratorClose ( iteratorRecord , completion ).
+
+- Return ReturnCompletion ( undefined ).
+
+- Let gen be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set gen . [[UnderlyingIterators]] to a new empty List .
+
+- Return gen .
+
+27.1.3.2.2 Iterator.from ( obj )
+
+- Let iteratorRecord be ? GetIteratorFlattenable ( obj , iterate-string-primitives ).
+
+- Let hasInstance be ? OrdinaryHasInstance ( %Iterator% , iteratorRecord . [[Iterator]] ).
+
+- If hasInstance is true , then
+- Return iteratorRecord . [[Iterator]] .
+
+- Let wrapper be OrdinaryObjectCreate ( %WrapForValidIteratorPrototype% , « [[Iterated]] »).
+
+- Set wrapper . [[Iterated]] to iteratorRecord .
+
+- Return wrapper .
+
+27.1.3.2.2.1 The %WrapForValidIteratorPrototype% Object
+
+The %WrapForValidIteratorPrototype% object:
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+27.1.3.2.2.1.1 %WrapForValidIteratorPrototype%.next ( )
+
+- Let obj be this value.
+
+- Perform ? RequireInternalSlot ( obj , [[Iterated]] ).
+
+- Let iteratorRecord be obj . [[Iterated]] .
+
+- Return ? Call ( iteratorRecord . [[NextMethod]] , iteratorRecord . [[Iterator]] ).
+
+27.1.3.2.2.1.2 %WrapForValidIteratorPrototype%.return ( )
+
+- Let obj be this value.
+
+- Perform ? RequireInternalSlot ( obj , [[Iterated]] ).
+
+- Let iterator be obj . [[Iterated]] . [[Iterator]] .
+
+- Assert : iterator is an Object .
+
+- Let returnMethod be ? GetMethod ( iterator , "return" ).
+
+- If returnMethod is undefined , then
+- Return CreateIteratorResultObject ( undefined , true ).
+
+- Return ? Call ( returnMethod , iterator ).
+
+27.1.3.2.3 Iterator.prototype
+
+The initial value of Iterator.prototype is the Iterator prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.1.3.2.4 Iterator.zip ( iterables [ , options ] )
+
+This function performs the following steps when called:
+
+- If iterables is not an Object , throw a TypeError exception.
+
+- Set options to ? GetOptionsObject ( options ).
+
+- Let mode be ? Get ( options , "mode" ).
+
+- If mode is undefined , set mode to "shortest" .
+
+- If mode is not one of "shortest" , "longest" , or "strict" , throw a TypeError exception.
+
+- Let paddingOption be undefined .
+
+- If mode is "longest" , then
+- Set paddingOption to ? Get ( options , "padding" ).
+
+- If paddingOption is not undefined and paddingOption is not an Object , throw a TypeError exception.
+
+- Let iters be a new empty List .
+
+- Let padding be a new empty List .
+
+- Let inputIter be ? GetIterator ( iterables , sync ).
+
+- Let next be not-started .
+
+- Repeat, while next is not done ,
+- Set next to Completion ( IteratorStepValue ( inputIter )).
+
+- IfAbruptCloseIterators ( next , iters ).
+
+- If next is not done , then
+- Let iter be Completion ( GetIteratorFlattenable ( next , reject-primitives )).
+
+- Let needClosing be the list-concatenation of « inputIter » and iters .
+
+- IfAbruptCloseIterators ( iter , needClosing ).
+
+- Append iter to iters .
+
+- Let iterCount be the number of elements in iters .
+
+- If mode is "longest" , then
+- If paddingOption is undefined , then
+- Repeat iterCount times:
+- Append undefined to padding .
+
+- Else,
+- Let paddingIter be Completion ( GetIterator ( paddingOption , sync )).
+
+- IfAbruptCloseIterators ( paddingIter , iters ).
+
+- Let usingIterator be true .
+
+- Repeat iterCount times:
+- If usingIterator is true , then
+- Set next to Completion ( IteratorStepValue ( paddingIter )).
+
+- IfAbruptCloseIterators ( next , iters ).
+
+- If next is done , then
+- Set usingIterator to false .
+
+- Else,
+- Append next to padding .
+
+- If usingIterator is false , append undefined to padding .
+
+- If usingIterator is true , then
+- Let completion be Completion ( IteratorClose ( paddingIter , NormalCompletion ( unused ))).
+
+- IfAbruptCloseIterators ( completion , iters ).
+
+- Let finishResults be a new Abstract Closure with parameters ( results ) that captures nothing and performs the following steps when called:
+- Return CreateArrayFromList ( results ).
+
+- Return IteratorZip ( iters , mode , padding , finishResults ).
+
+27.1.3.2.5 Iterator.zipKeyed ( iterables [ , options ] )
+
+This function performs the following steps when called:
+
+- If iterables is not an Object , throw a TypeError exception.
+
+- Set options to ? GetOptionsObject ( options ).
+
+- Let mode be ? Get ( options , "mode" ).
+
+- If mode is undefined , set mode to "shortest" .
+
+- If mode is not one of "shortest" , "longest" , or "strict" , throw a TypeError exception.
+
+- Let paddingOption be undefined .
+
+- If mode is "longest" , then
+- Set paddingOption to ? Get ( options , "padding" ).
+
+- If paddingOption is not undefined and paddingOption is not an Object , throw a TypeError exception.
+
+- Let iters be a new empty List .
+
+- Let padding be a new empty List .
+
+- Let allKeys be ? iterables . [[OwnPropertyKeys]] ().
+
+- Let keys be a new empty List .
+
+- For each element key of allKeys , do
+- Let propertyDesc be Completion ( iterables . [[GetOwnProperty]] ( key )).
+
+- IfAbruptCloseIterators ( propertyDesc , iters ).
+
+- If propertyDesc is not undefined and propertyDesc . [[Enumerable]] is true , then
+- Let value be Completion ( Get ( iterables , key )).
+
+- IfAbruptCloseIterators ( value , iters ).
+
+- If value is not undefined , then
+- Append key to keys .
+
+- Let iter be Completion ( GetIteratorFlattenable ( value , reject-primitives )).
+
+- IfAbruptCloseIterators ( iter , iters ).
+
+- Append iter to iters .
+
+- Let iterCount be the number of elements in iters .
+
+- If mode is "longest" , then
+- If paddingOption is undefined , then
+- Repeat iterCount times:
+- Append undefined to padding .
+
+- Else,
+- For each element key of keys , do
+- Let value be Completion ( Get ( paddingOption , key )).
+
+- IfAbruptCloseIterators ( value , iters ).
+
+- Append value to padding .
+
+- Let finishResults be a new Abstract Closure with parameters ( results ) that captures keys and iterCount and performs the following steps when called:
+- Let obj be OrdinaryObjectCreate ( null ).
+
+- For each integer i such that 0 ≤ i < iterCount , in ascending order, do
+- Perform ! CreateDataPropertyOrThrow ( obj , keys [ i ], results [ i ]).
+
+- Return obj .
+
+- Return IteratorZip ( iters , mode , padding , finishResults ).
+
+27.1.3.3 Properties of the Iterator Prototype Object
+
+The Iterator prototype object :
+
+- is %Iterator.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+Note
+All objects defined in this specification that implement the iterator interface also inherit from %Iterator.prototype%. ECMAScript code may also define objects that inherit from %Iterator.prototype%. %Iterator.prototype% provides a place where additional methods that are applicable to all iterator objects may be added.
+
+The following expression is one way that ECMAScript code can access the %Iterator.prototype% object:
+
+Object . getPrototypeOf ( Object . getPrototypeOf ([][ Symbol . iterator ]()))
+
+27.1.3.3.1 Iterator.prototype.constructor
+
+Iterator.prototype.constructor is an accessor property with attributes { [[Enumerable]] : false , [[Configurable]] : true }. The [[Getter]] and [[Setter]] attributes are defined as follows:
+
+27.1.3.3.1.1 get Iterator.prototype.constructor
+
+The value of the [[Getter]] attribute is a built-in function that requires no arguments. It performs the following steps when called:
+
+- Return %Iterator% .
+
+27.1.3.3.1.2 set Iterator.prototype.constructor
+
+The value of the [[Setter]] attribute is a built-in function that takes an argument v . It performs the following steps when called:
+
+- Perform ? SetterThatIgnoresPrototypeProperties ( this value, %Iterator.prototype% , "constructor" , v ).
+
+- Return undefined .
+
+Note
+Unlike the "constructor" property on most built-in prototypes, for web-compatibility reasons this property must be an accessor.
+
+27.1.3.3.2 Iterator.prototype.drop ( limit )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- Let numberLimit be Completion ( ToNumber ( limit )).
+
+- IfAbruptCloseIterator ( numberLimit , iterated ).
+
+- If numberLimit is NaN , then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- If numberLimit is finite and numberLimit > 𝔽 (2 53 - 1), then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Let intLimit be ! ToIntegerOrInfinity ( numberLimit ).
+
+- If intLimit < 0, then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let closure be a new Abstract Closure with no parameters that captures iterated and intLimit and performs the following steps when called:
+- Let remaining be 𝔽 ( intLimit ).
+
+- Repeat, while remaining > +0 𝔽 ,
+- Set remaining to remaining - 1 𝔽 .
+
+- Let next be ? IteratorStep ( iterated ).
+
+- If next is done , return ReturnCompletion ( undefined ).
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return ReturnCompletion ( undefined ).
+
+- Let completion be Completion ( Yield ( value )).
+
+- IfAbruptCloseIterator ( completion , iterated ).
+
+- Let result be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set result . [[UnderlyingIterators]] to « iterated ».
+
+- Return result .
+
+27.1.3.3.3 Iterator.prototype.every ( predicate )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( predicate ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return true .
+
+- Let result be Completion ( Call ( predicate , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( result , iterated ).
+
+- If ToBoolean ( result ) is false , return ? IteratorClose ( iterated , NormalCompletion ( false )).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+27.1.3.3.4 Iterator.prototype.filter ( predicate )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( predicate ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let closure be a new Abstract Closure with no parameters that captures iterated and predicate and performs the following steps when called:
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return ReturnCompletion ( undefined ).
+
+- Let selected be Completion ( Call ( predicate , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( selected , iterated ).
+
+- If ToBoolean ( selected ) is true , then
+- Let completion be Completion ( Yield ( value )).
+
+- IfAbruptCloseIterator ( completion , iterated ).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+- Let result be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set result . [[UnderlyingIterators]] to « iterated ».
+
+- Return result .
+
+27.1.3.3.5 Iterator.prototype.find ( predicate )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( predicate ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return undefined .
+
+- Let result be Completion ( Call ( predicate , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( result , iterated ).
+
+- If ToBoolean ( result ) is true , return ? IteratorClose ( iterated , NormalCompletion ( value )).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+27.1.3.3.6 Iterator.prototype.flatMap ( mapper )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( mapper ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let closure be a new Abstract Closure with no parameters that captures iterated and mapper and performs the following steps when called:
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return ReturnCompletion ( undefined ).
+
+- Let mapped be Completion ( Call ( mapper , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( mapped , iterated ).
+
+- Let innerIterator be Completion ( GetIteratorFlattenable ( mapped , reject-primitives )).
+
+- IfAbruptCloseIterator ( innerIterator , iterated ).
+
+- Let innerAlive be true .
+
+- Repeat, while innerAlive is true ,
+- Let innerValue be Completion ( IteratorStepValue ( innerIterator )).
+
+- IfAbruptCloseIterator ( innerValue , iterated ).
+
+- If innerValue is done , then
+- Set innerAlive to false .
+
+- Else,
+- Let completion be Completion ( Yield ( innerValue )).
+
+- If completion is an abrupt completion , then
+- Let backupCompletion be Completion ( IteratorClose ( innerIterator , completion )).
+
+- IfAbruptCloseIterator ( backupCompletion , iterated ).
+
+- Return ? IteratorClose ( iterated , completion ).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+- Let result be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set result . [[UnderlyingIterators]] to « iterated ».
+
+- Return result .
+
+27.1.3.3.7 Iterator.prototype.forEach ( procedure )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( procedure ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return undefined .
+
+- Let result be Completion ( Call ( procedure , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( result , iterated ).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+27.1.3.3.8 Iterator.prototype.map ( mapper )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( mapper ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let closure be a new Abstract Closure with no parameters that captures iterated and mapper and performs the following steps when called:
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return ReturnCompletion ( undefined ).
+
+- Let mapped be Completion ( Call ( mapper , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( mapped , iterated ).
+
+- Let completion be Completion ( Yield ( mapped )).
+
+- IfAbruptCloseIterator ( completion , iterated ).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+- Let result be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set result . [[UnderlyingIterators]] to « iterated ».
+
+- Return result .
+
+27.1.3.3.9 Iterator.prototype.reduce ( reducer [ , initialValue ] )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( reducer ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- If initialValue is not present, then
+- Let accumulator be ? IteratorStepValue ( iterated ).
+
+- If accumulator is done , throw a TypeError exception.
+
+- Let counter be 1 𝔽 .
+
+- Else,
+- Let accumulator be initialValue .
+
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return accumulator .
+
+- Let result be Completion ( Call ( reducer , undefined , « accumulator , value , counter »)).
+
+- IfAbruptCloseIterator ( result , iterated ).
+
+- Set accumulator to result .
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+27.1.3.3.10 Iterator.prototype.some ( predicate )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- If IsCallable ( predicate ) is false , then
+- Let error be ThrowCompletion (a newly created TypeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let counter be +0 𝔽 .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return false .
+
+- Let result be Completion ( Call ( predicate , undefined , « value , counter »)).
+
+- IfAbruptCloseIterator ( result , iterated ).
+
+- If ToBoolean ( result ) is true , return ? IteratorClose ( iterated , NormalCompletion ( true )).
+
+- NOTE : The following step will not change counter once it reaches 2 53 𝔽 .
+
+- Set counter to counter + 1 𝔽 .
+
+27.1.3.3.11 Iterator.prototype.take ( limit )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be the Iterator Record { [[Iterator]] : obj , [[NextMethod]] : undefined , [[Done]] : false }.
+
+- Let numberLimit be Completion ( ToNumber ( limit )).
+
+- IfAbruptCloseIterator ( numberLimit , iterated ).
+
+- If numberLimit is NaN , then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- If numberLimit is finite and numberLimit > 𝔽 (2 53 - 1), then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Let intLimit be ! ToIntegerOrInfinity ( numberLimit ).
+
+- If intLimit < 0, then
+- Let error be ThrowCompletion (a newly created RangeError object).
+
+- Return ? IteratorClose ( iterated , error ).
+
+- Set iterated to ? GetIteratorDirect ( obj ).
+
+- Let closure be a new Abstract Closure with no parameters that captures iterated and intLimit and performs the following steps when called:
+- Let remaining be 𝔽 ( intLimit ).
+
+- Repeat,
+- If remaining is +0 𝔽 , then
+- Return ? IteratorClose ( iterated , ReturnCompletion ( undefined )).
+
+- Set remaining to remaining - 1 𝔽 .
+
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return ReturnCompletion ( undefined ).
+
+- Let completion be Completion ( Yield ( value )).
+
+- IfAbruptCloseIterator ( completion , iterated ).
+
+- Let result be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set result . [[UnderlyingIterators]] to « iterated ».
+
+- Return result .
+
+27.1.3.3.12 Iterator.prototype.toArray ( )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- If obj is not an Object , throw a TypeError exception.
+
+- Let iterated be ? GetIteratorDirect ( obj ).
+
+- Let items be a new empty List .
+
+- Repeat,
+- Let value be ? IteratorStepValue ( iterated ).
+
+- If value is done , return CreateArrayFromList ( items ).
+
+- Append value to items .
+
+27.1.3.3.13 Iterator.prototype [ %Symbol.dispose% ] ( )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Let return be ? GetMethod ( obj , "return" ).
+
+- If return is not undefined , then
+- Perform ? Call ( return , obj ).
+
+- Return undefined .
+
+The value of the "name" property of this method is "[Symbol.dispose]" .
+
+27.1.3.3.14 Iterator.prototype [ %Symbol.iterator% ] ( )
+
+This function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "[Symbol.iterator]" .
+
+27.1.3.3.15 Iterator.prototype [ %Symbol.toStringTag% ]
+
+Iterator.prototype[%Symbol.toStringTag%] is an accessor property with attributes { [[Enumerable]] : false , [[Configurable]] : true }. The [[Getter]] and [[Setter]] attributes are defined as follows:
+
+27.1.3.3.15.1 get Iterator.prototype [ %Symbol.toStringTag% ]
+
+The value of the [[Getter]] attribute is a built-in function that requires no arguments. It performs the following steps when called:
+
+- Return "Iterator" .
+
+27.1.3.3.15.2 set Iterator.prototype [ %Symbol.toStringTag% ]
+
+The value of the [[Setter]] attribute is a built-in function that takes an argument v . It performs the following steps when called:
+
+- Perform ? SetterThatIgnoresPrototypeProperties ( this value, %Iterator.prototype% , %Symbol.toStringTag% , v ).
+
+- Return undefined .
+
+Note
+Unlike the %Symbol.toStringTag% property on most built-in prototypes, for web-compatibility reasons this property must be an accessor.
+
+27.1.3.4 Abstract Operations for Iterators
+
+27.1.3.4.1 IteratorZip ( iters , mode , padding , finishResults )
+
+The abstract operation IteratorZip takes arguments iters (a List of Iterator Records ), mode ( "shortest" , "longest" , or "strict" ), padding (a List of ECMAScript language values ), and finishResults (an Abstract Closure that takes a List of ECMAScript language values and returns an ECMAScript language value ) and returns a Generator. It performs the following steps when called:
+
+- Let iterCount be the number of elements in iters .
+
+- Let openIters be a copy of iters .
+
+- Let closure be a new Abstract Closure with no parameters that captures iters , iterCount , openIters , mode , padding , and finishResults and performs the following steps when called:
+- If iterCount = 0, return ReturnCompletion ( undefined ).
+
+- Repeat,
+- Let results be a new empty List .
+
+- Assert : openIters is not empty.
+
+- For each integer i such that 0 ≤ i < iterCount , in ascending order, do
+- Let iter be iters [ i ].
+
+- If iter is null , then
+- Assert : mode is "longest" .
+
+- Let result be padding [ i ].
+
+- Else,
+- Let result be Completion ( IteratorStepValue ( iter )).
+
+- If result is an abrupt completion , then
+- Remove iter from openIters .
+
+- Return ? IteratorCloseAll ( openIters , result ).
+
+- Set result to ! result .
+
+- If result is done , then
+- Remove iter from openIters .
+
+- If mode is "shortest" , then
+- Return ? IteratorCloseAll ( openIters , ReturnCompletion ( undefined )).
+
+- Else if mode is "strict" , then
+- If i ≠ 0, then
+- Return ? IteratorCloseAll ( openIters , ThrowCompletion (a newly created TypeError object)).
+
+- For each integer k such that 1 ≤ k < iterCount , in ascending order, do
+- Assert : iters [ k ] is not null .
+
+- Let open be Completion ( IteratorStep ( iters [ k ])).
+
+- If open is an abrupt completion , then
+- Remove iters [ k ] from openIters .
+
+- Return ? IteratorCloseAll ( openIters , open ).
+
+- Set open to ! open .
+
+- If open is done , then
+- Remove iters [ k ] from openIters .
+
+- Else,
+- Return ? IteratorCloseAll ( openIters , ThrowCompletion (a newly created TypeError object)).
+
+- Return ReturnCompletion ( undefined ).
+
+- Else,
+- Assert : mode is "longest" .
+
+- If openIters is empty, return ReturnCompletion ( undefined ).
+
+- Set iters [ i ] to null .
+
+- Set result to padding [ i ].
+
+- Append result to results .
+
+- Set results to finishResults ( results ).
+
+- Let completion be Completion ( Yield ( results )).
+
+- IfAbruptCloseIterators ( completion , openIters ).
+
+- Let gen be CreateIteratorFromClosure ( closure , "Iterator Helper" , %IteratorHelperPrototype% , « [[UnderlyingIterators]] »).
+
+- Set gen . [[UnderlyingIterators]] to openIters .
+
+- Return gen .
+
+27.1.4 The %AsyncIteratorPrototype% Object
+
+The %AsyncIteratorPrototype% object:
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+Note
+All objects defined in this specification that implement the async iterator interface also inherit from %AsyncIteratorPrototype%. ECMAScript code may also define objects that inherit from %AsyncIteratorPrototype%. The %AsyncIteratorPrototype% object provides a place where additional methods that are applicable to all async iterator objects may be added.
+
+27.1.4.1 %AsyncIteratorPrototype% [ %Symbol.asyncDispose% ] ( )
+
+This method performs the following steps when called:
+
+- Let obj be the this value.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let return be Completion ( GetMethod ( obj , "return" )).
+
+- IfAbruptRejectPromise ( return , promiseCapability ).
+
+- If return is undefined , then
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « undefined »).
+
+- Else,
+- Let result be Completion ( Call ( return , obj , « »)).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Let resultWrapper be Completion ( PromiseResolve ( %Promise% , result )).
+
+- IfAbruptRejectPromise ( resultWrapper , promiseCapability ).
+
+- Let unwrap be a new Abstract Closure with no parameters that captures nothing and performs the following steps when called:
+- Return undefined .
+
+- Let onFulfilled be CreateBuiltinFunction ( unwrap , 1, "" , « »).
+
+- Perform PerformPromiseThen ( resultWrapper , onFulfilled , undefined , promiseCapability ).
+
+- Return promiseCapability . [[Promise]] .
+
+The value of the "name" property of this method is "[Symbol.asyncDispose]" .
+
+27.1.4.2 %AsyncIteratorPrototype% [ %Symbol.asyncIterator% ] ( )
+
+This function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "[Symbol.asyncIterator]" .
+
+27.1.5 Async-from-Sync Iterator Objects
+
+An Async-from-Sync Iterator object is an async iterator that adapts a specific synchronous iterator . Async-from-Sync Iterator objects are never directly accessible to ECMAScript code. There is not a named constructor for Async-from-Sync Iterator objects. Instead, Async-from-Sync Iterator objects are created by the CreateAsyncFromSyncIterator abstract operation as needed.
+
+27.1.5.1 CreateAsyncFromSyncIterator ( syncIteratorRecord )
+
+The abstract operation CreateAsyncFromSyncIterator takes argument syncIteratorRecord (an Iterator Record ) and returns an Iterator Record . It is used to create an async Iterator Record from a synchronous Iterator Record . It performs the following steps when called:
+
+- Let asyncIterator be OrdinaryObjectCreate ( %AsyncFromSyncIteratorPrototype% , « [[SyncIteratorRecord]] »).
+
+- Set asyncIterator . [[SyncIteratorRecord]] to syncIteratorRecord .
+
+- Let nextMethod be ! Get ( asyncIterator , "next" ).
+
+- Let iteratorRecord be the Iterator Record { [[Iterator]] : asyncIterator , [[NextMethod]] : nextMethod , [[Done]] : false }.
+
+- Return iteratorRecord .
+
+27.1.5.2 The %AsyncFromSyncIteratorPrototype% Object
+
+The %AsyncFromSyncIteratorPrototype% object:
+
+- has properties that are inherited by all Async-from-Sync Iterator objects .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %AsyncIteratorPrototype% .
+
+- is never directly accessible to ECMAScript code.
+
+- has the following properties:
+
+27.1.5.2.1 %AsyncFromSyncIteratorPrototype%.next ( [ value ] )
+
+- Let obj be the this value.
+
+- Assert : obj is an Object that has a [[SyncIteratorRecord]] internal slot.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let syncIteratorRecord be obj . [[SyncIteratorRecord]] .
+
+- If value is present, then
+- Let result be Completion ( IteratorNext ( syncIteratorRecord , value )).
+
+- Else,
+- Let result be Completion ( IteratorNext ( syncIteratorRecord )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Return AsyncFromSyncIteratorContinuation ( result , promiseCapability , syncIteratorRecord , true ).
+
+27.1.5.2.2 %AsyncFromSyncIteratorPrototype%.return ( [ value ] )
+
+- Let obj be the this value.
+
+- Assert : obj is an Object that has a [[SyncIteratorRecord]] internal slot.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let syncIteratorRecord be obj . [[SyncIteratorRecord]] .
+
+- Let syncIterator be syncIteratorRecord . [[Iterator]] .
+
+- Let return be Completion ( GetMethod ( syncIterator , "return" )).
+
+- IfAbruptRejectPromise ( return , promiseCapability ).
+
+- If return is undefined , then
+- Let iteratorResult be CreateIteratorResultObject ( value , true ).
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « iteratorResult »).
+
+- Return promiseCapability . [[Promise]] .
+
+- If value is present, then
+- Let result be Completion ( Call ( return , syncIterator , « value »)).
+
+- Else,
+- Let result be Completion ( Call ( return , syncIterator )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- If result is not an Object , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « a newly created TypeError object »).
+
+- Return promiseCapability . [[Promise]] .
+
+- Return AsyncFromSyncIteratorContinuation ( result , promiseCapability , syncIteratorRecord , false ).
+
+27.1.5.2.3 %AsyncFromSyncIteratorPrototype%.throw ( [ value ] )
+
+Note In this specification, value is always provided, but is left optional for consistency with %AsyncFromSyncIteratorPrototype%.return ( [ value ] ) .
+
+- Let obj be the this value.
+
+- Assert : obj is an Object that has a [[SyncIteratorRecord]] internal slot.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let syncIteratorRecord be obj . [[SyncIteratorRecord]] .
+
+- Let syncIterator be syncIteratorRecord . [[Iterator]] .
+
+- Let throw be Completion ( GetMethod ( syncIterator , "throw" )).
+
+- IfAbruptRejectPromise ( throw , promiseCapability ).
+
+- If throw is undefined , then
+- NOTE : If syncIterator does not have a throw method, close it to give it a chance to clean up before we reject the capability.
+
+- Let closeCompletion be NormalCompletion ( empty ).
+
+- Let result be Completion ( IteratorClose ( syncIteratorRecord , closeCompletion )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- NOTE : The next step throws a TypeError to indicate that there was a protocol violation: syncIterator does not have a throw method.
+
+- NOTE : If closing syncIterator does not throw then the result of that operation is ignored, even if it yields a rejected promise.
+
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « a newly created TypeError object »).
+
+- Return promiseCapability . [[Promise]] .
+
+- If value is present, then
+- Let result be Completion ( Call ( throw , syncIterator , « value »)).
+
+- Else,
+- Let result be Completion ( Call ( throw , syncIterator )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- If result is not an Object , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « a newly created TypeError object »).
+
+- Return promiseCapability . [[Promise]] .
+
+- Return AsyncFromSyncIteratorContinuation ( result , promiseCapability , syncIteratorRecord , true ).
+
+27.1.5.3 Properties of Async-from-Sync Iterator Instances
+
+Async-from-Sync Iterator instances are ordinary objects that inherit properties from the %AsyncFromSyncIteratorPrototype% intrinsic object. Async-from-Sync Iterator instances are initially created with the internal slots listed in Table 86 .
+
+Table 86: Internal Slots of Async-from-Sync Iterator Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[SyncIteratorRecord]]
+
+an Iterator Record
+
+Represents the original synchronous iterator which is being adapted.
+
+27.1.5.4 AsyncFromSyncIteratorContinuation ( result , promiseCapability , syncIteratorRecord , closeOnRejection )
+
+The abstract operation AsyncFromSyncIteratorContinuation takes arguments result (an Object), promiseCapability (a PromiseCapability Record for an intrinsic %Promise% ), syncIteratorRecord (an Iterator Record ), and closeOnRejection (a Boolean) and returns a Promise. It performs the following steps when called:
+
+- NOTE : Because promiseCapability is derived from the intrinsic %Promise% , the calls to promiseCapability . [[Reject]] entailed by the use IfAbruptRejectPromise below are guaranteed not to throw.
+
+- Let done be Completion ( IteratorComplete ( result )).
+
+- IfAbruptRejectPromise ( done , promiseCapability ).
+
+- Let value be Completion ( IteratorValue ( result )).
+
+- IfAbruptRejectPromise ( value , promiseCapability ).
+
+- Let valueWrapper be Completion ( PromiseResolve ( %Promise% , value )).
+
+- If valueWrapper is an abrupt completion , done is false , and closeOnRejection is true , then
+- Set valueWrapper to Completion ( IteratorClose ( syncIteratorRecord , valueWrapper )).
+
+- IfAbruptRejectPromise ( valueWrapper , promiseCapability ).
+
+- Let unwrap be a new Abstract Closure with parameters ( v ) that captures done and performs the following steps when called:
+- Return CreateIteratorResultObject ( v , done ).
+
+- Let onFulfilled be CreateBuiltinFunction ( unwrap , 1, "" , « »).
+
+- NOTE : onFulfilled is used when processing the "value" property of an IteratorResult object in order to wait for its value if it is a promise and re-package the result in a new “unwrapped” IteratorResult object .
+
+- If done is true or closeOnRejection is false , then
+- Let onRejected be undefined .
+
+- Else,
+- Let closeIterator be a new Abstract Closure with parameters ( error ) that captures syncIteratorRecord and performs the following steps when called:
+- Return ? IteratorClose ( syncIteratorRecord , ThrowCompletion ( error )).
+
+- Let onRejected be CreateBuiltinFunction ( closeIterator , 1, "" , « »).
+
+- NOTE : onRejected is used to close the Iterator when the "value" property of an IteratorResult object it yields is a rejected promise.
+
+- Perform PerformPromiseThen ( valueWrapper , onFulfilled , onRejected , promiseCapability ).
+
+- Return promiseCapability . [[Promise]] .
+
+27.2 Resource Management
+
+27.2.1 Common Resource Management Interfaces
+
+27.2.1.1 The Disposable Interface
+
+The Disposable interface includes the properties described in Table 87 :
+
+Table 87: Disposable Interface Required Properties
+
+Property
+
+Value
+
+Requirements
+
+%Symbol.dispose%
+
+a function object
+
+Invoking this method notifies the Disposable object that the caller does not intend to continue to use this object. This method should perform any necessary logic to perform explicit clean-up of the resource including, but not limited to, file system handles, streams, host objects, etc. When an exception is thrown from this method, it typically means that the resource could not be explicitly freed.
+
+Invoking this method more than once on the same object should avoid repeating clean-up logic against the already-disposed resource and should not throw an exception, even if an exception was thrown on the first invocation. However, this requirement is not enforced.
+
+When using a Disposable object with a using or await using declaration, the resource will be automatically disposed when the Block or Module immediately containing the declaration has been evaluated.
+
+27.2.1.2 The AsyncDisposable Interface
+
+The AsyncDisposable interface includes the properties described in Table 88 :
+
+Table 88: AsyncDisposable Interface Required Properties
+
+Property
+
+Value
+
+Requirements
+
+%Symbol.asyncDispose%
+
+a function object that returns a promise
+
+Invoking this method notifies the AsyncDisposable object that the caller does not intend to continue to use this object. This method should perform any necessary logic to perform explicit clean-up of the resource including, but not limited to, file system handles, streams, host objects, etc. When the promise returned by this method is rejected, it typically means that the resource could not be explicitly freed. An AsyncDisposable object is not considered “disposed” until the resulting Promise has been fulfilled.
+
+Invoking this method more than once on the same object should avoid repeating clean-up logic against the already-disposed resource and should not throw an exception or return a rejected promise, even if an exception was thrown or a rejected promise was returned on the first invocation. However, this requirement is not enforced.
+
+When using an AsyncDisposable object with an await using declaration, the resource will be automatically disposed when the Block or Module immediately containing the declaration has been evaluated.
+
+27.3 DisposableStack Objects
+
+A DisposableStack is an object that can be used to contain one or more resources that should be disposed together.
+
+Any DisposableStack object is in one of two mutually exclusive states: disposed or pending . A disposable stack d is pending if and only if neither d.dispose() nor d.move() has been invoked for d .
+
+27.3.1 The DisposableStack Constructor
+
+The DisposableStack constructor :
+
+- is %DisposableStack% .
+
+- is the initial value of the "DisposableStack" property of the global object .
+
+- creates and initializes a new DisposableStack when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value in an extends clause of a class definition. Subclass constructors that intend to inherit the specified DisposableStack behaviour must include a super call to the DisposableStack constructor to create and initialize the subclass instance with the internal state necessary to support the built-in methods of DisposableStack.prototype .
+
+27.3.1.1 DisposableStack ( )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let disposableStack be ? OrdinaryCreateFromConstructor (NewTarget, "%DisposableStack.prototype%" , « [[DisposableState]] , [[DisposableResourceStack]] »).
+
+- Set disposableStack . [[DisposableState]] to pending .
+
+- Set disposableStack . [[DisposableResourceStack]] to a new empty List .
+
+- Return disposableStack .
+
+27.3.2 Properties of the DisposableStack Constructor
+
+The DisposableStack constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+27.3.2.1 DisposableStack.prototype
+
+The initial value of DisposableStack.prototype is the DisposableStack prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.3.3 Properties of the DisposableStack Prototype Object
+
+The DisposableStack prototype object :
+
+- is %DisposableStack.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have a [[DisposableState]] internal slot or any of the other internal slots of DisposableStack instances.
+
+27.3.3.1 DisposableStack.prototype.adopt ( value , onDispose )
+
+This method performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , throw a ReferenceError exception.
+
+- If IsCallable ( onDispose ) is false , throw a TypeError exception.
+
+- Let closure be a new Abstract Closure with no parameters that captures value and onDispose and performs the following steps when called:
+- Return ? Call ( onDispose , undefined , « value »).
+
+- Let func be CreateBuiltinFunction ( closure , 0, "" , « »).
+
+- Perform ? AddDisposableResource ( disposableStack . [[DisposableResourceStack]] , undefined , sync-dispose , func ).
+
+- Return value .
+
+27.3.3.2 DisposableStack.prototype.constructor
+
+The initial value of DisposableStack.prototype.constructor is %DisposableStack% .
+
+27.3.3.3 DisposableStack.prototype.defer ( onDispose )
+
+This method performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , throw a ReferenceError exception.
+
+- If IsCallable ( onDispose ) is false , throw a TypeError exception.
+
+- Perform ? AddDisposableResource ( disposableStack . [[DisposableResourceStack]] , undefined , sync-dispose , onDispose ).
+
+- Return undefined .
+
+27.3.3.4 DisposableStack.prototype.dispose ( )
+
+This method performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , return undefined .
+
+- Set disposableStack . [[DisposableState]] to disposed .
+
+- Return ? DisposeResources ( disposableStack . [[DisposableResourceStack]] , NormalCompletion ( undefined )).
+
+27.3.3.5 get DisposableStack.prototype.disposed
+
+DisposableStack.prototype.disposed is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , return true .
+
+- Return false .
+
+27.3.3.6 DisposableStack.prototype.move ( )
+
+This method performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , throw a ReferenceError exception.
+
+- Let newDisposableStack be ? OrdinaryCreateFromConstructor ( %DisposableStack% , "%DisposableStack.prototype%" , « [[DisposableState]] , [[DisposableResourceStack]] »).
+
+- Set newDisposableStack . [[DisposableState]] to pending .
+
+- Set newDisposableStack . [[DisposableResourceStack]] to disposableStack . [[DisposableResourceStack]] .
+
+- Set disposableStack . [[DisposableResourceStack]] to a new empty List .
+
+- Set disposableStack . [[DisposableState]] to disposed .
+
+- Return newDisposableStack .
+
+27.3.3.7 DisposableStack.prototype.use ( value )
+
+This method performs the following steps when called:
+
+- Let disposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( disposableStack , [[DisposableState]] ).
+
+- If disposableStack . [[DisposableState]] is disposed , throw a ReferenceError exception.
+
+- Perform ? AddDisposableResource ( disposableStack . [[DisposableResourceStack]] , value , sync-dispose ).
+
+- Return value .
+
+27.3.3.8 DisposableStack.prototype [ %Symbol.dispose% ] ( )
+
+The initial value of the %Symbol.dispose% property is %DisposableStack.prototype.dispose%, defined in 27.3.3.4 .
+
+27.3.3.9 DisposableStack.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "DisposableStack" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.3.4 Properties of DisposableStack Instances
+
+DisposableStack instances are ordinary objects that inherit properties from the DisposableStack prototype object (the intrinsic %DisposableStack.prototype% ). DisposableStack instances are initially created with internal slots described in Table 89 .
+
+Table 89: Internal Slots of DisposableStack Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[DisposableState]]
+
+pending or disposed
+
+Governs how a disposable stack will react to incoming calls to its %Symbol.dispose% method.
+
+[[DisposableResourceStack]]
+
+a List of DisposableResource Records
+
+Resources to be disposed when the disposable stack is disposed. Resources are added in the order they are initialized, and are disposed in reverse order.
+
+27.4 AsyncDisposableStack Objects
+
+An AsyncDisposableStack is an object that can be used to contain one or more resources that should be asynchronously disposed together.
+
+Any AsyncDisposableStack object is in one of two mutually exclusive states: disposed or pending . An async-disposable stack d is pending if and only if neither d.disposeAsync() nor d.move() has been invoked for d .
+
+27.4.1 The AsyncDisposableStack Constructor
+
+The AsyncDisposableStack constructor :
+
+- is %AsyncDisposableStack% .
+
+- is the initial value of the "AsyncDisposableStack" property of the global object .
+
+- creates and initializes a new AsyncDisposableStack when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value in an extends clause of a class definition. Subclass constructors that intend to inherit the specified AsyncDisposableStack behaviour must include a super call to the AsyncDisposableStack constructor to create and initialize the subclass instance with the internal state necessary to support the built-in methods of AsyncDisposableStack.prototype .
+
+27.4.1.1 AsyncDisposableStack ( )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let asyncDisposableStack be ? OrdinaryCreateFromConstructor (NewTarget, "%AsyncDisposableStack.prototype%" , « [[AsyncDisposableState]] , [[DisposableResourceStack]] »).
+
+- Set asyncDisposableStack . [[AsyncDisposableState]] to pending .
+
+- Set asyncDisposableStack . [[DisposableResourceStack]] to a new empty List .
+
+- Return asyncDisposableStack .
+
+27.4.2 Properties of the AsyncDisposableStack Constructor
+
+The AsyncDisposableStack constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+27.4.2.1 AsyncDisposableStack.prototype
+
+The initial value of AsyncDisposableStack.prototype is the AsyncDisposableStack prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.4.3 Properties of the AsyncDisposableStack Prototype Object
+
+The AsyncDisposableStack prototype object :
+
+- is %AsyncDisposableStack.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have an [[AsyncDisposableState]] internal slot or any of the other internal slots of AsyncDisposableStack instances.
+
+27.4.3.1 AsyncDisposableStack.prototype.adopt ( value , onDisposeAsync )
+
+This method performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , throw a ReferenceError exception.
+
+- If IsCallable ( onDisposeAsync ) is false , throw a TypeError exception.
+
+- Let closure be a new Abstract Closure with no parameters that captures value and onDisposeAsync and performs the following steps when called:
+- Return ? Call ( onDisposeAsync , undefined , « value »).
+
+- Let func be CreateBuiltinFunction ( closure , 0, "" , « »).
+
+- Perform ? AddDisposableResource ( asyncDisposableStack . [[DisposableResourceStack]] , undefined , async-dispose , func ).
+
+- Return value .
+
+27.4.3.2 AsyncDisposableStack.prototype.constructor
+
+The initial value of AsyncDisposableStack.prototype.constructor is %AsyncDisposableStack% .
+
+27.4.3.3 AsyncDisposableStack.prototype.defer ( onDisposeAsync )
+
+This method performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , throw a ReferenceError exception.
+
+- If IsCallable ( onDisposeAsync ) is false , throw a TypeError exception.
+
+- Perform ? AddDisposableResource ( asyncDisposableStack . [[DisposableResourceStack]] , undefined , async-dispose , onDisposeAsync ).
+
+- Return undefined .
+
+27.4.3.4 AsyncDisposableStack.prototype.disposeAsync ( )
+
+This async method performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , return undefined .
+
+- Set asyncDisposableStack . [[AsyncDisposableState]] to disposed .
+
+- Return ? DisposeResources ( asyncDisposableStack . [[DisposableResourceStack]] , NormalCompletion ( undefined )).
+
+27.4.3.5 get AsyncDisposableStack.prototype.disposed
+
+AsyncDisposableStack.prototype.disposed is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , return true .
+
+- Return false .
+
+27.4.3.6 AsyncDisposableStack.prototype.move ( )
+
+This method performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , throw a ReferenceError exception.
+
+- Let newAsyncDisposableStack be ? OrdinaryCreateFromConstructor ( %AsyncDisposableStack% , "%AsyncDisposableStack.prototype%" , « [[AsyncDisposableState]] , [[DisposableResourceStack]] »).
+
+- Set newAsyncDisposableStack . [[AsyncDisposableState]] to pending .
+
+- Set newAsyncDisposableStack . [[DisposableResourceStack]] to asyncDisposableStack . [[DisposableResourceStack]] .
+
+- Set asyncDisposableStack . [[DisposableResourceStack]] to a new empty List .
+
+- Set asyncDisposableStack . [[AsyncDisposableState]] to disposed .
+
+- Return newAsyncDisposableStack .
+
+27.4.3.7 AsyncDisposableStack.prototype.use ( value )
+
+This method performs the following steps when called:
+
+- Let asyncDisposableStack be the this value.
+
+- Perform ? RequireInternalSlot ( asyncDisposableStack , [[AsyncDisposableState]] ).
+
+- If asyncDisposableStack . [[AsyncDisposableState]] is disposed , throw a ReferenceError exception.
+
+- Perform ? AddDisposableResource ( asyncDisposableStack . [[DisposableResourceStack]] , value , async-dispose ).
+
+- Return value .
+
+27.4.3.8 AsyncDisposableStack.prototype [ %Symbol.asyncDispose% ] ( )
+
+The initial value of the %Symbol.asyncDispose% property is %AsyncDisposableStack.prototype.disposeAsync%, defined in 27.4.3.4 .
+
+27.4.3.9 AsyncDisposableStack.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "AsyncDisposableStack" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.4.4 Properties of AsyncDisposableStack Instances
+
+AsyncDisposableStack instances are ordinary objects that inherit properties from the AsyncDisposableStack prototype object (the intrinsic %AsyncDisposableStack.prototype% ). AsyncDisposableStack instances are initially created with internal slots described in Table 90 .
+
+Table 90: Internal Slots of AsyncDisposableStack Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[AsyncDisposableState]]
+
+pending or disposed
+
+Governs how a disposable stack will react to incoming calls to its %Symbol.asyncDispose% method.
+
+[[DisposableResourceStack]]
+
+a List of DisposableResource Records
+
+Resources to be disposed when the disposable stack is disposed. Resources are added in the order they are initialized, and are disposed in reverse order.
+
+27.5 Promise Objects
+
+A Promise is an object that is used as a placeholder for the eventual results of a deferred (and possibly asynchronous) computation.
+
+Any Promise is in one of three mutually exclusive states: fulfilled , rejected , and pending :
+
+-
+A promise p is fulfilled if p.then(f, r) will immediately enqueue a Job to call the function f .
+
+-
+A promise p is rejected if p.then(f, r) will immediately enqueue a Job to call the function r .
+
+-
+A promise is pending if it is neither fulfilled nor rejected.
+
+A promise is said to be settled if it is not pending, i.e. if it is either fulfilled or rejected.
+
+A promise is resolved if it is settled or if it has been “locked in” to match the state of another promise. Attempting to resolve or reject a resolved promise has no effect. A promise is unresolved if it is not resolved. An unresolved promise is always in the pending state. A resolved promise may be pending, fulfilled or rejected.
+
+A thenable is an object obj for which Get ( obj , "then" ) returns a function object .
+
+27.5.1 Promise Abstract Operations
+
+27.5.1.1 PromiseCapability Records
+
+A PromiseCapability Record is a Record used to encapsulate a Promise or promise-like object along with the functions that are capable of resolving or rejecting that promise. PromiseCapability Records are produced by the NewPromiseCapability abstract operation.
+
+PromiseCapability Records have the fields listed in Table 91 .
+
+Table 91: PromiseCapability Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Promise]]
+
+an Object
+
+An object that is usable as a promise.
+
+[[Resolve]]
+
+a function object
+
+The function that is used to resolve the given promise.
+
+[[Reject]]
+
+a function object
+
+The function that is used to reject the given promise.
+
+27.5.1.1.1 IfAbruptRejectPromise ( value , capability )
+
+IfAbruptRejectPromise is a shorthand for a sequence of algorithm steps that use a PromiseCapability Record . An algorithm step of the form:
+
+- IfAbruptRejectPromise ( value , capability ).
+
+means the same thing as:
+
+- Assert : value is a Completion Record .
+
+- If value is an abrupt completion , then
+- Perform ? Call ( capability . [[Reject]] , undefined , « value . [[Value]] »).
+
+- Return capability . [[Promise]] .
+
+- Set value to ! value .
+
+27.5.1.2 PromiseReaction Records
+
+A PromiseReaction Record is a Record used to store information about how a promise should react when it becomes resolved or rejected with a given value. PromiseReaction Records are created by the PerformPromiseThen abstract operation, and are used by the Abstract Closure returned by NewPromiseReactionJob .
+
+PromiseReaction Records have the fields listed in Table 92 .
+
+Table 92: PromiseReaction Record Fields
+
+Field Name
+
+Value
+
+Meaning
+
+[[Capability]]
+
+a PromiseCapability Record or undefined
+
+The capabilities of the promise for which this record provides a reaction handler.
+
+[[Type]]
+
+fulfill or reject
+
+The [[Type]] is used when [[Handler]] is empty to allow for behaviour specific to the settlement type.
+
+[[Handler]]
+
+a JobCallback Record or empty
+
+The function that should be applied to the incoming value, and whose return value will govern what happens to the derived promise. If [[Handler]] is empty , a function that depends on the value of [[Type]] will be used instead.
+
+27.5.1.3 CreateResolvingFunctions ( toResolve )
+
+The abstract operation CreateResolvingFunctions takes argument toResolve (a Promise) and returns a Record with fields [[Resolve]] (a function object ) and [[Reject]] (a function object ). It performs the following steps when called:
+
+- Let promiseOrEmpty be the Record { [[Value]] : toResolve }.
+
+- Let resolveSteps be a new Abstract Closure with parameters ( resolution ) that captures promiseOrEmpty and performs the following steps when called:
+- If promiseOrEmpty . [[Value]] is empty , return undefined .
+
+- Let promise be promiseOrEmpty . [[Value]] .
+
+- Set promiseOrEmpty . [[Value]] to empty .
+
+- If SameValue ( resolution , promise ) is true , then
+- Let selfResolutionError be a newly created TypeError object.
+
+- Perform RejectPromise ( promise , selfResolutionError ).
+
+- Return undefined .
+
+- If resolution is not an Object , then
+- Perform FulfillPromise ( promise , resolution ).
+
+- Return undefined .
+
+- Let then be Completion ( Get ( resolution , "then" )).
+
+- If then is an abrupt completion , then
+- Perform RejectPromise ( promise , then . [[Value]] ).
+
+- Return undefined .
+
+- Let thenAction be then . [[Value]] .
+
+- If IsCallable ( thenAction ) is false , then
+- Perform FulfillPromise ( promise , resolution ).
+
+- Return undefined .
+
+- Let thenJobCallback be HostMakeJobCallback ( thenAction ).
+
+- Let job be NewPromiseResolveThenableJob ( promise , resolution , thenJobCallback ).
+
+- Perform HostEnqueuePromiseJob ( job . [[Job]] , job . [[Realm]] ).
+
+- Return undefined .
+
+- Let resolve be CreateBuiltinFunction ( resolveSteps , 1, "" , « »).
+
+- Let rejectSteps be a new Abstract Closure with parameters ( reason ) that captures promiseOrEmpty and performs the following steps when called:
+- If promiseOrEmpty . [[Value]] is empty , return undefined .
+
+- Let promise be promiseOrEmpty . [[Value]] .
+
+- Set promiseOrEmpty . [[Value]] to empty .
+
+- Perform RejectPromise ( promise , reason ).
+
+- Return undefined .
+
+- Let reject be CreateBuiltinFunction ( rejectSteps , 1, "" , « »).
+
+- Return the Record { [[Resolve]] : resolve , [[Reject]] : reject }.
+
+27.5.1.4 FulfillPromise ( promise , value )
+
+The abstract operation FulfillPromise takes arguments promise (a Promise) and value (an ECMAScript language value ) and returns unused . It performs the following steps when called:
+
+- Assert : promise . [[PromiseState]] is pending .
+
+- Let reactions be promise . [[PromiseFulfillReactions]] .
+
+- Set promise . [[PromiseResult]] to value .
+
+- Set promise . [[PromiseFulfillReactions]] to undefined .
+
+- Set promise . [[PromiseRejectReactions]] to undefined .
+
+- Set promise . [[PromiseState]] to fulfilled .
+
+- Perform TriggerPromiseReactions ( reactions , value ).
+
+- Return unused .
+
+27.5.1.5 NewPromiseCapability ( ctor )
+
+The abstract operation NewPromiseCapability takes argument ctor (an ECMAScript language value ) and returns either a normal completion containing a PromiseCapability Record or a throw completion . It attempts to use ctor as a constructor in the fashion of the built-in Promise constructor to create a promise and extract its resolve and reject functions. The promise plus the resolve and reject functions are used to initialize a new PromiseCapability Record . It performs the following steps when called:
+
+- If IsConstructor ( ctor ) is false , throw a TypeError exception.
+
+- NOTE : ctor is assumed to be a constructor function that supports the parameter conventions of the Promise constructor (see 27.5.3.1 ).
+
+- Let resolvingFuncs be the Record { [[Resolve]] : undefined , [[Reject]] : undefined }.
+
+- Let executorClosure be a new Abstract Closure with parameters ( resolve , reject ) that captures resolvingFuncs and performs the following steps when called:
+- If resolvingFuncs . [[Resolve]] is not undefined , throw a TypeError exception.
+
+- If resolvingFuncs . [[Reject]] is not undefined , throw a TypeError exception.
+
+- Set resolvingFuncs . [[Resolve]] to resolve .
+
+- Set resolvingFuncs . [[Reject]] to reject .
+
+- Return NormalCompletion ( undefined ).
+
+- Let executor be CreateBuiltinFunction ( executorClosure , 2, "" , « »).
+
+- Let promise be ? Construct ( ctor , « executor »).
+
+- If IsCallable ( resolvingFuncs . [[Resolve]] ) is false , throw a TypeError exception.
+
+- If IsCallable ( resolvingFuncs . [[Reject]] ) is false , throw a TypeError exception.
+
+- Return the PromiseCapability Record { [[Promise]] : promise , [[Resolve]] : resolvingFuncs . [[Resolve]] , [[Reject]] : resolvingFuncs . [[Reject]] }.
+
+Note
+This abstract operation supports Promise subclassing, as it is generic on any constructor that calls a passed executor function argument in the same way as the Promise constructor . It is used to generalize static methods of the Promise constructor to any subclass.
+
+27.5.1.6 IsPromise ( arg )
+
+The abstract operation IsPromise takes argument arg (an ECMAScript language value ) and returns a Boolean. It checks for the promise brand on an object. It performs the following steps when called:
+
+- If arg is not an Object , return false .
+
+- If arg does not have a [[PromiseState]] internal slot, return false .
+
+- Return true .
+
+27.5.1.7 RejectPromise ( promise , reason )
+
+The abstract operation RejectPromise takes arguments promise (a Promise) and reason (an ECMAScript language value ) and returns unused . It performs the following steps when called:
+
+- Assert : promise . [[PromiseState]] is pending .
+
+- Let reactions be promise . [[PromiseRejectReactions]] .
+
+- Set promise . [[PromiseResult]] to reason .
+
+- Set promise . [[PromiseFulfillReactions]] to undefined .
+
+- Set promise . [[PromiseRejectReactions]] to undefined .
+
+- Set promise . [[PromiseState]] to rejected .
+
+- If promise . [[PromiseIsHandled]] is false , perform HostPromiseRejectionTracker ( promise , "reject" ).
+
+- Perform TriggerPromiseReactions ( reactions , reason ).
+
+- Return unused .
+
+27.5.1.8 TriggerPromiseReactions ( reactions , arg )
+
+The abstract operation TriggerPromiseReactions takes arguments reactions (a List of PromiseReaction Records ) and arg (an ECMAScript language value ) and returns unused . It enqueues a new Job for each record in reactions . Each such Job processes the [[Type]] and [[Handler]] of the PromiseReaction Record , and if the [[Handler]] is not empty , calls it passing the given argument. If the [[Handler]] is empty , the behaviour is determined by the [[Type]] . It performs the following steps when called:
+
+- For each element reaction of reactions , do
+- Let job be NewPromiseReactionJob ( reaction , arg ).
+
+- Perform HostEnqueuePromiseJob ( job . [[Job]] , job . [[Realm]] ).
+
+- Return unused .
+
+27.5.1.9 HostPromiseRejectionTracker ( promise , operation )
+
+The host-defined abstract operation HostPromiseRejectionTracker takes arguments promise (a Promise) and operation ( "reject" or "handle" ) and returns unused . It allows host environments to track promise rejections.
+
+The default implementation of HostPromiseRejectionTracker is to return unused .
+
+Note 1
+HostPromiseRejectionTracker is called in two scenarios:
+
+- When a promise is rejected without any handlers, it is called with its operation argument set to "reject" .
+
+- When a handler is added to a rejected promise for the first time, it is called with its operation argument set to "handle" .
+
+A typical implementation of HostPromiseRejectionTracker might try to notify developers of unhandled rejections, while also being careful to notify them if such previous notifications are later invalidated by new handlers being attached.
+
+Note 2
+If operation is "handle" , an implementation should not hold a reference to promise in a way that would interfere with garbage collection. An implementation may hold a reference to promise if operation is "reject" , since it is expected that rejections will be rare and not on hot code paths.
+
+27.5.2 Promise Jobs
+
+27.5.2.1 NewPromiseReactionJob ( reaction , arg )
+
+The abstract operation NewPromiseReactionJob takes arguments reaction (a PromiseReaction Record ) and arg (an ECMAScript language value ) and returns a Record with fields [[Job]] (a Job Abstract Closure ) and [[Realm]] (a Realm Record or null ). It returns a new Job Abstract Closure that applies the appropriate handler to the incoming value, and uses the handler's return value to resolve or reject the derived promise associated with that handler. It performs the following steps when called:
+
+- Let job be a new Job Abstract Closure with no parameters that captures reaction and arg and performs the following steps when called:
+- Let promiseCapability be reaction . [[Capability]] .
+
+- Let type be reaction . [[Type]] .
+
+- Let handler be reaction . [[Handler]] .
+
+- If handler is empty , then
+- If type is fulfill , then
+- Let handlerResult be NormalCompletion ( arg ).
+
+- Else,
+- Assert : type is reject .
+
+- Let handlerResult be ThrowCompletion ( arg ).
+
+- Else,
+- Let handlerResult be Completion ( HostCallJobCallback ( handler , undefined , « arg »)).
+
+- If promiseCapability is undefined , then
+- Assert : handlerResult is not an abrupt completion .
+
+- Return empty .
+
+- Assert : promiseCapability is a PromiseCapability Record .
+
+- If handlerResult is an abrupt completion , then
+- Return ? Call ( promiseCapability . [[Reject]] , undefined , « handlerResult . [[Value]] »).
+
+- Return ? Call ( promiseCapability . [[Resolve]] , undefined , « handlerResult . [[Value]] »).
+
+- Let handlerRealm be null .
+
+- If reaction . [[Handler]] is not empty , then
+- Let getHandlerRealmResult be Completion ( GetFunctionRealm ( reaction . [[Handler]] . [[Callback]] )).
+
+- If getHandlerRealmResult is a normal completion , set handlerRealm to getHandlerRealmResult . [[Value]] .
+
+- Else, set handlerRealm to the current Realm Record .
+
+- NOTE : handlerRealm is never null unless the handler is undefined . When the handler is a revoked Proxy and no ECMAScript code runs, handlerRealm is used to create error objects.
+
+- Return the Record { [[Job]] : job , [[Realm]] : handlerRealm }.
+
+27.5.2.2 NewPromiseResolveThenableJob ( promiseToResolve , thenable , then )
+
+The abstract operation NewPromiseResolveThenableJob takes arguments promiseToResolve (a Promise), thenable (an Object), and then (a JobCallback Record ) and returns a Record with fields [[Job]] (a Job Abstract Closure ) and [[Realm]] (a Realm Record ). It performs the following steps when called:
+
+- Let job be a new Job Abstract Closure with no parameters that captures promiseToResolve , thenable , and then and performs the following steps when called:
+- Let resolvingFuncs be CreateResolvingFunctions ( promiseToResolve ).
+
+- Let thenCallResult be Completion ( HostCallJobCallback ( then , thenable , « resolvingFuncs . [[Resolve]] , resolvingFuncs . [[Reject]] »)).
+
+- If thenCallResult is an abrupt completion , then
+- Return ? Call ( resolvingFuncs . [[Reject]] , undefined , « thenCallResult . [[Value]] »).
+
+- Return ! thenCallResult .
+
+- Let getThenRealmResult be Completion ( GetFunctionRealm ( then . [[Callback]] )).
+
+- If getThenRealmResult is a normal completion , let thenRealm be getThenRealmResult . [[Value]] .
+
+- Else, let thenRealm be the current Realm Record .
+
+- NOTE : thenRealm is never null . When then . [[Callback]] is a revoked Proxy and no code runs, thenRealm is used to create error objects.
+
+- Return the Record { [[Job]] : job , [[Realm]] : thenRealm }.
+
+Note
+This Job uses the supplied thenable and its then method to resolve the given promise. This process must take place as a Job to ensure that the evaluation of the then method occurs after evaluation of any surrounding code has completed.
+
+27.5.3 The Promise Constructor
+
+The Promise constructor :
+
+- is %Promise% .
+
+- is the initial value of the "Promise" property of the global object .
+
+- creates and initializes a new Promise when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+- may be used as the value in an extends clause of a class definition. Subclass constructors that intend to inherit the specified Promise behaviour must include a super call to the Promise constructor to create and initialize the subclass instance with the internal state necessary to support the built-in methods of Promise and Promise.prototype .
+
+27.5.3.1 Promise ( executor )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- If IsCallable ( executor ) is false , throw a TypeError exception.
+
+- Let promise be ? OrdinaryCreateFromConstructor (NewTarget, "%Promise.prototype%" , « [[PromiseState]] , [[PromiseResult]] , [[PromiseFulfillReactions]] , [[PromiseRejectReactions]] , [[PromiseIsHandled]] »).
+
+- Set promise . [[PromiseState]] to pending .
+
+- Set promise . [[PromiseResult]] to empty .
+
+- Set promise . [[PromiseFulfillReactions]] to a new empty List .
+
+- Set promise . [[PromiseRejectReactions]] to a new empty List .
+
+- Set promise . [[PromiseIsHandled]] to false .
+
+- Let resolvingFuncs be CreateResolvingFunctions ( promise ).
+
+- Let completion be Completion ( Call ( executor , undefined , « resolvingFuncs . [[Resolve]] , resolvingFuncs . [[Reject]] »)).
+
+- If completion is an abrupt completion , then
+- Perform ? Call ( resolvingFuncs . [[Reject]] , undefined , « completion . [[Value]] »).
+
+- Return promise .
+
+Note
+The executor argument must be a function object . It is called for initiating and reporting completion of the possibly deferred action represented by this Promise. The executor is called with two arguments: resolve and reject . These are functions that may be used by the executor function to report eventual completion or failure of the deferred computation. Returning from the executor function does not mean that the deferred action has been completed but only that the request to eventually perform the deferred action has been accepted.
+
+The resolve function that is passed to an executor function accepts a single argument. The executor code may eventually call the resolve function to indicate that it wishes to resolve the associated Promise. The argument passed to the resolve function represents the eventual value of the deferred action and can be either the actual fulfillment value or another promise which will provide the value if it is fulfilled.
+
+The reject function that is passed to an executor function accepts a single argument. The executor code may eventually call the reject function to indicate that the associated Promise is rejected and will never be fulfilled. The argument passed to the reject function is used as the rejection value of the promise. Typically it will be an Error object.
+
+The resolve and reject functions passed to an executor function by the Promise constructor have the capability to actually resolve and reject the associated promise. Subclasses may have different constructor behaviour that passes in customized values for resolve and reject.
+
+27.5.4 Properties of the Promise Constructor
+
+The Promise constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+27.5.4.1 Promise.all ( iterable )
+
+This function returns a new promise which is fulfilled with an array of fulfillment values for the passed promises, or rejects with the reason of the first passed promise that rejects. It resolves all elements of the passed iterable to promises as it runs this algorithm.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Let promiseResolve be Completion ( GetPromiseResolve ( ctor )).
+
+- IfAbruptRejectPromise ( promiseResolve , promiseCapability ).
+
+- Let iteratorRecord be Completion ( GetIterator ( iterable , sync )).
+
+- IfAbruptRejectPromise ( iteratorRecord , promiseCapability ).
+
+- Let result be Completion ( PerformPromiseAll ( iteratorRecord , ctor , promiseCapability , promiseResolve )).
+
+- If result is an abrupt completion , then
+- If iteratorRecord . [[Done]] is false , set result to Completion ( IteratorClose ( iteratorRecord , result )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Return ! result .
+
+Note
+This function requires its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.1.1 GetPromiseResolve ( promiseCtor )
+
+The abstract operation GetPromiseResolve takes argument promiseCtor (a constructor ) and returns either a normal completion containing a function object or a throw completion . It performs the following steps when called:
+
+- Let promiseResolve be ? Get ( promiseCtor , "resolve" ).
+
+- If IsCallable ( promiseResolve ) is false , throw a TypeError exception.
+
+- Return promiseResolve .
+
+27.5.4.1.2 PerformPromiseAll ( iteratorRecord , ctor , resultCapability , promiseResolve )
+
+The abstract operation PerformPromiseAll takes arguments iteratorRecord (an Iterator Record ), ctor (a constructor ), resultCapability (a PromiseCapability Record ), and promiseResolve (a function object ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let values be a new empty List .
+
+- NOTE : remainingElementsCount starts at 1 instead of 0 to ensure resultCapability . [[Resolve]] is only called once, even in the presence of a misbehaving "then" which calls the passed callback before the input iterator is exhausted.
+
+- Let remainingElementsCount be the Record { [[Value]] : 1 }.
+
+- Let index be 0.
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let valuesArray be CreateArrayFromList ( values ).
+
+- Perform ? Call ( resultCapability . [[Resolve]] , undefined , « valuesArray »).
+
+- Return resultCapability . [[Promise]] .
+
+- Append undefined to values .
+
+- Let nextPromise be ? Call ( promiseResolve , ctor , « next »).
+
+- Let fulfilledSteps be a new Abstract Closure with parameters ( value ) that captures values , resultCapability , and remainingElementsCount and performs the following steps when called:
+- Let activeFunc be the active function object .
+
+- If activeFunc . [[AlreadyCalled]] is true , return undefined .
+
+- Set activeFunc . [[AlreadyCalled]] to true .
+
+- Let thisIndex be activeFunc . [[Index]] .
+
+- Set values [ thisIndex ] to value .
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let valuesArray be CreateArrayFromList ( values ).
+
+- Return ? Call ( resultCapability . [[Resolve]] , undefined , « valuesArray »).
+
+- Return undefined .
+
+- Let onFulfilled be CreateBuiltinFunction ( fulfilledSteps , 1, "" , « [[AlreadyCalled]] , [[Index]] »).
+
+- Set onFulfilled . [[AlreadyCalled]] to false .
+
+- Set onFulfilled . [[Index]] to index .
+
+- Set index to index + 1.
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] + 1.
+
+- Perform ? Invoke ( nextPromise , "then" , « onFulfilled , resultCapability . [[Reject]] »).
+
+27.5.4.2 Promise.allSettled ( iterable )
+
+This function returns a promise that is fulfilled with an array of promise state snapshots, but only after all the original promises have settled, i.e. become either fulfilled or rejected. It resolves all elements of the passed iterable to promises as it runs this algorithm.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Let promiseResolve be Completion ( GetPromiseResolve ( ctor )).
+
+- IfAbruptRejectPromise ( promiseResolve , promiseCapability ).
+
+- Let iteratorRecord be Completion ( GetIterator ( iterable , sync )).
+
+- IfAbruptRejectPromise ( iteratorRecord , promiseCapability ).
+
+- Let result be Completion ( PerformPromiseAllSettled ( iteratorRecord , ctor , promiseCapability , promiseResolve )).
+
+- If result is an abrupt completion , then
+- If iteratorRecord . [[Done]] is false , set result to Completion ( IteratorClose ( iteratorRecord , result )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Return ! result .
+
+Note
+This function requires its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.2.1 PerformPromiseAllSettled ( iteratorRecord , ctor , resultCapability , promiseResolve )
+
+The abstract operation PerformPromiseAllSettled takes arguments iteratorRecord (an Iterator Record ), ctor (a constructor ), resultCapability (a PromiseCapability Record ), and promiseResolve (a function object ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let values be a new empty List .
+
+- NOTE : remainingElementsCount starts at 1 instead of 0 to ensure resultCapability . [[Resolve]] is only called once, even in the presence of a misbehaving "then" which calls one of the passed callbacks before the input iterator is exhausted.
+
+- Let remainingElementsCount be the Record { [[Value]] : 1 }.
+
+- Let index be 0.
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let valuesArray be CreateArrayFromList ( values ).
+
+- Perform ? Call ( resultCapability . [[Resolve]] , undefined , « valuesArray »).
+
+- Return resultCapability . [[Promise]] .
+
+- Append undefined to values .
+
+- Let nextPromise be ? Call ( promiseResolve , ctor , « next »).
+
+- Let alreadyCalled be the Record { [[Value]] : false }.
+
+- Let fulfilledSteps be a new Abstract Closure with parameters ( value ) that captures values , resultCapability , and remainingElementsCount and performs the following steps when called:
+- Let activeFunc be the active function object .
+
+- If activeFunc . [[AlreadyCalled]] . [[Value]] is true , return undefined .
+
+- Set activeFunc . [[AlreadyCalled]] . [[Value]] to true .
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "status" , "fulfilled" ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "value" , value ).
+
+- Let thisIndex be activeFunc . [[Index]] .
+
+- Set values [ thisIndex ] to obj .
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let valuesArray be CreateArrayFromList ( values ).
+
+- Return ? Call ( resultCapability . [[Resolve]] , undefined , « valuesArray »).
+
+- Return undefined .
+
+- Let onFulfilled be CreateBuiltinFunction ( fulfilledSteps , 1, "" , « [[AlreadyCalled]] , [[Index]] »).
+
+- Set onFulfilled . [[AlreadyCalled]] to alreadyCalled .
+
+- Set onFulfilled . [[Index]] to index .
+
+- Let rejectedSteps be a new Abstract Closure with parameters ( error ) that captures values , resultCapability , and remainingElementsCount and performs the following steps when called:
+- Let activeFunc be the active function object .
+
+- If activeFunc . [[AlreadyCalled]] . [[Value]] is true , return undefined .
+
+- Set activeFunc . [[AlreadyCalled]] . [[Value]] to true .
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "status" , "rejected" ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "reason" , error ).
+
+- Let thisIndex be activeFunc . [[Index]] .
+
+- Set values [ thisIndex ] to obj .
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let valuesArray be CreateArrayFromList ( values ).
+
+- Return ? Call ( resultCapability . [[Resolve]] , undefined , « valuesArray »).
+
+- Return undefined .
+
+- Let onRejected be CreateBuiltinFunction ( rejectedSteps , 1, "" , « [[AlreadyCalled]] , [[Index]] »).
+
+- Set onRejected . [[AlreadyCalled]] to alreadyCalled .
+
+- Set onRejected . [[Index]] to index .
+
+- Set index to index + 1.
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] + 1.
+
+- Perform ? Invoke ( nextPromise , "then" , « onFulfilled , onRejected »).
+
+27.5.4.3 Promise.any ( iterable )
+
+This function returns a promise that is fulfilled by the first given promise to be fulfilled, or rejected with an AggregateError holding the rejection reasons if all of the given promises are rejected. It resolves all elements of the passed iterable to promises as it runs this algorithm.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Let promiseResolve be Completion ( GetPromiseResolve ( ctor )).
+
+- IfAbruptRejectPromise ( promiseResolve , promiseCapability ).
+
+- Let iteratorRecord be Completion ( GetIterator ( iterable , sync )).
+
+- IfAbruptRejectPromise ( iteratorRecord , promiseCapability ).
+
+- Let result be Completion ( PerformPromiseAny ( iteratorRecord , ctor , promiseCapability , promiseResolve )).
+
+- If result is an abrupt completion , then
+- If iteratorRecord . [[Done]] is false , set result to Completion ( IteratorClose ( iteratorRecord , result )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Return ! result .
+
+Note
+This function requires its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.3.1 PerformPromiseAny ( iteratorRecord , ctor , resultCapability , promiseResolve )
+
+The abstract operation PerformPromiseAny takes arguments iteratorRecord (an Iterator Record ), ctor (a constructor ), resultCapability (a PromiseCapability Record ), and promiseResolve (a function object ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Let errors be a new empty List .
+
+- NOTE : remainingElementsCount starts at 1 instead of 0 to ensure resultCapability . [[Reject]] is only called once, even in the presence of a misbehaving "then" which calls the passed callback before the input iterator is exhausted.
+
+- Let remainingElementsCount be the Record { [[Value]] : 1 }.
+
+- Let index be 0.
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let aggregateError be a newly created AggregateError object.
+
+- Perform ! DefinePropertyOrThrow ( aggregateError , "errors" , PropertyDescriptor { [[Configurable]] : true , [[Enumerable]] : false , [[Writable]] : true , [[Value]] : CreateArrayFromList ( errors ) }).
+
+- Perform ? Call ( resultCapability . [[Reject]] , undefined , « aggregateError »).
+
+- Return resultCapability . [[Promise]] .
+
+- Append undefined to errors .
+
+- Let nextPromise be ? Call ( promiseResolve , ctor , « next »).
+
+- Let rejectedSteps be a new Abstract Closure with parameters ( error ) that captures errors , resultCapability , and remainingElementsCount and performs the following steps when called:
+- Let activeFunc be the active function object .
+
+- If activeFunc . [[AlreadyCalled]] is true , return undefined .
+
+- Set activeFunc . [[AlreadyCalled]] to true .
+
+- Let thisIndex be activeFunc . [[Index]] .
+
+- Set errors [ thisIndex ] to error .
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] - 1.
+
+- If remainingElementsCount . [[Value]] = 0, then
+- Let aggregateError be a newly created AggregateError object.
+
+- Perform ! DefinePropertyOrThrow ( aggregateError , "errors" , PropertyDescriptor { [[Configurable]] : true , [[Enumerable]] : false , [[Writable]] : true , [[Value]] : CreateArrayFromList ( errors ) }).
+
+- Return ? Call ( resultCapability . [[Reject]] , undefined , « aggregateError »).
+
+- Return undefined .
+
+- Let onRejected be CreateBuiltinFunction ( rejectedSteps , 1, "" , « [[AlreadyCalled]] , [[Index]] »).
+
+- Set onRejected . [[AlreadyCalled]] to false .
+
+- Set onRejected . [[Index]] to index .
+
+- Set index to index + 1.
+
+- Set remainingElementsCount . [[Value]] to remainingElementsCount . [[Value]] + 1.
+
+- Perform ? Invoke ( nextPromise , "then" , « resultCapability . [[Resolve]] , onRejected »).
+
+27.5.4.4 Promise.prototype
+
+The initial value of Promise.prototype is the Promise prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.5.4.5 Promise.race ( iterable )
+
+This function returns a new promise which is settled in the same way as the first passed promise to settle. It resolves all elements of the passed iterable to promises as it runs this algorithm.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Let promiseResolve be Completion ( GetPromiseResolve ( ctor )).
+
+- IfAbruptRejectPromise ( promiseResolve , promiseCapability ).
+
+- Let iteratorRecord be Completion ( GetIterator ( iterable , sync )).
+
+- IfAbruptRejectPromise ( iteratorRecord , promiseCapability ).
+
+- Let result be Completion ( PerformPromiseRace ( iteratorRecord , ctor , promiseCapability , promiseResolve )).
+
+- If result is an abrupt completion , then
+- If iteratorRecord . [[Done]] is false , set result to Completion ( IteratorClose ( iteratorRecord , result )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Return ! result .
+
+Note 1
+If the iterable argument yields no values or if none of the promises yielded by iterable ever settle, then the pending promise returned by this method will never be settled.
+
+Note 2
+This function expects its this value to be a constructor function that supports the parameter conventions of the Promise constructor . It also expects that its this value provides a resolve method.
+
+27.5.4.5.1 PerformPromiseRace ( iteratorRecord , ctor , resultCapability , promiseResolve )
+
+The abstract operation PerformPromiseRace takes arguments iteratorRecord (an Iterator Record ), ctor (a constructor ), resultCapability (a PromiseCapability Record ), and promiseResolve (a function object ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- Repeat,
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Return resultCapability . [[Promise]] .
+
+- Let nextPromise be ? Call ( promiseResolve , ctor , « next »).
+
+- Perform ? Invoke ( nextPromise , "then" , « resultCapability . [[Resolve]] , resultCapability . [[Reject]] »).
+
+27.5.4.6 Promise.reject ( reason )
+
+This function returns a new promise rejected with the passed argument.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Perform ? Call ( promiseCapability . [[Reject]] , undefined , « reason »).
+
+- Return promiseCapability . [[Promise]] .
+
+Note
+This function expects its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.7 Promise.resolve ( resolution )
+
+This function returns either a new promise resolved with the passed argument, or the argument itself if the argument is a promise produced by this constructor .
+
+- Let ctor be the this value.
+
+- If ctor is not an Object , throw a TypeError exception.
+
+- Return ? PromiseResolve ( ctor , resolution ).
+
+Note
+This function expects its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.7.1 PromiseResolve ( ctor , resolution )
+
+The abstract operation PromiseResolve takes arguments ctor (an Object) and resolution (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It returns a new promise resolved with resolution . It performs the following steps when called:
+
+- If IsPromise ( resolution ) is true , then
+- Let resolutionCtor be ? Get ( resolution , "constructor" ).
+
+- If SameValue ( resolutionCtor , ctor ) is true , return resolution .
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Perform ? Call ( promiseCapability . [[Resolve]] , undefined , « resolution »).
+
+- Return promiseCapability . [[Promise]] .
+
+27.5.4.8 Promise.try ( callback , ... args )
+
+This function performs the following steps when called:
+
+- Let ctor be the this value.
+
+- If ctor is not an Object , throw a TypeError exception.
+
+- Let status be Completion ( Call ( callback , undefined , args )).
+
+- If status is an abrupt completion , then
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Perform ? Call ( promiseCapability . [[Reject]] , undefined , « status . [[Value]] »).
+
+- Return promiseCapability . [[Promise]] .
+
+- Else,
+- Return ? PromiseResolve ( ctor , ! status ).
+
+Note
+This function expects its this value to be a constructor function that supports the parameter conventions of the Promise constructor .
+
+27.5.4.9 Promise.withResolvers ( )
+
+This function returns an object with three properties: a new promise together with the resolve and reject functions associated with it.
+
+- Let ctor be the this value.
+
+- Let promiseCapability be ? NewPromiseCapability ( ctor ).
+
+- Let obj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "promise" , promiseCapability . [[Promise]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "resolve" , promiseCapability . [[Resolve]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( obj , "reject" , promiseCapability . [[Reject]] ).
+
+- Return obj .
+
+27.5.4.10 get Promise [ %Symbol.species% ]
+
+Promise[%Symbol.species%] is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps when called:
+
+- Return the this value.
+
+The value of the "name" property of this function is "get [Symbol.species]" .
+
+Note
+Promise prototype methods normally use their this value's constructor to create a derived object. However, a subclass constructor may over-ride that default behaviour by redefining its %Symbol.species% property.
+
+27.5.5 Properties of the Promise Prototype Object
+
+The Promise prototype object :
+
+- is %Promise.prototype% .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is an ordinary object .
+
+- does not have a [[PromiseState]] internal slot or any of the other internal slots of Promise instances.
+
+27.5.5.1 Promise.prototype.catch ( onRejected )
+
+This method performs the following steps when called:
+
+- Let promise be the this value.
+
+- Return ? Invoke ( promise , "then" , « undefined , onRejected »).
+
+27.5.5.2 Promise.prototype.constructor
+
+The initial value of Promise.prototype.constructor is %Promise% .
+
+27.5.5.3 Promise.prototype.finally ( onFinally )
+
+This method performs the following steps when called:
+
+- Let promise be the this value.
+
+- If promise is not an Object , throw a TypeError exception.
+
+- Let ctor be ? SpeciesConstructor ( promise , %Promise% ).
+
+- Assert : IsConstructor ( ctor ) is true .
+
+- If IsCallable ( onFinally ) is false , then
+- Let thenFinally be onFinally .
+
+- Let catchFinally be onFinally .
+
+- Else,
+- Let thenFinallyClosure be a new Abstract Closure with parameters ( value ) that captures onFinally and ctor and performs the following steps when called:
+- Let result be ? Call ( onFinally , undefined ).
+
+- Let p be ? PromiseResolve ( ctor , result ).
+
+- Let returnValue be a new Abstract Closure with no parameters that captures value and performs the following steps when called:
+- Return NormalCompletion ( value ).
+
+- Let valueThunk be CreateBuiltinFunction ( returnValue , 0, "" , « »).
+
+- Return ? Invoke ( p , "then" , « valueThunk »).
+
+- Let thenFinally be CreateBuiltinFunction ( thenFinallyClosure , 1, "" , « »).
+
+- Let catchFinallyClosure be a new Abstract Closure with parameters ( reason ) that captures onFinally and ctor and performs the following steps when called:
+- Let result be ? Call ( onFinally , undefined ).
+
+- Let p be ? PromiseResolve ( ctor , result ).
+
+- Let throwReason be a new Abstract Closure with no parameters that captures reason and performs the following steps when called:
+- Throw reason .
+
+- Let thrower be CreateBuiltinFunction ( throwReason , 0, "" , « »).
+
+- Return ? Invoke ( p , "then" , « thrower »).
+
+- Let catchFinally be CreateBuiltinFunction ( catchFinallyClosure , 1, "" , « »).
+
+- Return ? Invoke ( promise , "then" , « thenFinally , catchFinally »).
+
+27.5.5.4 Promise.prototype.then ( onFulfilled , onRejected )
+
+This method performs the following steps when called:
+
+- Let promise be the this value.
+
+- If IsPromise ( promise ) is false , throw a TypeError exception.
+
+- Let ctor be ? SpeciesConstructor ( promise , %Promise% ).
+
+- Let resultCapability be ? NewPromiseCapability ( ctor ).
+
+- Return PerformPromiseThen ( promise , onFulfilled , onRejected , resultCapability ).
+
+27.5.5.4.1 PerformPromiseThen ( promise , onFulfilled , onRejected [ , resultCapability ] )
+
+The abstract operation PerformPromiseThen takes arguments promise (a Promise), onFulfilled (an ECMAScript language value ), and onRejected (an ECMAScript language value ) and optional argument resultCapability (a PromiseCapability Record ) and returns an Object or undefined . It performs the “then” operation on promise using onFulfilled and onRejected as its settlement actions. If resultCapability is passed, the result is stored by updating resultCapability 's promise. If it is not passed, then PerformPromiseThen is being called by a specification-internal operation where the result does not matter. It performs the following steps when called:
+
+- Assert : IsPromise ( promise ) is true .
+
+- If resultCapability is not present, then
+- Set resultCapability to undefined .
+
+- If IsCallable ( onFulfilled ) is false , then
+- Let onFulfilledJobCallback be empty .
+
+- Else,
+- Let onFulfilledJobCallback be HostMakeJobCallback ( onFulfilled ).
+
+- If IsCallable ( onRejected ) is false , then
+- Let onRejectedJobCallback be empty .
+
+- Else,
+- Let onRejectedJobCallback be HostMakeJobCallback ( onRejected ).
+
+- Let fulfillReaction be the PromiseReaction Record { [[Capability]] : resultCapability , [[Type]] : fulfill , [[Handler]] : onFulfilledJobCallback }.
+
+- Let rejectReaction be the PromiseReaction Record { [[Capability]] : resultCapability , [[Type]] : reject , [[Handler]] : onRejectedJobCallback }.
+
+- If promise . [[PromiseState]] is pending , then
+- Append fulfillReaction to promise . [[PromiseFulfillReactions]] .
+
+- Append rejectReaction to promise . [[PromiseRejectReactions]] .
+
+- Else if promise . [[PromiseState]] is fulfilled , then
+- Let value be promise . [[PromiseResult]] .
+
+- Let fulfillJob be NewPromiseReactionJob ( fulfillReaction , value ).
+
+- Perform HostEnqueuePromiseJob ( fulfillJob . [[Job]] , fulfillJob . [[Realm]] ).
+
+- Else,
+- Assert : promise . [[PromiseState]] is rejected .
+
+- Let reason be promise . [[PromiseResult]] .
+
+- If promise . [[PromiseIsHandled]] is false , perform HostPromiseRejectionTracker ( promise , "handle" ).
+
+- Let rejectJob be NewPromiseReactionJob ( rejectReaction , reason ).
+
+- Perform HostEnqueuePromiseJob ( rejectJob . [[Job]] , rejectJob . [[Realm]] ).
+
+- Set promise . [[PromiseIsHandled]] to true .
+
+- If resultCapability is undefined , return undefined .
+
+- Return resultCapability . [[Promise]] .
+
+27.5.5.5 Promise.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Promise" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.5.6 Properties of Promise Instances
+
+Promise instances are ordinary objects that inherit properties from the Promise prototype object (the intrinsic, %Promise.prototype% ). Promise instances are initially created with the internal slots described in Table 93 .
+
+Table 93: Internal Slots of Promise Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[PromiseState]]
+
+pending , fulfilled , or rejected
+
+Governs how a promise will react to incoming calls to its then method.
+
+[[PromiseResult]]
+
+an ECMAScript language value or empty
+
+The value with which the promise has been fulfilled or rejected, if any. empty if and only if the [[PromiseState]] is pending .
+
+[[PromiseFulfillReactions]]
+
+a List of PromiseReaction Records
+
+Records to be processed when/if the promise transitions from the pending state to the fulfilled state.
+
+[[PromiseRejectReactions]]
+
+a List of PromiseReaction Records
+
+Records to be processed when/if the promise transitions from the pending state to the rejected state.
+
+[[PromiseIsHandled]]
+
+a Boolean
+
+Indicates whether the promise has ever had a fulfillment or rejection handler; used in unhandled rejection tracking.
+
+27.6 GeneratorFunction Objects
+
+GeneratorFunctions are functions that are usually created by evaluating GeneratorDeclaration s, GeneratorExpression s, and GeneratorMethod s. They may also be created by calling the %GeneratorFunction% intrinsic.
+
+Figure 6 (Informative): Generator Objects Relationships
+
+27.6.1 The GeneratorFunction Constructor
+
+The GeneratorFunction constructor :
+
+- is %GeneratorFunction% .
+
+- is a subclass of Function .
+
+- creates and initializes a new GeneratorFunction when called as a function rather than as a constructor . Thus the function call GeneratorFunction (…) is equivalent to the object creation expression new GeneratorFunction (…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified GeneratorFunction behaviour must include a super call to the GeneratorFunction constructor to create and initialize subclass instances with the internal slots necessary for built-in GeneratorFunction behaviour. All ECMAScript syntactic forms for defining generator function objects create direct instances of GeneratorFunction. There is no syntactic means to create instances of GeneratorFunction subclasses.
+
+27.6.1.1 GeneratorFunction ( ... paramArgs , bodyArg )
+
+The last argument (if any) specifies the body (executable code) of a generator function; any preceding arguments specify formal parameters.
+
+This function performs the following steps when called:
+
+- Let activeFunc be the active function object .
+
+- If bodyArg is not present, set bodyArg to the empty String.
+
+- Return ? CreateDynamicFunction ( activeFunc , NewTarget, generator , paramArgs , bodyArg ).
+
+Note
+See NOTE for 20.2.1.1 .
+
+27.6.2 Properties of the GeneratorFunction Constructor
+
+The GeneratorFunction constructor :
+
+- is a standard built-in function object that inherits from the Function constructor .
+
+- has a [[Prototype]] internal slot whose value is %Function% .
+
+- has a "length" property whose value is 1 𝔽 .
+
+- has a "name" property whose value is "GeneratorFunction" .
+
+- has the following properties:
+
+27.6.2.1 GeneratorFunction.prototype
+
+The initial value of GeneratorFunction.prototype is the GeneratorFunction prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.6.3 Properties of the GeneratorFunction Prototype Object
+
+The GeneratorFunction prototype object :
+
+- is %GeneratorFunction.prototype% (see Figure 6 ).
+
+- is an ordinary object .
+
+- is not a function object and does not have an [[ECMAScriptCode]] internal slot or any other of the internal slots listed in Table 26 or Table 94 .
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+27.6.3.1 GeneratorFunction.prototype.constructor
+
+The initial value of GeneratorFunction.prototype.constructor is %GeneratorFunction% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.6.3.2 GeneratorFunction.prototype.prototype
+
+The initial value of GeneratorFunction.prototype.prototype is %GeneratorPrototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.6.3.3 GeneratorFunction.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "GeneratorFunction" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.6.4 GeneratorFunction Instances
+
+Every GeneratorFunction instance is an ECMAScript function object and has the internal slots listed in Table 26 . The value of the [[IsClassConstructor]] internal slot for all such instances is false .
+
+Each GeneratorFunction instance has the following own properties:
+
+27.6.4.1 length
+
+The specification for the "length" property of Function instances given in 20.2.4.1 also applies to GeneratorFunction instances.
+
+27.6.4.2 name
+
+The specification for the "name" property of Function instances given in 20.2.4.2 also applies to GeneratorFunction instances.
+
+27.6.4.3 prototype
+
+Whenever a GeneratorFunction instance is created another ordinary object is also created and is the initial value of the generator function's "prototype" property. The value of the prototype property is used to initialize the [[Prototype]] internal slot of a newly created Generator when the generator function object is invoked using [[Call]] .
+
+This property has the attributes { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }.
+
+Note
+Unlike Function instances, the object that is the value of a GeneratorFunction's "prototype" property does not have a "constructor" property whose value is the GeneratorFunction instance.
+
+27.7 AsyncGeneratorFunction Objects
+
+AsyncGeneratorFunctions are functions that are usually created by evaluating AsyncGeneratorDeclaration , AsyncGeneratorExpression , and AsyncGeneratorMethod syntactic productions. They may also be created by calling the %AsyncGeneratorFunction% intrinsic.
+
+27.7.1 The AsyncGeneratorFunction Constructor
+
+The AsyncGeneratorFunction constructor :
+
+- is %AsyncGeneratorFunction% .
+
+- is a subclass of Function .
+
+- creates and initializes a new AsyncGeneratorFunction when called as a function rather than as a constructor . Thus the function call AsyncGeneratorFunction (...) is equivalent to the object creation expression new AsyncGeneratorFunction (...) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified AsyncGeneratorFunction behaviour must include a super call to the AsyncGeneratorFunction constructor to create and initialize subclass instances with the internal slots necessary for built-in AsyncGeneratorFunction behaviour. All ECMAScript syntactic forms for defining async generator function objects create direct instances of AsyncGeneratorFunction. There is no syntactic means to create instances of AsyncGeneratorFunction subclasses.
+
+27.7.1.1 AsyncGeneratorFunction ( ... paramArgs , bodyArg )
+
+The last argument (if any) specifies the body (executable code) of an async generator function; any preceding arguments specify formal parameters.
+
+This function performs the following steps when called:
+
+- Let activeFunc be the active function object .
+
+- If bodyArg is not present, set bodyArg to the empty String.
+
+- Return ? CreateDynamicFunction ( activeFunc , NewTarget, async-generator , paramArgs , bodyArg ).
+
+Note
+See NOTE for 20.2.1.1 .
+
+27.7.2 Properties of the AsyncGeneratorFunction Constructor
+
+The AsyncGeneratorFunction constructor :
+
+- is a standard built-in function object that inherits from the Function constructor .
+
+- has a [[Prototype]] internal slot whose value is %Function% .
+
+- has a "length" property whose value is 1 𝔽 .
+
+- has a "name" property whose value is "AsyncGeneratorFunction" .
+
+- has the following properties:
+
+27.7.2.1 AsyncGeneratorFunction.prototype
+
+The initial value of AsyncGeneratorFunction.prototype is the AsyncGeneratorFunction prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.7.3 Properties of the AsyncGeneratorFunction Prototype Object
+
+The AsyncGeneratorFunction prototype object :
+
+- is %AsyncGeneratorFunction.prototype% .
+
+- is an ordinary object .
+
+- is not a function object and does not have an [[ECMAScriptCode]] internal slot or any other of the internal slots listed in Table 26 or Table 95 .
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+27.7.3.1 AsyncGeneratorFunction.prototype.constructor
+
+The initial value of AsyncGeneratorFunction.prototype.constructor is %AsyncGeneratorFunction% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.7.3.2 AsyncGeneratorFunction.prototype.prototype
+
+The initial value of AsyncGeneratorFunction.prototype.prototype is %AsyncGeneratorPrototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.7.3.3 AsyncGeneratorFunction.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "AsyncGeneratorFunction" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.7.4 AsyncGeneratorFunction Instances
+
+Every AsyncGeneratorFunction instance is an ECMAScript function object and has the internal slots listed in Table 26 . The value of the [[IsClassConstructor]] internal slot for all such instances is false .
+
+Each AsyncGeneratorFunction instance has the following own properties:
+
+27.7.4.1 length
+
+The value of the "length" property is an integral Number that indicates the typical number of arguments expected by the AsyncGeneratorFunction. However, the language permits the function to be invoked with some other number of arguments. The behaviour of an AsyncGeneratorFunction when invoked on a number of arguments other than the number specified by its "length" property depends on the function.
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.7.4.2 name
+
+The specification for the "name" property of Function instances given in 20.2.4.2 also applies to AsyncGeneratorFunction instances.
+
+27.7.4.3 prototype
+
+Whenever an AsyncGeneratorFunction instance is created, another ordinary object is also created and is the initial value of the async generator function's "prototype" property. The value of the prototype property is used to initialize the [[Prototype]] internal slot of a newly created AsyncGenerator when the generator function object is invoked using [[Call]] .
+
+This property has the attributes { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }.
+
+Note
+Unlike function instances, the object that is the value of an AsyncGeneratorFunction's "prototype" property does not have a "constructor" property whose value is the AsyncGeneratorFunction instance.
+
+27.8 Generator Objects
+
+A Generator is created by calling a generator function and conforms to both the iterator interface and the iterable interface .
+
+Generator instances directly inherit properties from the initial value of the "prototype" property of the generator function that created the instance. Generator instances indirectly inherit properties from %GeneratorPrototype% .
+
+27.8.1 The %GeneratorPrototype% Object
+
+The %GeneratorPrototype% object:
+
+- is %GeneratorFunction.prototype.prototype% .
+
+- is an ordinary object .
+
+- is not a Generator instance and does not have a [[GeneratorState]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- has properties that are indirectly inherited by all Generator instances.
+
+27.8.1.1 %GeneratorPrototype%.constructor
+
+The initial value of %GeneratorPrototype% .constructor is %GeneratorFunction.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.8.1.2 %GeneratorPrototype%.next ( value )
+
+- Return ? GeneratorResume ( this value, value , empty ).
+
+27.8.1.3 %GeneratorPrototype%.return ( value )
+
+This method performs the following steps when called:
+
+- Let gen be the this value.
+
+- Let completion be ReturnCompletion ( value ).
+
+- Return ? GeneratorResumeAbrupt ( gen , completion , empty ).
+
+27.8.1.4 %GeneratorPrototype%.throw ( exception )
+
+This method performs the following steps when called:
+
+- Let gen be the this value.
+
+- Let completion be ThrowCompletion ( exception ).
+
+- Return ? GeneratorResumeAbrupt ( gen , completion , empty ).
+
+27.8.1.5 %GeneratorPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Generator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.8.2 Properties of Generator Instances
+
+Generator instances are initially created with the internal slots described in Table 94 .
+
+Table 94: Internal Slots of Generator Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[GeneratorState]]
+
+suspended-start , suspended-yield , executing , or completed
+
+The current execution state of the generator.
+
+[[GeneratorContext]]
+
+an execution context
+
+The execution context that is used when executing the code of this generator.
+
+[[GeneratorBrand]]
+
+a String or empty
+
+A brand used to distinguish different kinds of generators. The [[GeneratorBrand]] of generators declared by ECMAScript source text is always empty .
+
+27.8.3 Generator Abstract Operations
+
+27.8.3.1 GeneratorStart ( gen , genBody )
+
+The abstract operation GeneratorStart takes arguments gen (a Generator) and genBody (a FunctionBody Parse Node or an Abstract Closure with no parameters) and returns unused . It performs the following steps when called:
+
+- Assert : gen . [[GeneratorState]] is suspended-start .
+
+- Let genContext be the running execution context .
+
+- Set the Generator component of genContext to gen .
+
+- Let closure be a new Abstract Closure with no parameters that captures genBody and performs the following steps when called:
+- Let acGenContext be the running execution context .
+
+- Let acGen be the Generator component of acGenContext .
+
+- If genBody is a Parse Node , then
+- Let result be Completion ( Evaluation of genBody ).
+
+- Else,
+- Assert : genBody is an Abstract Closure with no parameters.
+
+- Let result be Completion ( genBody ()).
+
+- Assert : If we return here, the generator either threw an exception or performed either an implicit or explicit return.
+
+- Remove acGenContext from the execution context stack and restore the execution context that is at the top of the execution context stack as the running execution context .
+
+- Set acGen . [[GeneratorState]] to completed .
+
+- NOTE : Once a generator enters the completed state it never leaves it and its associated execution context is never resumed. Any execution state associated with acGen can be discarded at this point.
+
+- If result is a throw completion , then
+- Let resumption be result .
+
+- Else,
+- If result is a normal completion , then
+- Let resultValue be undefined .
+
+- Else if result is a return completion , then
+- Let resultValue be result . [[Value]] .
+
+- Let resumption be NormalCompletion ( CreateIteratorResultObject ( resultValue , true )).
+
+- Let callerContext be the running execution context .
+
+- Resume callerContext , passing resumption .
+
+- Assert : This step is never reached.
+
+- Set the code evaluation state of genContext such that when evaluation is resumed for that execution context , closure will be called with no arguments.
+
+- Set gen . [[GeneratorContext]] to genContext .
+
+- Return unused .
+
+27.8.3.2 GeneratorValidate ( gen , genBrand )
+
+The abstract operation GeneratorValidate takes arguments gen (an ECMAScript language value ) and genBrand (a String or empty ) and returns either a normal completion containing one of suspended-start , suspended-yield , or completed , or a throw completion . It performs the following steps when called:
+
+- Perform ? RequireInternalSlot ( gen , [[GeneratorState]] ).
+
+- Perform ? RequireInternalSlot ( gen , [[GeneratorBrand]] ).
+
+- If gen . [[GeneratorBrand]] is not genBrand , throw a TypeError exception.
+
+- Assert : gen has a [[GeneratorContext]] internal slot.
+
+- Let state be gen . [[GeneratorState]] .
+
+- If state is executing , throw a TypeError exception.
+
+- Return state .
+
+27.8.3.3 GeneratorResume ( gen , value , genBrand )
+
+The abstract operation GeneratorResume takes arguments gen (an ECMAScript language value ), value (an ECMAScript language value or empty ), and genBrand (a String or empty ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let state be ? GeneratorValidate ( gen , genBrand ).
+
+- If state is completed , return CreateIteratorResultObject ( undefined , true ).
+
+- Assert : state is either suspended-start or suspended-yield .
+
+- Let genContext be gen . [[GeneratorContext]] .
+
+- Set gen . [[GeneratorState]] to executing .
+
+- Return ? RunSuspendedContext ( genContext , NormalCompletion ( value )).
+
+27.8.3.4 GeneratorResumeAbrupt ( gen , abruptCompletion , genBrand )
+
+The abstract operation GeneratorResumeAbrupt takes arguments gen (an ECMAScript language value ), abruptCompletion (a return completion or a throw completion ), and genBrand (a String or empty ) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Let state be ? GeneratorValidate ( gen , genBrand ).
+
+- If state is suspended-start , then
+- Set gen . [[GeneratorState]] to completed .
+
+- NOTE : Once a generator enters the completed state it never leaves it and its associated execution context is never resumed. Any execution state associated with gen can be discarded at this point.
+
+- Set state to completed .
+
+- If state is completed , then
+- If abruptCompletion is a return completion , then
+- Return CreateIteratorResultObject ( abruptCompletion . [[Value]] , true ).
+
+- Return ? abruptCompletion .
+
+- Assert : state is suspended-yield .
+
+- Let genContext be gen . [[GeneratorContext]] .
+
+- Set gen . [[GeneratorState]] to executing .
+
+- Return ? RunSuspendedContext ( genContext , abruptCompletion ).
+
+27.8.3.5 GetGeneratorKind ( )
+
+The abstract operation GetGeneratorKind takes no arguments and returns non-generator , sync , or async . It performs the following steps when called:
+
+- Let genContext be the running execution context .
+
+- If genContext does not have a Generator component, return non-generator .
+
+- Let gen be the Generator component of genContext .
+
+- If gen has an [[AsyncGeneratorState]] internal slot, return async .
+
+- Return sync .
+
+27.8.3.6 GeneratorYield ( iteratorResult )
+
+The abstract operation GeneratorYield takes argument iteratorResult (an Object that conforms to the IteratorResult interface ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- Let genContext be the running execution context .
+
+- Assert : genContext is the execution context of a generator.
+
+- Let gen be the value of the Generator component of genContext .
+
+- Assert : GetGeneratorKind () is sync .
+
+- Set gen . [[GeneratorState]] to suspended-yield .
+
+- Return ? RunCallerContext ( iteratorResult ).
+
+27.8.3.7 Yield ( arg )
+
+The abstract operation Yield takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- Let genKind be GetGeneratorKind ().
+
+- If genKind is async , return ? AsyncGeneratorYield (? Await ( arg )).
+
+- Return ? GeneratorYield ( CreateIteratorResultObject ( arg , false )).
+
+27.8.3.8 CreateIteratorFromClosure ( closure , genBrand , genProto [ , extraSlots ] )
+
+The abstract operation CreateIteratorFromClosure takes arguments closure (an Abstract Closure with no parameters), genBrand (a String or empty ), and genProto (an Object) and optional argument extraSlots (a List of names of internal slots) and returns a Generator. It performs the following steps when called:
+
+- NOTE : closure can contain uses of the Yield operation to yield an IteratorResult object .
+
+- If extraSlots is not present, set extraSlots to a new empty List .
+
+- Let internalSlotsList be the list-concatenation of extraSlots and « [[GeneratorState]] , [[GeneratorContext]] , [[GeneratorBrand]] ».
+
+- Let gen be OrdinaryObjectCreate ( genProto , internalSlotsList ).
+
+- Set gen . [[GeneratorBrand]] to genBrand .
+
+- Set gen . [[GeneratorState]] to suspended-start .
+
+- Let callerContext be the running execution context .
+
+- Let calleeContext be a new execution context .
+
+- Set the Function of calleeContext to null .
+
+- Set the Realm of calleeContext to the current Realm Record .
+
+- Set the ScriptOrModule of calleeContext to callerContext 's ScriptOrModule.
+
+- If callerContext is not already suspended, suspend callerContext .
+
+- Push calleeContext onto the execution context stack ; calleeContext is now the running execution context .
+
+- Perform GeneratorStart ( gen , closure ).
+
+- Remove calleeContext from the execution context stack and restore callerContext as the running execution context .
+
+- Return gen .
+
+27.9 AsyncGenerator Objects
+
+An AsyncGenerator is created by calling an async generator function and conforms to both the async iterator interface and the async iterable interface .
+
+AsyncGenerator instances directly inherit properties from the initial value of the "prototype" property of the async generator function that created the instance. AsyncGenerator instances indirectly inherit properties from %AsyncGeneratorPrototype% .
+
+27.9.1 The %AsyncGeneratorPrototype% Object
+
+The %AsyncGeneratorPrototype% object:
+
+- is %AsyncGeneratorFunction.prototype.prototype% .
+
+- is an ordinary object .
+
+- is not an AsyncGenerator instance and does not have an [[AsyncGeneratorState]] internal slot.
+
+- has a [[Prototype]] internal slot whose value is %AsyncIteratorPrototype% .
+
+- has properties that are indirectly inherited by all AsyncGenerator instances.
+
+27.9.1.1 %AsyncGeneratorPrototype%.constructor
+
+The initial value of %AsyncGeneratorPrototype% .constructor is %AsyncGeneratorFunction.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.9.1.2 %AsyncGeneratorPrototype%.next ( value )
+
+- Let gen be the this value.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let result be Completion ( AsyncGeneratorValidate ( gen , empty )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Let state be gen . [[AsyncGeneratorState]] .
+
+- If state is completed , then
+- Let iteratorResult be CreateIteratorResultObject ( undefined , true ).
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « iteratorResult »).
+
+- Return promiseCapability . [[Promise]] .
+
+- Let completion be NormalCompletion ( value ).
+
+- Perform AsyncGeneratorEnqueue ( gen , completion , promiseCapability ).
+
+- If state is either suspended-start or suspended-yield , then
+- Perform AsyncGeneratorResume ( gen , completion ).
+
+- Else,
+- Assert : state is either executing or draining-queue .
+
+- Return promiseCapability . [[Promise]] .
+
+27.9.1.3 %AsyncGeneratorPrototype%.return ( value )
+
+- Let gen be the this value.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let result be Completion ( AsyncGeneratorValidate ( gen , empty )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Let completion be ReturnCompletion ( value ).
+
+- Perform AsyncGeneratorEnqueue ( gen , completion , promiseCapability ).
+
+- Let state be gen . [[AsyncGeneratorState]] .
+
+- If state is either suspended-start or completed , then
+- Set gen . [[AsyncGeneratorState]] to draining-queue .
+
+- Perform AsyncGeneratorAwaitReturn ( gen ).
+
+- Else if state is suspended-yield , then
+- Perform AsyncGeneratorResume ( gen , completion ).
+
+- Else,
+- Assert : state is either executing or draining-queue .
+
+- Return promiseCapability . [[Promise]] .
+
+27.9.1.4 %AsyncGeneratorPrototype%.throw ( exception )
+
+- Let gen be the this value.
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let result be Completion ( AsyncGeneratorValidate ( gen , empty )).
+
+- IfAbruptRejectPromise ( result , promiseCapability ).
+
+- Let state be gen . [[AsyncGeneratorState]] .
+
+- If state is suspended-start , then
+- Set gen . [[AsyncGeneratorState]] to completed .
+
+- Set state to completed .
+
+- If state is completed , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « exception »).
+
+- Return promiseCapability . [[Promise]] .
+
+- Let completion be ThrowCompletion ( exception ).
+
+- Perform AsyncGeneratorEnqueue ( gen , completion , promiseCapability ).
+
+- If state is suspended-yield , then
+- Perform AsyncGeneratorResume ( gen , completion ).
+
+- Else,
+- Assert : state is either executing or draining-queue .
+
+- Return promiseCapability . [[Promise]] .
+
+27.9.1.5 %AsyncGeneratorPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "AsyncGenerator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.9.2 Properties of AsyncGenerator Instances
+
+AsyncGenerator instances are initially created with the internal slots described below:
+
+Table 95: Internal Slots of AsyncGenerator Instances
+
+Internal Slot
+Type
+Description
+
+[[AsyncGeneratorState]]
+suspended-start , suspended-yield , executing , draining-queue , or completed
+The current execution state of the async generator.
+
+[[AsyncGeneratorContext]]
+an execution context
+The execution context that is used when executing the code of this async generator.
+
+[[AsyncGeneratorQueue]]
+a List of AsyncGeneratorRequest Records
+Records which represent requests to resume the async generator. Except during state transitions, it is non-empty if and only if [[AsyncGeneratorState]] is either executing or draining-queue .
+
+[[GeneratorBrand]]
+a String or empty
+A brand used to distinguish different kinds of async generators. The [[GeneratorBrand]] of async generators declared by ECMAScript source text is always empty .
+
+27.9.3 AsyncGenerator Abstract Operations
+
+27.9.3.1 AsyncGeneratorRequest Records
+
+An AsyncGeneratorRequest is a Record used to store information about how an async generator should be resumed and contains capabilities for fulfilling or rejecting the corresponding promise.
+
+They have the following fields:
+
+Table 96: AsyncGeneratorRequest Record Fields
+
+Field Name
+Value
+Meaning
+
+[[Completion]]
+a Completion Record
+The Completion Record which should be used to resume the async generator.
+
+[[Capability]]
+a PromiseCapability Record
+The promise capabilities associated with this request.
+
+27.9.3.2 AsyncGeneratorStart ( gen , genBody )
+
+The abstract operation AsyncGeneratorStart takes arguments gen (an AsyncGenerator) and genBody (a FunctionBody Parse Node or an Abstract Closure with no parameters) and returns unused . It performs the following steps when called:
+
+- Assert : gen . [[AsyncGeneratorState]] is suspended-start .
+
+- Let genContext be the running execution context .
+
+- Set the Generator component of genContext to gen .
+
+- Let closure be a new Abstract Closure with no parameters that captures genBody and performs the following steps when called:
+- Let acGenContext be the running execution context .
+
+- Let acGen be the Generator component of acGenContext .
+
+- If genBody is a Parse Node , then
+- Let result be Completion ( Evaluation of genBody ).
+
+- Else,
+- Assert : genBody is an Abstract Closure with no parameters.
+
+- Let result be Completion ( genBody ()).
+
+- Assert : If we return here, the async generator either threw an exception or performed either an implicit or explicit return.
+
+- Remove acGenContext from the execution context stack and restore the execution context that is at the top of the execution context stack as the running execution context .
+
+- Set acGen . [[AsyncGeneratorState]] to draining-queue .
+
+- If result is a normal completion , set result to NormalCompletion ( undefined ).
+
+- If result is a return completion , set result to NormalCompletion ( result . [[Value]] ).
+
+- Perform AsyncGeneratorCompleteStep ( acGen , result , true ).
+
+- Perform AsyncGeneratorDrainQueue ( acGen ).
+
+- Let callerContext be the running execution context .
+
+- Resume callerContext , passing NormalCompletion ( undefined ).
+
+- Assert : This step is never reached.
+
+- Set the code evaluation state of genContext such that when evaluation is resumed for that execution context , closure will be called with no arguments.
+
+- Set gen . [[AsyncGeneratorContext]] to genContext .
+
+- Set gen . [[AsyncGeneratorQueue]] to a new empty List .
+
+- Return unused .
+
+27.9.3.3 AsyncGeneratorValidate ( gen , genBrand )
+
+The abstract operation AsyncGeneratorValidate takes arguments gen (an ECMAScript language value ) and genBrand (a String or empty ) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Perform ? RequireInternalSlot ( gen , [[AsyncGeneratorContext]] ).
+
+- Perform ? RequireInternalSlot ( gen , [[AsyncGeneratorState]] ).
+
+- Perform ? RequireInternalSlot ( gen , [[AsyncGeneratorQueue]] ).
+
+- If gen . [[GeneratorBrand]] is not genBrand , throw a TypeError exception.
+
+- Return unused .
+
+27.9.3.4 AsyncGeneratorEnqueue ( gen , completion , promiseCapability )
+
+The abstract operation AsyncGeneratorEnqueue takes arguments gen (an AsyncGenerator), completion (a Completion Record ), and promiseCapability (a PromiseCapability Record ) and returns unused . It performs the following steps when called:
+
+- Let request be AsyncGeneratorRequest { [[Completion]] : completion , [[Capability]] : promiseCapability }.
+
+- Append request to gen . [[AsyncGeneratorQueue]] .
+
+- Return unused .
+
+27.9.3.5 AsyncGeneratorCompleteStep ( gen , completion , done [ , realm ] )
+
+The abstract operation AsyncGeneratorCompleteStep takes arguments gen (an AsyncGenerator), completion (a Completion Record ), and done (a Boolean) and optional argument realm (a Realm Record ) and returns unused . It performs the following steps when called:
+
+- Assert : gen . [[AsyncGeneratorQueue]] is not empty.
+
+- Let next be the first element of gen . [[AsyncGeneratorQueue]] .
+
+- Remove the first element from gen . [[AsyncGeneratorQueue]] .
+
+- Let promiseCapability be next . [[Capability]] .
+
+- Let value be completion . [[Value]] .
+
+- If completion is a throw completion , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « value »).
+
+- Else,
+- Assert : completion is a normal completion .
+
+- If realm is present, then
+- Let oldRealm be the running execution context 's Realm .
+
+- Set the running execution context 's Realm to realm .
+
+- Let iteratorResult be CreateIteratorResultObject ( value , done ).
+
+- Set the running execution context 's Realm to oldRealm .
+
+- Else,
+- Let iteratorResult be CreateIteratorResultObject ( value , done ).
+
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « iteratorResult »).
+
+- Return unused .
+
+27.9.3.6 AsyncGeneratorResume ( gen , completion )
+
+The abstract operation AsyncGeneratorResume takes arguments gen (an AsyncGenerator) and completion (a Completion Record ) and returns unused . It performs the following steps when called:
+
+- Assert : gen . [[AsyncGeneratorState]] is either suspended-start or suspended-yield .
+
+- Let genContext be gen . [[AsyncGeneratorContext]] .
+
+- Set gen . [[AsyncGeneratorState]] to executing .
+
+- Perform ! RunSuspendedContext ( genContext , completion ).
+
+- Return unused .
+
+27.9.3.7 AsyncGeneratorUnwrapYieldResumption ( resumptionValue )
+
+The abstract operation AsyncGeneratorUnwrapYieldResumption takes argument resumptionValue (a Completion Record ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- If resumptionValue is not a return completion , return ? resumptionValue .
+
+- Let awaited be Completion ( Await ( resumptionValue . [[Value]] )).
+
+- If awaited is a throw completion , return ? awaited .
+
+- Assert : awaited is a normal completion .
+
+- Return ReturnCompletion ( awaited . [[Value]] ).
+
+27.9.3.8 AsyncGeneratorYield ( arg )
+
+The abstract operation AsyncGeneratorYield takes argument arg (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- Let genContext be the running execution context .
+
+- Assert : genContext is the execution context of a generator.
+
+- Let gen be the value of the Generator component of genContext .
+
+- Assert : GetGeneratorKind () is async .
+
+- Let completion be NormalCompletion ( arg ).
+
+- Assert : The execution context stack has at least two elements.
+
+- Let previousContext be the second to top element of the execution context stack .
+
+- Let previousRealm be previousContext 's Realm .
+
+- Perform AsyncGeneratorCompleteStep ( gen , completion , false , previousRealm ).
+
+- Let queue be gen . [[AsyncGeneratorQueue]] .
+
+- If queue is not empty, then
+- NOTE : Execution continues without suspending the generator.
+
+- Let toYield be the first element of queue .
+
+- Let resumptionValue be Completion ( toYield . [[Completion]] ).
+
+- Return ? AsyncGeneratorUnwrapYieldResumption ( resumptionValue ).
+
+- Set gen . [[AsyncGeneratorState]] to suspended-yield .
+
+- Let resumptionValue be Completion ( RunCallerContext ( undefined )).
+
+- Return ? AsyncGeneratorUnwrapYieldResumption ( resumptionValue ).
+
+27.9.3.9 AsyncGeneratorAwaitReturn ( gen )
+
+The abstract operation AsyncGeneratorAwaitReturn takes argument gen (an AsyncGenerator) and returns unused . It performs the following steps when called:
+
+- Assert : gen . [[AsyncGeneratorState]] is draining-queue .
+
+- Let queue be gen . [[AsyncGeneratorQueue]] .
+
+- Assert : queue is not empty.
+
+- Let next be the first element of queue .
+
+- Let completion be Completion ( next . [[Completion]] ).
+
+- Assert : completion is a return completion .
+
+- Let promiseCompletion be Completion ( PromiseResolve ( %Promise% , completion . [[Value]] )).
+
+- If promiseCompletion is an abrupt completion , then
+- Perform AsyncGeneratorCompleteStep ( gen , promiseCompletion , true ).
+
+- Perform AsyncGeneratorDrainQueue ( gen ).
+
+- Return unused .
+
+- Assert : promiseCompletion is a normal completion .
+
+- Let promise be promiseCompletion . [[Value]] .
+
+- Let fulfilledClosure be a new Abstract Closure with parameters ( value ) that captures gen and performs the following steps when called:
+- Assert : gen . [[AsyncGeneratorState]] is draining-queue .
+
+- Let result be NormalCompletion ( value ).
+
+- Perform AsyncGeneratorCompleteStep ( gen , result , true ).
+
+- Perform AsyncGeneratorDrainQueue ( gen ).
+
+- Return NormalCompletion ( undefined ).
+
+- Let onFulfilled be CreateBuiltinFunction ( fulfilledClosure , 1, "" , « »).
+
+- Let rejectedClosure be a new Abstract Closure with parameters ( reason ) that captures gen and performs the following steps when called:
+- Assert : gen . [[AsyncGeneratorState]] is draining-queue .
+
+- Let result be ThrowCompletion ( reason ).
+
+- Perform AsyncGeneratorCompleteStep ( gen , result , true ).
+
+- Perform AsyncGeneratorDrainQueue ( gen ).
+
+- Return NormalCompletion ( undefined ).
+
+- Let onRejected be CreateBuiltinFunction ( rejectedClosure , 1, "" , « »).
+
+- Perform PerformPromiseThen ( promise , onFulfilled , onRejected ).
+
+- Return unused .
+
+27.9.3.10 AsyncGeneratorDrainQueue ( gen )
+
+The abstract operation AsyncGeneratorDrainQueue takes argument gen (an AsyncGenerator) and returns unused . It drains the generator's AsyncGeneratorQueue until it encounters an AsyncGeneratorRequest which holds a return completion . It performs the following steps when called:
+
+- Assert : gen . [[AsyncGeneratorState]] is draining-queue .
+
+- Let queue be gen . [[AsyncGeneratorQueue]] .
+
+- Repeat, while queue is not empty,
+- Let next be the first element of queue .
+
+- Let completion be Completion ( next . [[Completion]] ).
+
+- If completion is a return completion , then
+- Perform AsyncGeneratorAwaitReturn ( gen ).
+
+- Return unused .
+
+- If completion is a normal completion , then
+- Set completion to NormalCompletion ( undefined ).
+
+- Perform AsyncGeneratorCompleteStep ( gen , completion , true ).
+
+- Set gen . [[AsyncGeneratorState]] to completed .
+
+- Return unused .
+
+27.10 AsyncFunction Objects
+
+AsyncFunctions are functions that are usually created by evaluating AsyncFunctionDeclaration s, AsyncFunctionExpression s, AsyncMethod s, and AsyncArrowFunction s. They may also be created by calling the %AsyncFunction% intrinsic.
+
+27.10.1 The AsyncFunction Constructor
+
+The AsyncFunction constructor :
+
+- is %AsyncFunction% .
+
+- is a subclass of Function .
+
+- creates and initializes a new AsyncFunction when called as a function rather than as a constructor . Thus the function call AsyncFunction(…) is equivalent to the object creation expression new AsyncFunction(…) with the same arguments.
+
+- may be used as the value of an extends clause of a class definition. Subclass constructors that intend to inherit the specified AsyncFunction behaviour must include a super call to the AsyncFunction constructor to create and initialize a subclass instance with the internal slots necessary for built-in async function behaviour. All ECMAScript syntactic forms for defining async function objects create direct instances of AsyncFunction. There is no syntactic means to create instances of AsyncFunction subclasses.
+
+27.10.1.1 AsyncFunction ( ... paramArgs , bodyArg )
+
+The last argument (if any) specifies the body (executable code) of an async function. Any preceding arguments specify formal parameters.
+
+This function performs the following steps when called:
+
+- Let activeFunc be the active function object .
+
+- If bodyArg is not present, set bodyArg to the empty String.
+
+- Return ? CreateDynamicFunction ( activeFunc , NewTarget, async , paramArgs , bodyArg ).
+
+Note See NOTE for 20.2.1.1 .
+
+27.10.2 Properties of the AsyncFunction Constructor
+
+The AsyncFunction constructor :
+
+- is a standard built-in function object that inherits from the Function constructor .
+
+- has a [[Prototype]] internal slot whose value is %Function% .
+
+- has a "length" property whose value is 1 𝔽 .
+
+- has a "name" property whose value is "AsyncFunction" .
+
+- has the following properties:
+
+27.10.2.1 AsyncFunction.prototype
+
+The initial value of AsyncFunction.prototype is the AsyncFunction prototype object .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+27.10.3 Properties of the AsyncFunction Prototype Object
+
+The AsyncFunction prototype object :
+
+- is %AsyncFunction.prototype% .
+
+- is an ordinary object .
+
+- is not a function object and does not have an [[ECMAScriptCode]] internal slot or any other of the internal slots listed in Table 26 .
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+27.10.3.1 AsyncFunction.prototype.constructor
+
+The initial value of AsyncFunction.prototype.constructor is %AsyncFunction% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.10.3.2 AsyncFunction.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "AsyncFunction" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+27.10.4 AsyncFunction Instances
+
+Every AsyncFunction instance is an ECMAScript function object and has the internal slots listed in Table 26 . The value of the [[IsClassConstructor]] internal slot for all such instances is false . AsyncFunction instances are not constructors and do not have a [[Construct]] internal method. AsyncFunction instances do not have a prototype property as they are not constructable.
+
+Each AsyncFunction instance has the following own properties:
+
+27.10.4.1 length
+
+The specification for the "length" property of Function instances given in 20.2.4.1 also applies to AsyncFunction instances.
+
+27.10.4.2 name
+
+The specification for the "name" property of Function instances given in 20.2.4.2 also applies to AsyncFunction instances.
+
+27.10.5 Async Functions Abstract Operations
+
+27.10.5.1 AsyncFunctionStart ( promiseCapability , asyncFuncBody )
+
+The abstract operation AsyncFunctionStart takes arguments promiseCapability (a PromiseCapability Record ) and asyncFuncBody (a FunctionBody Parse Node , an ExpressionBody Parse Node , or an Abstract Closure with no parameters) and returns unused . It performs the following steps when called:
+
+- Let runningContext be the running execution context .
+
+- Let asyncContext be a copy of runningContext .
+
+- NOTE : Copying the execution state is required for AsyncBlockStart to resume its execution. It is ill-defined to resume a currently executing context.
+
+- Perform AsyncBlockStart ( promiseCapability , asyncFuncBody , asyncContext ).
+
+- Return unused .
+
+27.10.5.2 AsyncBlockStart ( promiseCapability , asyncBody , asyncContext )
+
+The abstract operation AsyncBlockStart takes arguments promiseCapability (a PromiseCapability Record ), asyncBody (a Parse Node or an Abstract Closure with no parameters), and asyncContext (an execution context ) and returns unused . It performs the following steps when called:
+
+- Let closure be a new Abstract Closure with no parameters that captures promiseCapability and asyncBody and performs the following steps when called:
+- Let acAsyncContext be the running execution context .
+
+- If asyncBody is a Parse Node , then
+- Let result be Completion ( Evaluation of asyncBody ).
+
+- Else,
+- Assert : asyncBody is an Abstract Closure with no parameters.
+
+- Let result be Completion ( asyncBody ()).
+
+- Assert : If we return here, the async function either threw an exception or performed an implicit or explicit return; all awaiting is done.
+
+- Remove acAsyncContext from the execution context stack and restore the execution context that is at the top of the execution context stack as the running execution context .
+
+- If result is a normal completion , then
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « undefined »).
+
+- Else if result is a return completion , then
+- Perform ! Call ( promiseCapability . [[Resolve]] , undefined , « result . [[Value]] »).
+
+- Else,
+- Assert : result is a throw completion .
+
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « result . [[Value]] »).
+
+- Let callerContext be the running execution context .
+
+- Resume callerContext , passing NormalCompletion ( unused ).
+
+- Assert : This step is never reached.
+
+- Set the code evaluation state of asyncContext such that when evaluation is resumed for that execution context , closure will be called with no arguments.
+
+- Let result be ! RunSuspendedContext ( asyncContext , NormalCompletion ( empty )).
+
+- Assert : result is unused .
+
+- NOTE : The possible sources of result values are Await or, if the async function doesn't await anything, step 1.j above.
+
+- Return unused .
+
+27.10.5.3 Await ( arg )
+
+The abstract operation Await takes argument arg (an ECMAScript language value ) and returns either a normal completion containing either an ECMAScript language value or empty , or a throw completion . It performs the following steps when called:
+
+- Let asyncContext be the running execution context .
+
+- Let promise be ? PromiseResolve ( %Promise% , arg ).
+
+- Let fulfilledClosure be a new Abstract Closure with parameters ( v ) that captures asyncContext and performs the following steps when called:
+- Perform Completion ( RunSuspendedContext ( asyncContext , NormalCompletion ( v ))).
+
+- NOTE : The Completion Record returned by RunSuspendedContext is intentionally ignored.
+
+- Return NormalCompletion ( undefined ).
+
+- Let onFulfilled be CreateBuiltinFunction ( fulfilledClosure , 1, "" , « »).
+
+- Let rejectedClosure be a new Abstract Closure with parameters ( reason ) that captures asyncContext and performs the following steps when called:
+- Perform Completion ( RunSuspendedContext ( asyncContext , ThrowCompletion ( reason ))).
+
+- NOTE : The Completion Record returned by RunSuspendedContext is intentionally ignored.
+
+- Return NormalCompletion ( undefined ).
+
+- Let onRejected be CreateBuiltinFunction ( rejectedClosure , 1, "" , « »).
+
+- Perform PerformPromiseThen ( promise , onFulfilled , onRejected ).
+
+- Return ? RunCallerContext ( empty ).

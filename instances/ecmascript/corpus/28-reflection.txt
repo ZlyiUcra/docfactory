@@ -1,0 +1,250 @@
+# 28 Reflection
+# джерело: https://tc39.es/ecma262/multipage/reflection.html#sec-reflection
+# отримано: 2026-09-01
+
+28 Reflection
+
+28.1 The Reflect Object
+
+The Reflect object:
+
+- is %Reflect% .
+
+- is the initial value of the "Reflect" property of the global object .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is not a function object .
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- does not have a [[Call]] internal method; it cannot be invoked as a function.
+
+28.1.1 Reflect.apply ( target , thisArg , args )
+
+This function performs the following steps when called:
+
+- If IsCallable ( target ) is false , throw a TypeError exception.
+
+- Let argList be ? CreateListFromArrayLike ( args ).
+
+- Perform PrepareForTailCall ().
+
+- Return ? Call ( target , thisArg , argList ).
+
+28.1.2 Reflect.construct ( target , args [ , newTarget ] )
+
+This function performs the following steps when called:
+
+- If IsConstructor ( target ) is false , throw a TypeError exception.
+
+- If newTarget is not present, set newTarget to target .
+
+- Else if IsConstructor ( newTarget ) is false , throw a TypeError exception.
+
+- Let argList be ? CreateListFromArrayLike ( args ).
+
+- Return ? Construct ( target , argList , newTarget ).
+
+28.1.3 Reflect.defineProperty ( target , key , attrs )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Let propertyDesc be ? ToPropertyDescriptor ( attrs ).
+
+- Return ? target . [[DefineOwnProperty]] ( propertyKey , propertyDesc ) .
+
+28.1.4 Reflect.deleteProperty ( target , key )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Return ? target . [[Delete]] ( propertyKey ) .
+
+28.1.5 Reflect.get ( target , key [ , receiver ] )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- If receiver is not present, then
+- Set receiver to target .
+
+- Return ? target . [[Get]] ( propertyKey , receiver ) .
+
+28.1.6 Reflect.getOwnPropertyDescriptor ( target , key )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Let propertyDesc be ? target . [[GetOwnProperty]] ( propertyKey ) .
+
+- Return FromPropertyDescriptor ( propertyDesc ).
+
+28.1.7 Reflect.getPrototypeOf ( target )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Return ? target . [[GetPrototypeOf]] () .
+
+28.1.8 Reflect.has ( target , key )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- Return ? target . [[HasProperty]] ( propertyKey ) .
+
+28.1.9 Reflect.isExtensible ( target )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Return ? target . [[IsExtensible]] () .
+
+28.1.10 Reflect.ownKeys ( target )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let keys be ? target . [[OwnPropertyKeys]] () .
+
+- Return CreateArrayFromList ( keys ).
+
+28.1.11 Reflect.preventExtensions ( target )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Return ? target . [[PreventExtensions]] () .
+
+28.1.12 Reflect.set ( target , key , value [ , receiver ] )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- Let propertyKey be ? ToPropertyKey ( key ).
+
+- If receiver is not present, then
+- Set receiver to target .
+
+- Return ? target . [[Set]] ( propertyKey , value , receiver ) .
+
+28.1.13 Reflect.setPrototypeOf ( target , proto )
+
+This function performs the following steps when called:
+
+- If target is not an Object , throw a TypeError exception.
+
+- If proto is not an Object and proto is not null , throw a TypeError exception.
+
+- Return ? target . [[SetPrototypeOf]] ( proto ) .
+
+28.1.14 Reflect [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Reflect" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+28.2 Proxy Objects
+
+28.2.1 The Proxy Constructor
+
+The Proxy constructor :
+
+- is %Proxy% .
+
+- is the initial value of the "Proxy" property of the global object .
+
+- creates and initializes a new Proxy object when called as a constructor .
+
+- is not intended to be called as a function and will throw an exception when called in that manner.
+
+28.2.1.1 Proxy ( target , handler )
+
+This function performs the following steps when called:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Return ? ProxyCreate ( target , handler ).
+
+28.2.2 Properties of the Proxy Constructor
+
+The Proxy constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- does not have a "prototype" property because Proxy objects do not have a [[Prototype]] internal slot that requires initialization.
+
+- has the following properties:
+
+28.2.2.1 Proxy.revocable ( target , handler )
+
+This function creates a revocable Proxy object.
+
+It performs the following steps when called:
+
+- Let proxy be ? ProxyCreate ( target , handler ).
+
+- Let revokerClosure be a new Abstract Closure with no parameters that captures nothing and performs the following steps when called:
+- Let activeFunc be the active function object .
+
+- Let revocableProxy be activeFunc . [[RevocableProxy]] .
+
+- If revocableProxy is null , return NormalCompletion ( undefined ).
+
+- Set activeFunc . [[RevocableProxy]] to null .
+
+- Assert : revocableProxy is a Proxy exotic object .
+
+- Set revocableProxy . [[ProxyTarget]] to null .
+
+- Set revocableProxy . [[ProxyHandler]] to null .
+
+- Return NormalCompletion ( undefined ).
+
+- Let revoker be CreateBuiltinFunction ( revokerClosure , 0, "" , « [[RevocableProxy]] »).
+
+- Set revoker . [[RevocableProxy]] to proxy .
+
+- Let result be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , "proxy" , proxy ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , "revoke" , revoker ).
+
+- Return result .
+
+28.3 Module Namespace Objects
+
+A Module Namespace Object is a module namespace exotic object that provides runtime property-based access to a module's exported bindings. There is no constructor function for Module Namespace Objects. Instead, such an object is created for each module that is imported by an ImportDeclaration that contains a NameSpaceImport .
+
+In addition to the properties specified in 10.4.6 each Module Namespace Object has the following own property:
+
+28.3.1 %Symbol.toStringTag%
+
+The initial value of the %Symbol.toStringTag% property is the String value "Module" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.

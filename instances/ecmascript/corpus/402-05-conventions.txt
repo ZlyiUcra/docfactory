@@ -1,0 +1,44 @@
+# 5 Notational Conventions
+# джерело: https://tc39.es/ecma402/#conventions
+# отримано: 2026-09-01
+
+5 Notational Conventions
+
+This standard uses a subset of the notational conventions of ECMA-262 :
+
+- Object Internal Methods and Internal Slots, as described in Object Internal Methods and Internal Slots .
+
+- Algorithm conventions, as described in Algorithm Conventions , and the use of abstract operations as described in Type Conversion , Testing and Comparison Operations , Operations on Objects , and Operations on Iterator Objects .
+
+- Internal Slots, as described in Ordinary Object Internal Methods and Internal Slots .
+
+- The List and Record Specification Type, as described in The List and Record Specification Types .
+
+Note
+As described in ECMA-262 , algorithms are used to precisely specify the required semantics of ECMAScript constructs, but are not intended to imply the use of any specific implementation technique. Internal slots are used to define the semantics of object values, but are not part of the API. They are defined purely for expository purposes. An implementation of the API must behave as if it produced and operated upon internal slots in the manner described here.
+
+As an extension to the Record Specification Type, the notation “[[< name >]]” denotes a field whose name is given by the variable name , which must have a String value. For example, if a variable s has the value "a" , then [[< s >]] denotes the field [[a]] .
+
+This specification uses blocks demarcated as Normative Optional to denote the sense of Annex B in ECMA 262. That is, normative optional sections are required when the ECMAScript host is a web browser. The content of the section is normative but optional if the ECMAScript host is not a web browser.
+
+5.1 Well-Known Intrinsic Objects
+
+The following table extends the Well-Known Intrinsic Objects table defined in Well-Known Intrinsic Objects .
+
+Table 1: Well-known Intrinsic Objects (Extensions)
+
+Intrinsic Name
+Global Name
+ECMAScript Language Association
+
+%Intl%
+"Intl"
+The Intl object ( 8 )
+
+%IntlSegmentIteratorPrototype%
+
+The prototype of Segment Iterator objects ( 19.6.2 )
+
+%IntlSegmentsPrototype%
+
+The prototype of Segments objects ( 19.5.2 )

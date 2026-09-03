@@ -1,0 +1,877 @@
+# 19 The Global Object
+# джерело: https://tc39.es/ecma262/multipage/global-object.html#sec-global-object
+# отримано: 2026-09-01
+
+19 The Global Object
+
+The global object :
+
+- is created before control enters any execution context .
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- does not have a [[Call]] internal method; it cannot be invoked as a function.
+
+- has a [[Prototype]] internal slot whose value is host-defined .
+
+- may have host-defined properties in addition to the properties defined in this specification. This may include a property whose value is the global object itself.
+
+19.1 Value Properties of the Global Object
+
+19.1.1 globalThis
+
+The initial value of the "globalThis" property of the global object in a Realm Record realm is realm . [[GlobalEnv]] . [[GlobalThisValue]] .
+
+This property has the attributes { [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : true }.
+
+19.1.2 Infinity
+
+The initial value of the "Infinity" property of the global object is +∞ 𝔽 (see 6.1.6.1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+19.1.3 NaN
+
+The initial value of the "NaN" property of the global object is NaN (see 6.1.6.1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+19.1.4 undefined
+
+The initial value of the "undefined" property of the global object is undefined (see 6.1.1 ).
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+19.2 Function Properties of the Global Object
+
+19.2.1 eval ( source )
+
+This function is the %eval% intrinsic object.
+
+It performs the following steps when called:
+
+- Return ? PerformEval ( source , false , false ).
+
+19.2.1.1 PerformEval ( source , strictCaller , direct )
+
+The abstract operation PerformEval takes arguments source (an ECMAScript language value ), strictCaller (a Boolean), and direct (a Boolean) and returns either a normal completion containing an ECMAScript language value or a throw completion . It performs the following steps when called:
+
+- Assert : If direct is false , then strictCaller is also false .
+
+- If source is not a String , return source .
+
+- Let evalRealm be the current Realm Record .
+
+- NOTE : In the case of a direct eval , evalRealm is the realm of both the caller of eval and of the eval function itself.
+
+- Perform ? HostEnsureCanCompileStrings ( evalRealm , « », source , direct ).
+
+- Let inFunc be false .
+
+- Let inMethod be false .
+
+- Let inDerivedCtor be false .
+
+- Let inClassFieldInitializer be false .
+
+- If direct is true , then
+- Let thisEnvRecord be GetThisEnvironment ().
+
+- If thisEnvRecord is a Function Environment Record , then
+- Let func be thisEnvRecord . [[FunctionObject]] .
+
+- Set inFunc to true .
+
+- Set inMethod to thisEnvRecord . HasSuperBinding ().
+
+- If func . [[ConstructorKind]] is derived , set inDerivedCtor to true .
+
+- Let classFieldInitializerName be func . [[ClassFieldInitializerName]] .
+
+- If classFieldInitializerName is not empty , set inClassFieldInitializer to true .
+
+- Perform the following substeps in an implementation-defined order, possibly interleaving parsing and error detection:
+- Let script be ParseText ( source , Script ).
+
+- If script is a List of errors, throw a SyntaxError exception.
+
+- If script Contains ScriptBody is false , return undefined .
+
+- Let body be the ScriptBody of script .
+
+- If inFunc is false and body Contains NewTarget , throw a SyntaxError exception.
+
+- If inMethod is false and body Contains SuperProperty , throw a SyntaxError exception.
+
+- If inDerivedCtor is false and body Contains SuperCall , throw a SyntaxError exception.
+
+- If inClassFieldInitializer is true and ContainsArguments of body is true , throw a SyntaxError exception.
+
+- If strictCaller is true , let strictEval be true .
+
+- Else, let strictEval be ScriptIsStrict of script .
+
+- Let runningContext be the running execution context .
+
+- NOTE : If direct is true , runningContext will be the execution context that performed the direct eval . If direct is false , runningContext will be the execution context for the invocation of the eval function.
+
+- If direct is true , then
+- Let lexicalEnv be NewDeclarativeEnvironment ( runningContext 's LexicalEnvironment).
+
+- Let variableEnv be runningContext 's VariableEnvironment.
+
+- Let privateEnv be runningContext 's PrivateEnvironment.
+
+- Else,
+- Let lexicalEnv be NewDeclarativeEnvironment ( evalRealm . [[GlobalEnv]] ).
+
+- Let variableEnv be evalRealm . [[GlobalEnv]] .
+
+- Let privateEnv be null .
+
+- If strictEval is true , set variableEnv to lexicalEnv .
+
+- If runningContext is not already suspended, suspend runningContext .
+
+- Let evalContext be a new ECMAScript code execution context .
+
+- Set evalContext 's Function to null .
+
+- Set evalContext 's Realm to evalRealm .
+
+- Set evalContext 's ScriptOrModule to runningContext 's ScriptOrModule.
+
+- Set evalContext 's VariableEnvironment to variableEnv .
+
+- Set evalContext 's LexicalEnvironment to lexicalEnv .
+
+- Set evalContext 's PrivateEnvironment to privateEnv .
+
+- Push evalContext onto the execution context stack ; evalContext is now the running execution context .
+
+- Let result be Completion ( EvalDeclarationInstantiation ( body , variableEnv , lexicalEnv , privateEnv , strictEval )).
+
+- If result is a normal completion , then
+- Set result to Completion ( Evaluation of body ).
+
+- If result is a normal completion and result . [[Value]] is empty , then
+- Set result to NormalCompletion ( undefined ).
+
+- Suspend evalContext and remove it from the execution context stack .
+
+- Resume the context that is now on the top of the execution context stack as the running execution context .
+
+- Return ? result .
+
+Note
+The eval code cannot instantiate variable or function bindings in the variable environment of the calling context that invoked the eval if either the code of the calling context or the eval code is strict mode code . Instead such bindings are instantiated in a new VariableEnvironment that is only accessible to the eval code. Bindings introduced by let , const , or class declarations are always instantiated in a new LexicalEnvironment.
+
+19.2.1.2 HostEnsureCanCompileStrings ( calleeRealm , paramStrings , bodyString , direct )
+
+The host-defined abstract operation HostEnsureCanCompileStrings takes arguments calleeRealm (a Realm Record ), paramStrings (a List of Strings), bodyString (a String), and direct (a Boolean) and returns either a normal completion containing unused or a throw completion . It allows host environments to block certain ECMAScript functions which allow developers to interpret and evaluate strings as ECMAScript code.
+
+paramStrings represents the strings that, when using one of the function constructors , will be concatenated together to build the parameters list. bodyString represents the function body or the string passed to an eval call.
+direct signifies whether the evaluation is a direct eval .
+
+The default implementation of HostEnsureCanCompileStrings is to return NormalCompletion ( unused ).
+
+19.2.1.3 EvalDeclarationInstantiation ( body , variableEnv , lexicalEnv , privateEnv , strict )
+
+The abstract operation EvalDeclarationInstantiation takes arguments body (a ScriptBody Parse Node ), variableEnv (an Environment Record ), lexicalEnv (a Declarative Environment Record ), privateEnv (a PrivateEnvironment Record or null ), and strict (a Boolean) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- Let variableNames be the VarDeclaredNames of body .
+
+- Let variableDecls be the VarScopedDeclarations of body .
+
+- If strict is false , then
+- If variableEnv is a Global Environment Record , then
+- For each element name of variableNames , do
+- If HasLexicalDeclaration ( variableEnv , name ) is true , throw a SyntaxError exception.
+
+- NOTE : eval will not create a global var declaration that would be shadowed by a global lexical declaration.
+
+- Let thisEnv be lexicalEnv .
+
+- Assert : The following loop will terminate.
+
+- Repeat, while thisEnv and variableEnv are not the same Environment Record ,
+- If thisEnv is not an Object Environment Record , then
+- NOTE : The environment of with statements cannot contain any lexical declaration so it doesn't need to be checked for var/let hoisting conflicts.
+
+- For each element name of variableNames , do
+- If ! thisEnv . HasBinding ( name ) is true , then
+- Normative Optional
+If the host is a web browser or otherwise supports VariableStatements in Catch Blocks , then
+- If thisEnv is not the Environment Record for a Catch clause, throw a SyntaxError exception.
+
+- Else,
+- Throw a SyntaxError exception.
+
+- NOTE : A direct eval will not hoist var declaration over a like-named lexical declaration.
+
+- Set thisEnv to thisEnv . [[OuterEnv]] .
+
+- Let privateIdentifiers be a new empty List .
+
+- Let pointer be privateEnv .
+
+- Repeat, while pointer is not null ,
+- For each Private Name binding of pointer . [[Names]] , do
+- If privateIdentifiers does not contain binding . [[Description]] , append binding . [[Description]] to privateIdentifiers .
+
+- Set pointer to pointer . [[OuterPrivateEnvironment]] .
+
+- If AllPrivateIdentifiersValid of body with argument privateIdentifiers is false , throw a SyntaxError exception.
+
+- Let funcsToInitialize be a new empty List .
+
+- Let declaredFuncNames be a new empty List .
+
+- For each element variableDecl of variableDecls , in reverse List order, do
+- If variableDecl is not either a VariableDeclaration , a ForBinding , or a BindingIdentifier , then
+- Assert : variableDecl is either a FunctionDeclaration , a GeneratorDeclaration , an AsyncFunctionDeclaration , or an AsyncGeneratorDeclaration .
+
+- NOTE : If there are multiple function declarations for the same name, the last declaration is used.
+
+- Let funcName be the sole element of the BoundNames of variableDecl .
+
+- If declaredFuncNames does not contain funcName , then
+- If variableEnv is a Global Environment Record , then
+- Let funcDefinable be ? CanDeclareGlobalFunction ( variableEnv , funcName ).
+
+- If funcDefinable is false , throw a TypeError exception.
+
+- Append funcName to declaredFuncNames .
+
+- Insert variableDecl as the first element of funcsToInitialize .
+
+- Let declaredVariableNames be a new empty List .
+
+- For each element variableDecl of variableDecls , do
+- If variableDecl is either a VariableDeclaration , a ForBinding , or a BindingIdentifier , then
+- For each String name of the BoundNames of variableDecl , do
+- If declaredFuncNames does not contain name , then
+- If variableEnv is a Global Environment Record , then
+- Let variableDefinable be ? CanDeclareGlobalVar ( variableEnv , name ).
+
+- If variableDefinable is false , throw a TypeError exception.
+
+- If declaredVariableNames does not contain name , then
+- Append name to declaredVariableNames .
+
+- Normative Optional
+If strict is false and the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , then
+- Let declaredFuncOrVariableNames be the list-concatenation of declaredFuncNames and declaredVariableNames .
+
+- For each FunctionDeclaration funcDecl that is directly contained in the StatementList of any Block , CaseClause , or DefaultClause x such that body Contains x is true , do
+- Let funcName be the StringValue of the BindingIdentifier of funcDecl .
+
+- If replacing the FunctionDeclaration funcDecl with a VariableStatement that has funcName as a BindingIdentifier would not produce any Early Errors for body , then
+- Let bindingExists be false .
+
+- Set thisEnv to lexicalEnv .
+
+- Assert : The following loop will terminate.
+
+- Repeat, while thisEnv is not variableEnv ,
+- If thisEnv is not an Object Environment Record , then
+- If ! thisEnv . HasBinding ( funcName ) is true , then
+- Normative Optional
+If the host is a web browser or otherwise supports VariableStatements in Catch Blocks , then
+- If thisEnv is not the Environment Record for a Catch clause, set bindingExists to true .
+
+- Else,
+- Set bindingExists to true .
+
+- Set thisEnv to thisEnv . [[OuterEnv]] .
+
+- If bindingExists is false and variableEnv is a Global Environment Record , then
+- If HasLexicalDeclaration ( variableEnv , funcName ) is false , then
+- Let funcDefinable be ? CanDeclareGlobalVar ( variableEnv , funcName ).
+
+- Else,
+- Let funcDefinable be false .
+
+- Else,
+- Let funcDefinable be true .
+
+- If bindingExists is false and funcDefinable is true , then
+- If declaredFuncOrVariableNames does not contain funcName , then
+- If variableEnv is a Global Environment Record , then
+- Perform ? CreateGlobalVarBinding ( variableEnv , funcName , true ).
+
+- Else,
+- Set bindingExists to ! variableEnv . HasBinding ( funcName ).
+
+- If bindingExists is false , then
+- Perform ! variableEnv . CreateMutableBinding ( funcName , true ).
+
+- Perform ! variableEnv . InitializeBinding ( funcName , undefined ).
+
+- Append funcName to declaredFuncOrVariableNames .
+
+- When the FunctionDeclaration funcDecl is evaluated, perform the following steps in place of the FunctionDeclaration Evaluation algorithm provided in 15.2.6 :
+- Let globalEnv be the running execution context 's VariableEnvironment.
+
+- Let blockEnv be the running execution context 's LexicalEnvironment.
+
+- Let funcObj be ! blockEnv . GetBindingValue ( funcName , false ).
+
+- Perform ? globalEnv . SetMutableBinding ( funcName , funcObj , false ) .
+
+- Return unused .
+
+- NOTE : No abnormal terminations occur after this algorithm step unless variableEnv is a Global Environment Record and the global object is a Proxy exotic object .
+
+- Let lexicalDecls be the LexicallyScopedDeclarations of body .
+
+- For each element lexicalDecl of lexicalDecls , do
+- NOTE : Lexically declared names are only instantiated here but not initialized.
+
+- For each element name of the BoundNames of lexicalDecl , do
+- If IsConstantDeclaration of lexicalDecl is true , then
+- Perform ? lexicalEnv . CreateImmutableBinding ( name , true ).
+
+- Else,
+- Perform ? lexicalEnv . CreateMutableBinding ( name , false ).
+
+- For each Parse Node funcDecl of funcsToInitialize , do
+- Let funcName be the sole element of the BoundNames of funcDecl .
+
+- Let funcObj be InstantiateFunctionObject of funcDecl with arguments lexicalEnv and privateEnv .
+
+- If variableEnv is a Global Environment Record , then
+- Perform ? CreateGlobalFunctionBinding ( variableEnv , funcName , funcObj , true ).
+
+- Else,
+- Let bindingExists be ! variableEnv . HasBinding ( funcName ).
+
+- If bindingExists is false , then
+- NOTE : The following invocation cannot return an abrupt completion because of the validation preceding step 14 .
+
+- Perform ! variableEnv . CreateMutableBinding ( funcName , true ).
+
+- Perform ! variableEnv . InitializeBinding ( funcName , funcObj ).
+
+- Else,
+- Perform ! variableEnv . SetMutableBinding ( funcName , funcObj , false ).
+
+- For each String variableName of declaredVariableNames , do
+- If variableEnv is a Global Environment Record , then
+- Perform ? CreateGlobalVarBinding ( variableEnv , variableName , true ).
+
+- Else,
+- Let bindingExists be ! variableEnv . HasBinding ( variableName ).
+
+- If bindingExists is false , then
+- NOTE : The following invocation cannot return an abrupt completion because of the validation preceding step 14 .
+
+- Perform ! variableEnv . CreateMutableBinding ( variableName , true ).
+
+- Perform ! variableEnv . InitializeBinding ( variableName , undefined ).
+
+- Return unused .
+
+19.2.2 isFinite ( value )
+
+This function is the %isFinite% intrinsic object.
+
+It performs the following steps when called:
+
+- Let number be ? ToNumber ( value ).
+
+- If number is finite , return true .
+
+- Return false .
+
+19.2.3 isNaN ( value )
+
+This function is the %isNaN% intrinsic object.
+
+It performs the following steps when called:
+
+- Let number be ? ToNumber ( value ).
+
+- If number is NaN , return true .
+
+- Return false .
+
+Note
+A reliable way for ECMAScript code to test if a value X is NaN is an expression of the form X !== X . The result will be true if and only if X is NaN .
+
+19.2.4 parseFloat ( string )
+
+This function produces a Number value dictated by interpretation of the contents of the string argument as a decimal literal.
+
+It is the %parseFloat% intrinsic object.
+
+It performs the following steps when called:
+
+- Let inputString be ? ToString ( string ).
+
+- Let trimmedString be ! TrimString ( inputString , start ).
+
+- Let trimmed be StringToCodePoints ( trimmedString ).
+
+- Let trimmedPrefix be the longest prefix of trimmed that satisfies the syntax of a StrDecimalLiteral , which might be trimmed itself. If there is no such prefix, return NaN .
+
+- Let parsedNumber be ParseText ( trimmedPrefix , StrDecimalLiteral ).
+
+- Assert : parsedNumber is a Parse Node .
+
+- Return the StringNumericValue of parsedNumber .
+
+Note
+This function may interpret only a leading portion of string as a Number value; it ignores any code units that cannot be interpreted as part of the notation of a decimal literal, and no indication is given that any such code units were ignored.
+
+19.2.5 parseInt ( string , radix )
+
+This function produces an integral Number dictated by interpretation of the contents of string according to the specified radix . Leading white space in string is ignored. If radix coerces to 0 (such as when it is undefined ), it is assumed to be 10 except when the number representation begins with "0x" or "0X" , in which case it is assumed to be 16. If radix is 16, the number representation may optionally begin with "0x" or "0X" .
+
+It is the %parseInt% intrinsic object.
+
+It performs the following steps when called:
+
+- Let inputString be ? ToString ( string ).
+
+- Let radixMV be ℝ (? ToInt32 ( radix )).
+
+- If radixMV ≠ 0 and radixMV is not in the inclusive interval from 2 to 36, return NaN .
+
+- Let trimmedString be ! TrimString ( inputString , start ).
+
+- If trimmedString is the empty String, return NaN .
+
+- Let sign be 1.
+
+- If the first code unit of trimmedString is the code unit 0x002D (HYPHEN-MINUS), then
+- Set sign to -1.
+
+- Set trimmedString to the substring of trimmedString from 1.
+
+- Else if the first code unit of trimmedString is the code unit 0x002B (PLUS SIGN), then
+- Set trimmedString to the substring of trimmedString from 1.
+
+- If radixMV = 0 or radixMV = 16, then
+- If the length of trimmedString ≥ 2 and the substring of trimmedString from 0 to 2 is either "0x" or "0X" , then
+- Set trimmedString to the substring of trimmedString from 2.
+
+- Set radixMV to 16.
+
+- If radixMV = 0, set radixMV to 10.
+
+- If trimmedString contains a code unit that is not a radix- radixMV digit, let end be the index within trimmedString of the first such code unit; else let end be the length of trimmedString .
+
+- Let numberString be the substring of trimmedString from 0 to end .
+
+- If numberString is empty, return NaN .
+
+- Let mathInt be the integer value that is represented by numberString in radix- radixMV notation, using the letters A through Z and a through z for digits with values 10 through 35. (However, if radixMV = 10 and numberString contains more than 20 significant digits, every significant digit after the 20th may be replaced by a 0 digit, at the option of the implementation; and if radixMV is not one of 2, 4, 8, 10, 16, or 32, then mathInt may be an implementation-approximated integer representing the integer value denoted by numberString in radix- radixMV notation.)
+
+- If sign = -1 and mathInt = 0, return -0 𝔽 .
+
+- Return 𝔽 ( sign × mathInt ).
+
+Note
+This function may interpret only a leading portion of string as an integer value; it ignores any code units that cannot be interpreted as part of the notation of an integer , and no indication is given that any such code units were ignored.
+
+19.2.6 URI Handling Functions
+
+Uniform Resource Identifiers, or URIs, are Strings that identify resources (e.g. web pages or files) and transport protocols by which to access them (e.g. HTTP or FTP) on the Internet. The ECMAScript language itself does not provide any support for using URIs except for functions that encode and decode URIs as described in this section. encodeURI and decodeURI are intended to work with complete URIs; they assume that any reserved characters are intended to have special meaning (e.g., as delimiters) and so are not encoded. encodeURIComponent and decodeURIComponent are intended to work with the individual components of a URI; they assume that any reserved characters represent text and must be encoded to avoid special meaning when the component is part of a complete URI.
+
+Note 1
+The set of reserved characters is based upon RFC 2396 and does not reflect changes introduced by the more recent RFC 3986.
+
+Note 2
+Many implementations of ECMAScript provide additional functions and methods that manipulate web pages; these functions are beyond the scope of this standard.
+
+19.2.6.1 decodeURI ( encodedURI )
+
+This function computes a new version of a URI in which each escape sequence and UTF-8 encoding of the sort that might be introduced by the encodeURI function is replaced with the UTF-16 encoding of the code point that it represents. Escape sequences that could not have been introduced by encodeURI are not replaced.
+
+It is the %decodeURI% intrinsic object.
+
+It performs the following steps when called:
+
+- Let uriString be ? ToString ( encodedURI ).
+
+- Let preserveEscapeSet be ";/?:@&=+$,#" .
+
+- Return ? Decode ( uriString , preserveEscapeSet ).
+
+19.2.6.2 decodeURIComponent ( encodedURIComponent )
+
+This function computes a new version of a URI in which each escape sequence and UTF-8 encoding of the sort that might be introduced by the encodeURIComponent function is replaced with the UTF-16 encoding of the code point that it represents.
+
+It is the %decodeURIComponent% intrinsic object.
+
+It performs the following steps when called:
+
+- Let componentString be ? ToString ( encodedURIComponent ).
+
+- Let preserveEscapeSet be the empty String.
+
+- Return ? Decode ( componentString , preserveEscapeSet ).
+
+19.2.6.3 encodeURI ( uri )
+
+This function computes a new version of a UTF-16 encoded ( 6.1.4 ) URI in which each instance of certain code points is replaced by one, two, three, or four escape sequences representing the UTF-8 encoding of the code point.
+
+It is the %encodeURI% intrinsic object.
+
+It performs the following steps when called:
+
+- Let uriString be ? ToString ( uri ).
+
+- Let extraUnescaped be ";/?:@&=+$,#" .
+
+- Return ? Encode ( uriString , extraUnescaped ).
+
+19.2.6.4 encodeURIComponent ( uriComponent )
+
+This function computes a new version of a UTF-16 encoded ( 6.1.4 ) URI in which each instance of certain code points is replaced by one, two, three, or four escape sequences representing the UTF-8 encoding of the code point.
+
+It is the %encodeURIComponent% intrinsic object.
+
+It performs the following steps when called:
+
+- Let componentString be ? ToString ( uriComponent ).
+
+- Let extraUnescaped be the empty String.
+
+- Return ? Encode ( componentString , extraUnescaped ).
+
+19.2.6.5 Encode ( string , extraUnescaped )
+
+The abstract operation Encode takes arguments string (a String) and extraUnescaped (a String) and returns either a normal completion containing a String or a throw completion . It performs URI encoding and escaping, interpreting string as a sequence of UTF-16 encoded code points as described in 6.1.4 . If a character is identified as unreserved in RFC 2396 or appears in extraUnescaped , it is not escaped. It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Let result be the empty String.
+
+- Let alwaysUnescaped be the string-concatenation of the ASCII word characters and "-.!~*'()" .
+
+- Let unescapedSet be the string-concatenation of alwaysUnescaped and extraUnescaped .
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- Let codeUnit be the code unit at index k within string .
+
+- If unescapedSet contains codeUnit , then
+- Set k to k + 1.
+
+- Set result to the string-concatenation of result and codeUnit .
+
+- Else,
+- Let codePoint be CodePointAt ( string , k ).
+
+- If codePoint . [[IsUnpairedSurrogate]] is true , throw a URIError exception.
+
+- Set k to k + codePoint . [[CodeUnitCount]] .
+
+- Let octets be the List of octets resulting by applying the UTF-8 transformation to codePoint . [[CodePoint]] .
+
+- For each element octet of octets , do
+- Let hex be the String representation of octet , formatted as an uppercase hexadecimal number.
+
+- Set result to the string-concatenation of result , "%" , and StringPad ( hex , 2, "0" , start ).
+
+- Return result .
+
+Note
+Because percent-encoding is used to represent individual octets, a single code point may be expressed as multiple consecutive escape sequences (one for each of its 8-bit UTF-8 code units).
+
+19.2.6.6 Decode ( string , preserveEscapeSet )
+
+The abstract operation Decode takes arguments string (a String) and preserveEscapeSet (a String) and returns either a normal completion containing a String or a throw completion . It performs URI unescaping and decoding, preserving any escape sequences that correspond to Basic Latin characters in preserveEscapeSet . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Let result be the empty String.
+
+- Let k be 0.
+
+- Repeat, while k < length ,
+- Let codeUnit be the code unit at index k within string .
+
+- Let segment be codeUnit .
+
+- If codeUnit is the code unit 0x0025 (PERCENT SIGN), then
+- If k + 3 > length , throw a URIError exception.
+
+- Let escape be the substring of string from k to k + 3.
+
+- Let firstOctet be ParseHexOctet ( string , k + 1).
+
+- If firstOctet is not an integer , throw a URIError exception.
+
+- Set k to k + 2.
+
+- Let n be the number of leading 1 bits in firstOctet .
+
+- If n = 0, then
+- Let asciiChar be the code unit whose numeric value is firstOctet .
+
+- If preserveEscapeSet contains asciiChar , set segment to escape ; else set segment to asciiChar .
+
+- Else,
+- If n = 1 or n > 4, throw a URIError exception.
+
+- Let octets be « firstOctet ».
+
+- Let j be 1.
+
+- Repeat, while j < n ,
+- Set k to k + 1.
+
+- If k + 3 > length , throw a URIError exception.
+
+- If the code unit at index k within string is not the code unit 0x0025 (PERCENT SIGN), throw a URIError exception.
+
+- Let continuationByte be ParseHexOctet ( string , k + 1).
+
+- If continuationByte is not an integer , throw a URIError exception.
+
+- Append continuationByte to octets .
+
+- Set k to k + 2.
+
+- Set j to j + 1.
+
+- Assert : The length of octets is n .
+
+- If octets does not contain a valid UTF-8 encoding of a Unicode code point, throw a URIError exception.
+
+- Let codePoint be the code point obtained by applying the UTF-8 transformation to octets , that is, from a List of octets into a 21-bit value.
+
+- Set segment to UTF16EncodeCodePoint ( codePoint ).
+
+- Set result to the string-concatenation of result and segment .
+
+- Set k to k + 1.
+
+- Return result .
+
+Note
+RFC 3629 prohibits the decoding of invalid UTF-8 octet sequences. For example, the invalid sequence 0xC0 0x80 must not decode into the code unit 0x0000. Implementations of the Decode algorithm are required to throw a URIError when encountering such invalid sequences.
+
+19.2.6.7 ParseHexOctet ( string , position )
+
+The abstract operation ParseHexOctet takes arguments string (a String) and position (a non-negative integer ) and returns either a non-negative integer or a non-empty List of SyntaxError objects. It parses a sequence of two hexadecimal characters at the specified position in string into an unsigned 8-bit integer . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Assert : position + 2 ≤ length .
+
+- Let hexDigits be the substring of string from position to position + 2.
+
+- Let parseResult be ParseText ( hexDigits , HexDigits [~Sep] ).
+
+- If parseResult is not a Parse Node , return parseResult .
+
+- Let n be the MV of parseResult .
+
+- Assert : n is in the inclusive interval from 0 to 255.
+
+- Return n .
+
+19.3 Constructor Properties of the Global Object
+
+19.3.1 AggregateError ( . . . )
+
+See 20.5.7.1 .
+
+19.3.2 Array ( . . . )
+
+See 23.1.1 .
+
+19.3.3 ArrayBuffer ( . . . )
+
+See 25.1.4 .
+
+19.3.4 AsyncDisposableStack ( . . . )
+
+See 27.4.1 .
+
+19.3.5 BigInt ( . . . )
+
+See 21.2.1 .
+
+19.3.6 BigInt64Array ( . . . )
+
+See 23.2.5 .
+
+19.3.7 BigUint64Array ( . . . )
+
+See 23.2.5 .
+
+19.3.8 Boolean ( . . . )
+
+See 20.3.1 .
+
+19.3.9 DataView ( . . . )
+
+See 25.3.2 .
+
+19.3.10 Date ( . . . )
+
+See 21.4.2 .
+
+19.3.11 DisposableStack ( . . . )
+
+See 27.3.1 .
+
+19.3.12 Error ( . . . )
+
+See 20.5.1 .
+
+19.3.13 EvalError ( . . . )
+
+See 20.5.5.1 .
+
+19.3.14 FinalizationRegistry ( . . . )
+
+See 26.2.1 .
+
+19.3.15 Float16Array ( . . . )
+
+See 23.2.5 .
+
+19.3.16 Float32Array ( . . . )
+
+See 23.2.5 .
+
+19.3.17 Float64Array ( . . . )
+
+See 23.2.5 .
+
+19.3.18 Function ( . . . )
+
+See 20.2.1 .
+
+19.3.19 Int8Array ( . . . )
+
+See 23.2.5 .
+
+19.3.20 Int16Array ( . . . )
+
+See 23.2.5 .
+
+19.3.21 Int32Array ( . . . )
+
+See 23.2.5 .
+
+19.3.22 Iterator ( . . . )
+
+See 27.1.3.1 .
+
+19.3.23 Map ( . . . )
+
+See 24.1.1 .
+
+19.3.24 Number ( . . . )
+
+See 21.1.1 .
+
+19.3.25 Object ( . . . )
+
+See 20.1.1 .
+
+19.3.26 Promise ( . . . )
+
+See 27.5.3 .
+
+19.3.27 Proxy ( . . . )
+
+See 28.2.1 .
+
+19.3.28 RangeError ( . . . )
+
+See 20.5.5.2 .
+
+19.3.29 ReferenceError ( . . . )
+
+See 20.5.5.3 .
+
+19.3.30 RegExp ( . . . )
+
+See 22.2.4 .
+
+19.3.31 Set ( . . . )
+
+See 24.2.2 .
+
+19.3.32 SharedArrayBuffer ( . . . )
+
+See 25.2.3 .
+
+19.3.33 String ( . . . )
+
+See 22.1.1 .
+
+19.3.34 SuppressedError ( . . . )
+
+See 20.5.8.1 .
+
+19.3.35 Symbol ( . . . )
+
+See 20.4.1 .
+
+19.3.36 SyntaxError ( . . . )
+
+See 20.5.5.4 .
+
+19.3.37 TypeError ( . . . )
+
+See 20.5.5.5 .
+
+19.3.38 Uint8Array ( . . . )
+
+See 23.2.5 .
+
+19.3.39 Uint8ClampedArray ( . . . )
+
+See 23.2.5 .
+
+19.3.40 Uint16Array ( . . . )
+
+See 23.2.5 .
+
+19.3.41 Uint32Array ( . . . )
+
+See 23.2.5 .
+
+19.3.42 URIError ( . . . )
+
+See 20.5.5.6 .
+
+19.3.43 WeakMap ( . . . )
+
+See 24.3.1 .
+
+19.3.44 WeakRef ( . . . )
+
+See 26.1.1 .
+
+19.3.45 WeakSet ( . . . )
+
+See 24.4 .
+
+19.4 Other Properties of the Global Object
+
+19.4.1 Atomics
+
+See 25.4 .
+
+19.4.2 JSON
+
+See 25.5 .
+
+19.4.3 Math
+
+See 21.3 .
+
+19.4.4 Reflect
+
+See 28.1 .

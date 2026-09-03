@@ -1,0 +1,381 @@
+# 19 Segmenter Objects
+# джерело: https://tc39.es/ecma402/#segmenter-objects
+# отримано: 2026-09-01
+
+19 Segmenter Objects
+
+19.1 The Intl.Segmenter Constructor
+
+The Intl.Segmenter constructor :
+
+- is %Intl.Segmenter% .
+
+- is the initial value of the "Segmenter" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+19.1.1 Intl.Segmenter ( [ locales [ , options ] ] )
+
+When the Intl.Segmenter function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let internalSlotsList be « [[InitializedSegmenter]] , [[Locale]] , [[SegmenterGranularity]] ».
+
+- Let segmenter be ? OrdinaryCreateFromConstructor (NewTarget, "%Intl.Segmenter.prototype%" , internalSlotsList ).
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.Segmenter% , %Intl.Segmenter% . [[LocaleData]] , locales , options ).
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set segmenter . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Let granularity be ? GetOption ( options , "granularity" , string , « "grapheme" , "word" , "sentence" », "grapheme" ).
+
+- Set segmenter . [[SegmenterGranularity]] to granularity .
+
+- Return segmenter .
+
+19.2 Properties of the Intl.Segmenter Constructor
+
+The Intl.Segmenter constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+19.2.1 Intl.Segmenter.prototype
+
+The value of Intl.Segmenter.prototype is %Intl.Segmenter.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+19.2.2 Intl.Segmenter.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.Segmenter% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+19.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « ».
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « ».
+
+Note
+Intl.Segmenter does not have any relevant extension keys.
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+19.3 Properties of the Intl.Segmenter Prototype Object
+
+The Intl.Segmenter prototype object :
+
+- is %Intl.Segmenter.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.Segmenter instance and does not have an [[InitializedSegmenter]] internal slot or any of the other internal slots of Intl.Segmenter instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+19.3.1 Intl.Segmenter.prototype.constructor
+
+The initial value of Intl.Segmenter.prototype.constructor is %Intl.Segmenter% .
+
+19.3.2 Intl.Segmenter.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let segmenter be the this value.
+
+- Perform ? RequireInternalSlot ( segmenter , [[InitializedSegmenter]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 34 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of segmenter 's internal slot whose name is the Internal Slot value of the current row.
+
+- Assert : value is not undefined .
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 34: Resolved Options of Segmenter Instances
+
+Internal Slot
+Property
+
+[[Locale]]
+"locale"
+
+[[SegmenterGranularity]]
+"granularity"
+
+19.3.3 Intl.Segmenter.prototype.segment ( string )
+
+The Intl.Segmenter.prototype.segment method is called on an Intl.Segmenter instance with argument string to create a Segments instance for the string using the locale and options of the Intl.Segmenter instance. The following steps are taken:
+
+- Let segmenter be the this value.
+
+- Perform ? RequireInternalSlot ( segmenter , [[InitializedSegmenter]] ).
+
+- Set string to ? ToString ( string ).
+
+- Return CreateSegmentsObject ( segmenter , string ).
+
+19.3.4 Intl.Segmenter.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.Segmenter" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+19.4 Properties of Intl.Segmenter Instances
+
+Intl.Segmenter instances are ordinary objects that inherit properties from %Intl.Segmenter.prototype% .
+
+Intl.Segmenter instances have an [[InitializedSegmenter]] internal slot.
+
+Intl.Segmenter instances also have internal slots that are computed by The Intl.Segmenter Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for segmentation.
+
+- [[SegmenterGranularity]] is one of the String values "grapheme" , "word" , or "sentence" , identifying the kind of text element to segment.
+
+19.5 Segments Objects
+
+A Segments instance is an object that represents the segments of a specific string, subject to the locale and options of its constructing Intl.Segmenter instance.
+
+19.5.1 CreateSegmentsObject ( segmenter , string )
+
+The abstract operation CreateSegmentsObject takes arguments segmenter (an Intl.Segmenter) and string (a String) and returns a Segments instance . The Segments instance references segmenter and string . It performs the following steps when called:
+
+- Let internalSlotsList be « [[SegmentsSegmenter]] , [[SegmentsString]] ».
+
+- Let segments be OrdinaryObjectCreate ( %IntlSegmentsPrototype% , internalSlotsList ).
+
+- Set segments . [[SegmentsSegmenter]] to segmenter .
+
+- Set segments . [[SegmentsString]] to string .
+
+- Return segments .
+
+19.5.2 The %IntlSegmentsPrototype% Object
+
+The %IntlSegmentsPrototype% object:
+
+- is the prototype of all Segments objects.
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- has the following properties:
+
+19.5.2.1 %IntlSegmentsPrototype%.containing ( index )
+
+The containing method is called on a Segments instance with argument index to return a Segment Data object describing the segment in the string including the code unit at the specified index according to the locale and options of the Segments instance 's constructing Intl.Segmenter instance. The following steps are taken:
+
+- Let segments be the this value.
+
+- Perform ? RequireInternalSlot ( segments , [[SegmentsSegmenter]] ).
+
+- Let segmenter be segments . [[SegmentsSegmenter]] .
+
+- Let string be segments . [[SegmentsString]] .
+
+- Let length be the length of string .
+
+- Let n be ? ToIntegerOrInfinity ( index ).
+
+- If n < 0 or n ≥ length , return undefined .
+
+- Let startIndex be FindBoundary ( segmenter , string , n , before ).
+
+- Let endIndex be FindBoundary ( segmenter , string , n , after ).
+
+- Return CreateSegmentDataObject ( segmenter , string , startIndex , endIndex ).
+
+19.5.2.2 %IntlSegmentsPrototype% [ %Symbol.iterator% ] ( )
+
+The %Symbol.iterator% method is called on a Segments instance to create a Segment Iterator over its string using the locale and options of its constructing Intl.Segmenter instance. The following steps are taken:
+
+- Let segments be the this value.
+
+- Perform ? RequireInternalSlot ( segments , [[SegmentsSegmenter]] ).
+
+- Let segmenter be segments . [[SegmentsSegmenter]] .
+
+- Let string be segments . [[SegmentsString]] .
+
+- Return CreateSegmentIterator ( segmenter , string ).
+
+The value of the "name" property of this function is "[Symbol.iterator]" .
+
+19.5.3 Properties of Segments Instances
+
+Segments instances are ordinary objects that inherit properties from %IntlSegmentsPrototype% .
+
+Segments instances have a [[SegmentsSegmenter]] internal slot that references the constructing Intl.Segmenter instance.
+
+Segments instances have a [[SegmentsString]] internal slot that references the String value whose segments they expose.
+
+19.6 Segment Iterator Objects
+
+A Segment Iterator is an object that represents a particular iteration over the segments of a specific string.
+
+19.6.1 CreateSegmentIterator ( segmenter , string )
+
+The abstract operation CreateSegmentIterator takes arguments segmenter (an Intl.Segmenter) and string (a String) and returns a Segment Iterator . The Segment Iterator iterates over string using the locale and options of segmenter . It performs the following steps when called:
+
+- Let internalSlotsList be « [[IteratingSegmenter]] , [[IteratedString]] , [[IteratedStringNextSegmentCodeUnitIndex]] ».
+
+- Let iterator be OrdinaryObjectCreate ( %IntlSegmentIteratorPrototype% , internalSlotsList ).
+
+- Set iterator . [[IteratingSegmenter]] to segmenter .
+
+- Set iterator . [[IteratedString]] to string .
+
+- Set iterator . [[IteratedStringNextSegmentCodeUnitIndex]] to 0.
+
+- Return iterator .
+
+19.6.2 The %IntlSegmentIteratorPrototype% Object
+
+The %IntlSegmentIteratorPrototype% object:
+
+- is the prototype of all Segment Iterator objects.
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- has the following properties:
+
+19.6.2.1 %IntlSegmentIteratorPrototype%.next ( )
+
+The next method is called on a Segment Iterator instance to advance it forward one segment and return an IteratorResult object either describing the new segment or declaring iteration done. The following steps are taken:
+
+- Let iterator be the this value.
+
+- Perform ? RequireInternalSlot ( iterator , [[IteratingSegmenter]] ).
+
+- Let segmenter be iterator . [[IteratingSegmenter]] .
+
+- Let string be iterator . [[IteratedString]] .
+
+- Let startIndex be iterator . [[IteratedStringNextSegmentCodeUnitIndex]] .
+
+- Let length be the length of string .
+
+- If startIndex ≥ length , then
+- Return CreateIteratorResultObject ( undefined , true ).
+
+- Let endIndex be FindBoundary ( segmenter , string , startIndex , after ).
+
+- Set iterator . [[IteratedStringNextSegmentCodeUnitIndex]] to endIndex .
+
+- Let segmentData be CreateSegmentDataObject ( segmenter , string , startIndex , endIndex ).
+
+- Return CreateIteratorResultObject ( segmentData , false ).
+
+19.6.2.2 %IntlSegmentIteratorPrototype% [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Segmenter String Iterator" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+19.6.3 Properties of Segment Iterator Instances
+
+Segment Iterator instances are ordinary objects that inherit properties from %SegmentIteratorPrototype%. Segment Iterator instances are initially created with the internal slots described in Table 35 .
+
+Table 35: Internal Slots of Segment Iterator Instances
+
+Internal Slot
+Description
+
+[[IteratingSegmenter]]
+The Intl.Segmenter instance used for iteration.
+
+[[IteratedString]]
+The String value being iterated upon.
+
+[[IteratedStringNextSegmentCodeUnitIndex]]
+The code unit index in the String value being iterated upon at the start of the next segment.
+
+19.7 Segment Data Objects
+
+A Segment Data object is an object that represents a particular segment from a string.
+
+19.7.1 CreateSegmentDataObject ( segmenter , string , startIndex , endIndex )
+
+The abstract operation CreateSegmentDataObject takes arguments segmenter (an Intl.Segmenter), string (a String), startIndex (a non-negative integer ), and endIndex (a non-negative integer ) and returns a Segment Data object . The Segment Data object describes the segment within string from segmenter that is bounded by the indices startIndex and endIndex . It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Assert : endIndex ≤ length .
+
+- Assert : startIndex < endIndex .
+
+- Let result be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Let segment be the substring of string from startIndex to endIndex .
+
+- Perform ! CreateDataPropertyOrThrow ( result , "segment" , segment ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , "index" , 𝔽 ( startIndex )).
+
+- Perform ! CreateDataPropertyOrThrow ( result , "input" , string ).
+
+- Let granularity be segmenter . [[SegmenterGranularity]] .
+
+- If granularity is "word" , then
+- Let isWordLike be a Boolean indicating whether the segment in string is "word-like" according to locale segmenter . [[Locale]] .
+
+- Perform ! CreateDataPropertyOrThrow ( result , "isWordLike" , isWordLike ).
+
+- Return result .
+
+Note Whether a segment is "word-like" is implementation-dependent, and implementations are recommended to use locale-sensitive tailorings. In general, segments consisting solely of spaces and/or punctuation (such as those terminated with "WORD_NONE" boundaries by ICU [International Components for Unicode, documented at https://unicode-org.github.io/icu-docs/ ]) are not considered to be "word-like".
+
+19.8 Abstract Operations for Segmenter Objects
+
+19.8.1 FindBoundary ( segmenter , string , startIndex , direction )
+
+The abstract operation FindBoundary takes arguments segmenter (an Intl.Segmenter), string (a String), startIndex (a non-negative integer ), and direction ( before or after ) and returns a non-negative integer . It finds a segmentation boundary between two code units in string in the specified direction from the code unit at index startIndex according to the locale and options of segmenter and returns the immediately following code unit index. It performs the following steps when called:
+
+- Let length be the length of string .
+
+- Assert : startIndex < length .
+
+- Let locale be segmenter . [[Locale]] .
+
+- Let granularity be segmenter . [[SegmenterGranularity]] .
+
+- If direction is before , then
+- Search string for the last segmentation boundary that is preceded by at most startIndex code units from the beginning, using locale locale and text element granularity granularity .
+
+- If a boundary is found, return the count of code units in string preceding it.
+
+- Return 0.
+
+- Assert : direction is after .
+
+- Search string for the first segmentation boundary that follows the code unit at index startIndex , using locale locale and text element granularity granularity .
+
+- If a boundary is found, return the count of code units in string preceding it.
+
+- Return length .
+
+Note Boundary determination is implementation-dependent, but general default algorithms are specified in Unicode Standard Annex #29 . It is recommended that implementations use locale-sensitive tailorings such as those provided by the Common Locale Data Repository (available at https://cldr.unicode.org ).

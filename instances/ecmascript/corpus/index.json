@@ -1,0 +1,725 @@
+{
+  "written": "2026-09-01",
+  "documents": [
+    {
+      "file": "01-scope.txt",
+      "id": "scope",
+      "title": "1 Scope",
+      "url": "https://tc39.es/ecma262/multipage/scope.html#sec-scope",
+      "fetched": "2026-09-01",
+      "chars": 89,
+      "sha256": "ab10e546f6786360a9204efb7866d8b47540d6f552415aeb47ea4b266451ca68",
+      "source": "ecma262"
+    },
+    {
+      "file": "02-conformance.txt",
+      "id": "conformance",
+      "title": "2 Conformance",
+      "url": "https://tc39.es/ecma262/multipage/conformance.html#sec-conformance",
+      "fetched": "2026-09-01",
+      "chars": 3019,
+      "sha256": "82682d2ac8cfff3c81762ccb87b2a5eb82f49c7dd7b252ebd298fbf639432396",
+      "source": "ecma262"
+    },
+    {
+      "file": "03-normative-references.txt",
+      "id": "normative-references",
+      "title": "3 Normative References",
+      "url": "https://tc39.es/ecma262/multipage/normative-references.html#sec-normative-references",
+      "fetched": "2026-09-01",
+      "chars": 983,
+      "sha256": "bce61481052f1af97d29e7293dcf1be182b00cb7fb31af332e3305743eb8f607",
+      "source": "ecma262"
+    },
+    {
+      "file": "04-overview.txt",
+      "id": "overview",
+      "title": "4 Overview",
+      "url": "https://tc39.es/ecma262/multipage/overview.html#sec-overview",
+      "fetched": "2026-09-01",
+      "chars": 23494,
+      "sha256": "1a8d760e8aeb61587714f77a518f5608f962820331fb3b6b268c8b4bdda92527",
+      "source": "ecma262"
+    },
+    {
+      "file": "05-notational-conventions.txt",
+      "id": "notational-conventions",
+      "title": "5 Notational Conventions",
+      "url": "https://tc39.es/ecma262/multipage/notational-conventions.html#sec-notational-conventions",
+      "fetched": "2026-09-01",
+      "chars": 40416,
+      "sha256": "be40d2f74d0e083dee7b81fe1cc9be5e1dd6ad610dc5ae2a906a3be982ff4c9e",
+      "source": "ecma262"
+    },
+    {
+      "file": "06-ecmascript-data-types-and-values.txt",
+      "id": "ecmascript-data-types-and-values",
+      "title": "6 ECMAScript Data Types and Values",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-data-types-and-values.html#sec-ecmascript-data-types-and-values",
+      "fetched": "2026-09-01",
+      "chars": 108330,
+      "sha256": "0054eb11b42a9c4a022543baea7d316b82cecdcb448d675dd62a400f1a681b44",
+      "source": "ecma262"
+    },
+    {
+      "file": "07-abstract-operations.txt",
+      "id": "abstract-operations",
+      "title": "7 Abstract Operations",
+      "url": "https://tc39.es/ecma262/multipage/abstract-operations.html#sec-abstract-operations",
+      "fetched": "2026-09-01",
+      "chars": 85375,
+      "sha256": "404fb2e04a0df3d7c08910f83d2677e47bb333f018bcdbce992966dedc7385ae",
+      "source": "ecma262"
+    },
+    {
+      "file": "08-syntax-directed-operations.txt",
+      "id": "syntax-directed-operations",
+      "title": "8 Syntax-Directed Operations",
+      "url": "https://tc39.es/ecma262/multipage/syntax-directed-operations.html#sec-syntax-directed-operations",
+      "fetched": "2026-09-01",
+      "chars": 85282,
+      "sha256": "f7ab491901ddbba1782695184930d664d4f32758d2794cac5841b7fb5fb5896c",
+      "source": "ecma262"
+    },
+    {
+      "file": "09-executable-code-and-execution-contexts.txt",
+      "id": "executable-code-and-execution-contexts",
+      "title": "9 Executable Code and Execution Contexts",
+      "url": "https://tc39.es/ecma262/multipage/executable-code-and-execution-contexts.html#sec-executable-code-and-execution-contexts",
+      "fetched": "2026-09-01",
+      "chars": 99585,
+      "sha256": "844c70322a5462aa0bb04ca7e6e76519c9f0b4f6a4176576305be59b8806bcca",
+      "source": "ecma262"
+    },
+    {
+      "file": "10-ordinary-and-exotic-objects-behaviours.txt",
+      "id": "ordinary-and-exotic-objects-behaviours",
+      "title": "10 Ordinary and Exotic Objects Behaviours",
+      "url": "https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-ordinary-and-exotic-objects-behaviours",
+      "fetched": "2026-09-01",
+      "chars": 141278,
+      "sha256": "58e38a86c4dd25f28c8dda6fcb32884b3ee7c97892e5a465385f591299e52d94",
+      "source": "ecma262"
+    },
+    {
+      "file": "11-ecmascript-language-source-code.txt",
+      "id": "ecmascript-language-source-code",
+      "title": "11 ECMAScript Language: Source Text",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-source-code.html#sec-ecmascript-language-source-code",
+      "fetched": "2026-09-01",
+      "chars": 14945,
+      "sha256": "40cbd3b16e6153273e1fb17797a1b4320c51d78ba28c111b1d0cfd80eccf0e40",
+      "source": "ecma262"
+    },
+    {
+      "file": "12-ecmascript-language-lexical-grammar.txt",
+      "id": "ecmascript-language-lexical-grammar",
+      "title": "12 ECMAScript Language: Lexical Grammar",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#sec-ecmascript-language-lexical-grammar",
+      "fetched": "2026-09-01",
+      "chars": 58903,
+      "sha256": "d965f998e4356b1f543e4a5a5b050ac6f5cf2d2c9a924dc2436af3e2a382f090",
+      "source": "ecma262"
+    },
+    {
+      "file": "13-ecmascript-language-expressions.txt",
+      "id": "ecmascript-language-expressions",
+      "title": "13 ECMAScript Language: Expressions",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#sec-ecmascript-language-expressions",
+      "fetched": "2026-09-01",
+      "chars": 107736,
+      "sha256": "f808ebb951c26044b3e728204912be9e01b767a311ed0e48468705693faf2aae",
+      "source": "ecma262"
+    },
+    {
+      "file": "14-ecmascript-language-statements-and-declarations.txt",
+      "id": "ecmascript-language-statements-and-declarations",
+      "title": "14 ECMAScript Language: Statements and Declarations",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-ecmascript-language-statements-and-declarations",
+      "fetched": "2026-09-01",
+      "chars": 74745,
+      "sha256": "3c2e0f7ef81b3e33eef6b371a5ee4f352282cbda2201bd37429418157c5e993e",
+      "source": "ecma262"
+    },
+    {
+      "file": "15-ecmascript-language-functions-and-classes.txt",
+      "id": "ecmascript-language-functions-and-classes",
+      "title": "15 ECMAScript Language: Functions and Classes",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#sec-ecmascript-language-functions-and-classes",
+      "fetched": "2026-09-01",
+      "chars": 102267,
+      "sha256": "a339d9b3afa0ca05a975feb7720287ba125a232140ae5813d6ff27f1191b13c4",
+      "source": "ecma262"
+    },
+    {
+      "file": "16-ecmascript-language-scripts-and-modules.txt",
+      "id": "ecmascript-language-scripts-and-modules",
+      "title": "16 ECMAScript Language: Scripts and Modules",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-language-scripts-and-modules.html#sec-ecmascript-language-scripts-and-modules",
+      "fetched": "2026-09-01",
+      "chars": 118217,
+      "sha256": "9ec1eb490066dd1b88a76eb052f54f4a755bed1e580ce52a2befd9fc920a3c72",
+      "source": "ecma262"
+    },
+    {
+      "file": "17-error-handling-and-language-extensions.txt",
+      "id": "error-handling-and-language-extensions",
+      "title": "17 Error Handling and Language Extensions",
+      "url": "https://tc39.es/ecma262/multipage/error-handling-and-language-extensions.html#sec-error-handling-and-language-extensions",
+      "fetched": "2026-09-01",
+      "chars": 4673,
+      "sha256": "c3b096cc3d7bad853e6b988a66623a6a31455d43e8e1d8c2484af61c27ee5ca3",
+      "source": "ecma262"
+    },
+    {
+      "file": "18-ecmascript-standard-built-in-objects.txt",
+      "id": "ecmascript-standard-built-in-objects",
+      "title": "18 ECMAScript Standard Built-in Objects",
+      "url": "https://tc39.es/ecma262/multipage/ecmascript-standard-built-in-objects.html#sec-ecmascript-standard-built-in-objects",
+      "fetched": "2026-09-01",
+      "chars": 6839,
+      "sha256": "e9d8d09a59bab9451bc7f0e9c4f6f454c99a74b7a7e6f51858203f56f0ccd9f2",
+      "source": "ecma262"
+    },
+    {
+      "file": "19-global-object.txt",
+      "id": "global-object",
+      "title": "19 The Global Object",
+      "url": "https://tc39.es/ecma262/multipage/global-object.html#sec-global-object",
+      "fetched": "2026-09-01",
+      "chars": 30098,
+      "sha256": "9b3c70c5a70e88f0376bbbee956c13c66f5a0cbee8b3f4a64b9a24f8b3d49d89",
+      "source": "ecma262"
+    },
+    {
+      "file": "20-fundamental-objects.txt",
+      "id": "fundamental-objects",
+      "title": "20 Fundamental Objects",
+      "url": "https://tc39.es/ecma262/multipage/fundamental-objects.html#sec-fundamental-objects",
+      "fetched": "2026-09-01",
+      "chars": 64255,
+      "sha256": "cea453dcd3170670b57af4d7eed1b2e3a8ac70997c1247556fc906f11a57727e",
+      "source": "ecma262"
+    },
+    {
+      "file": "21-numbers-and-dates.txt",
+      "id": "numbers-and-dates",
+      "title": "21 Numbers and Dates",
+      "url": "https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-numbers-and-dates",
+      "fetched": "2026-09-01",
+      "chars": 125067,
+      "sha256": "1c5c7cf63d13c33ed629fd1f9e073c242174970879e1a025e1a4f7eb0c5ba627",
+      "source": "ecma262"
+    },
+    {
+      "file": "22-text-processing.txt",
+      "id": "text-processing",
+      "title": "22 Text Processing",
+      "url": "https://tc39.es/ecma262/multipage/text-processing.html#sec-text-processing",
+      "fetched": "2026-09-01",
+      "chars": 189395,
+      "sha256": "e052821f13638bdb2548b7a3fcda0dae0e8a7260a51d191178b189946461ec34",
+      "source": "ecma262"
+    },
+    {
+      "file": "23-indexed-collections.txt",
+      "id": "indexed-collections",
+      "title": "23 Indexed Collections",
+      "url": "https://tc39.es/ecma262/multipage/indexed-collections.html#sec-indexed-collections",
+      "fetched": "2026-09-01",
+      "chars": 152811,
+      "sha256": "d8f252e050ea068c68d74a991df807ae65eb511a2e90c40cb7dbca98488230f2",
+      "source": "ecma262"
+    },
+    {
+      "file": "24-keyed-collections.txt",
+      "id": "keyed-collections",
+      "title": "24 Keyed Collections",
+      "url": "https://tc39.es/ecma262/multipage/keyed-collections.html#sec-keyed-collections",
+      "fetched": "2026-09-01",
+      "chars": 53458,
+      "sha256": "ee98a5ffc41d4517d0adddcb932bb046f456b69ac745f6fe6c4528f803ca511c",
+      "source": "ecma262"
+    },
+    {
+      "file": "25-structured-data.txt",
+      "id": "structured-data",
+      "title": "25 Structured Data",
+      "url": "https://tc39.es/ecma262/multipage/structured-data.html#sec-structured-data",
+      "fetched": "2026-09-01",
+      "chars": 133427,
+      "sha256": "8628f23ee15afc4723e91e83eb4775527e0ed572a4558c21da0255beccd819f8",
+      "source": "ecma262"
+    },
+    {
+      "file": "26-managing-memory.txt",
+      "id": "managing-memory",
+      "title": "26 Managing Memory",
+      "url": "https://tc39.es/ecma262/multipage/managing-memory.html#sec-managing-memory",
+      "fetched": "2026-09-01",
+      "chars": 8909,
+      "sha256": "30afdefea610181fc7a70e675c9b2e77d0c682d6e78ce20c53141379b8cbd6b2",
+      "source": "ecma262"
+    },
+    {
+      "file": "27-control-abstraction-objects.txt",
+      "id": "control-abstraction-objects",
+      "title": "27 Control Abstraction Objects",
+      "url": "https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-control-abstraction-objects",
+      "fetched": "2026-09-01",
+      "chars": 152816,
+      "sha256": "1adf9181399cce92e6f7ba23c2d4d3bd3925cc7ef450a8aed77b24002c50b701",
+      "source": "ecma262"
+    },
+    {
+      "file": "28-reflection.txt",
+      "id": "reflection",
+      "title": "28 Reflection",
+      "url": "https://tc39.es/ecma262/multipage/reflection.html#sec-reflection",
+      "fetched": "2026-09-01",
+      "chars": 7202,
+      "sha256": "3a54664c45dda584ca85ca990f422c9ac6844c3dbbd43afff70732052d07cb34",
+      "source": "ecma262"
+    },
+    {
+      "file": "29-memory-model.txt",
+      "id": "memory-model",
+      "title": "29 Memory Model",
+      "url": "https://tc39.es/ecma262/multipage/memory-model.html#sec-memory-model",
+      "fetched": "2026-09-01",
+      "chars": 32399,
+      "sha256": "f34fd826eaf09388600aad65a0d29ca528081dc1f9c531294192f408857a48e6",
+      "source": "ecma262"
+    },
+    {
+      "file": "30-grammar-summary.txt",
+      "id": "grammar-summary",
+      "title": "Annex A (informative) Grammar Summary",
+      "url": "https://tc39.es/ecma262/multipage/grammar-summary.html",
+      "fetched": "2026-09-01",
+      "chars": 51705,
+      "sha256": "206593d67f5c379d04c5ba8d1c6437f1fab3528d6a68572d30700ffb1a9e761f",
+      "source": "ecma262"
+    },
+    {
+      "file": "31-additional-ecmascript-features-for-web-browsers.txt",
+      "id": "additional-ecmascript-features-for-web-browsers",
+      "title": "Annex B (normative) Additional ECMAScript Features for Web Browsers",
+      "url": "https://tc39.es/ecma262/multipage/additional-ecmascript-features-for-web-browsers.html",
+      "fetched": "2026-09-01",
+      "chars": 38200,
+      "sha256": "3f9d49b3fc9ddd56b4b0569e004a65a5509e86d13988e43c150b79a00d51f54d",
+      "source": "ecma262"
+    },
+    {
+      "file": "32-strict-mode-of-ecmascript.txt",
+      "id": "strict-mode-of-ecmascript",
+      "title": "Annex C (informative) The Strict Mode of ECMAScript",
+      "url": "https://tc39.es/ecma262/multipage/strict-mode-of-ecmascript.html",
+      "fetched": "2026-09-01",
+      "chars": 4178,
+      "sha256": "8c5afb9676fb1822ba25f4033f799db02ad64c78af2fa96f62f78f35407712f2",
+      "source": "ecma262"
+    },
+    {
+      "file": "33-host-layering-points.txt",
+      "id": "host-layering-points",
+      "title": "Annex D (informative) Host Layering Points",
+      "url": "https://tc39.es/ecma262/multipage/host-layering-points.html",
+      "fetched": "2026-09-01",
+      "chars": 1360,
+      "sha256": "b45531041ec447896a4f0eacd0655d1817c53d9aef77dc8109c5e218ef8eec3a",
+      "source": "ecma262"
+    },
+    {
+      "file": "34-corrections-and-clarifications-in-ecmascript-2015-with-possible-compatibility-impact.txt",
+      "id": "corrections-and-clarifications-in-ecmascript-2015-with-possible-compatibility-impact",
+      "title": "Annex E (informative) Corrections and Clarifications in ECMAScript 2015 with Possible Compatibility Impact",
+      "url": "https://tc39.es/ecma262/multipage/corrections-and-clarifications-in-ecmascript-2015-with-possible-compatibility-impact.html",
+      "fetched": "2026-09-01",
+      "chars": 2897,
+      "sha256": "eba5a64937abb2f0bfdb110c94beff76600535a37242119ad310706e265f8400",
+      "source": "ecma262"
+    },
+    {
+      "file": "35-additions-and-changes-that-introduce-incompatibilities-with-prior-editions.txt",
+      "id": "additions-and-changes-that-introduce-incompatibilities-with-prior-editions",
+      "title": "Annex F (informative) Additions and Changes That Introduce Incompatibilities with Prior Editions",
+      "url": "https://tc39.es/ecma262/multipage/additions-and-changes-that-introduce-incompatibilities-with-prior-editions.html",
+      "fetched": "2026-09-01",
+      "chars": 11758,
+      "sha256": "77d54b0a51d04e312bcd8d335c83ec67a564140db7a735554a4120c3f1af13ac",
+      "source": "ecma262"
+    },
+    {
+      "file": "36-bibliography.txt",
+      "id": "bibliography",
+      "title": "Bibliography",
+      "url": "https://tc39.es/ecma262/multipage/bibliography.html",
+      "fetched": "2026-09-01",
+      "chars": 2050,
+      "sha256": "a4378cf1030a28e395d45681aa810fe05032b59404adf9bc0e51d0e31dd3910b",
+      "source": "ecma262"
+    },
+    {
+      "file": "37-colophon.txt",
+      "id": "colophon",
+      "title": "Colophon",
+      "url": "https://tc39.es/ecma262/multipage/colophon.html",
+      "fetched": "2026-09-01",
+      "chars": 921,
+      "sha256": "f24a6dcdda4e47d02f052beeba49f28bfd89eaef27dcac0c8a17a59bbf3027cc",
+      "source": "ecma262"
+    },
+    {
+      "file": "38-copyright-and-software-license.txt",
+      "id": "copyright-and-software-license",
+      "title": "Copyright & Software License",
+      "url": "https://tc39.es/ecma262/multipage/copyright-and-software-license.html",
+      "fetched": "2026-09-01",
+      "chars": 4055,
+      "sha256": "8818f1cdf1188e389933469b28b099a2db486b5358c97ad62ec5d05716f830c4",
+      "source": "ecma262"
+    },
+    {
+      "file": "402-01-scope.txt",
+      "id": "scope",
+      "title": "1 Scope",
+      "url": "https://tc39.es/ecma402/#scope",
+      "fetched": "2026-09-01",
+      "chars": 225,
+      "sha256": "7923bbf5046e302df35d3e20f329e6df65e434cac582c8865c74bb286b473bf5",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-02-conformance.txt",
+      "id": "conformance",
+      "title": "2 Conformance",
+      "url": "https://tc39.es/ecma402/#conformance",
+      "fetched": "2026-09-01",
+      "chars": 2395,
+      "sha256": "8fdcddeb77abddaa15a0c9842c38ec3c0707522b7fb3c0b80941923166101eb4",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-03-normative-references.txt",
+      "id": "normative-references",
+      "title": "3 Normative References",
+      "url": "https://tc39.es/ecma402/#normative-references",
+      "fetched": "2026-09-01",
+      "chars": 1521,
+      "sha256": "78df83ff8c2b2d5264f86583dda5787c85562f0a3aa6ad59cf9859428da7dcb6",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-04-overview.txt",
+      "id": "overview",
+      "title": "4 Overview",
+      "url": "https://tc39.es/ecma402/#overview",
+      "fetched": "2026-09-01",
+      "chars": 8703,
+      "sha256": "8e794fa12399bc932da8de174e95cd7b260606afe3fedff085d4d39325fe8a2b",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-05-conventions.txt",
+      "id": "conventions",
+      "title": "5 Notational Conventions",
+      "url": "https://tc39.es/ecma402/#conventions",
+      "fetched": "2026-09-01",
+      "chars": 2107,
+      "sha256": "986f7b9eba93fab445a573ff1f5d91e4c9a4cfde3b5e1efd1aa0e1d7b85c1bc9",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-06-locales-currencies-tz.txt",
+      "id": "locales-currencies-tz",
+      "title": "6 Identification of Locales, Currencies, Time Zones, Measurement Units, Numbering Systems, Collations, and Calendars",
+      "url": "https://tc39.es/ecma402/#locales-currencies-tz",
+      "fetched": "2026-09-01",
+      "chars": 31353,
+      "sha256": "2aea65bf864263f27548ce64d4ce50268e1434ed8179c7e08760a2b3547f7251",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-07-requirements.txt",
+      "id": "requirements",
+      "title": "7 Requirements for Standard Built-in ECMAScript Objects",
+      "url": "https://tc39.es/ecma402/#requirements",
+      "fetched": "2026-09-01",
+      "chars": 320,
+      "sha256": "6c3c3bd1be115916fb8a3c09dbce38abb920a3d72e3c745a19aa2acdb00a560e",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-08-intl-object.txt",
+      "id": "intl-object",
+      "title": "8 The Intl Object",
+      "url": "https://tc39.es/ecma402/#intl-object",
+      "fetched": "2026-09-01",
+      "chars": 2734,
+      "sha256": "1ad7fc75a26d1701f9068c6f1af95bde7f9eaec67b2a11f64eada1a1b6aa914d",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-09-locale-and-parameter-negotiation.txt",
+      "id": "locale-and-parameter-negotiation",
+      "title": "9 Locale and Parameter Negotiation",
+      "url": "https://tc39.es/ecma402/#locale-and-parameter-negotiation",
+      "fetched": "2026-09-01",
+      "chars": 27065,
+      "sha256": "25bed66140fb1234b8c21cfcb10d6a7fa9ba44185d7248fd693c31ff0236cb6c",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-10-collator-objects.txt",
+      "id": "collator-objects",
+      "title": "10 Collator Objects",
+      "url": "https://tc39.es/ecma402/#collator-objects",
+      "fetched": "2026-09-01",
+      "chars": 15274,
+      "sha256": "92b30793073e59e2c535803c9d11a15d17bf187bd481cf52c897015dbe5a926f",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-11-datetimeformat-objects.txt",
+      "id": "datetimeformat-objects",
+      "title": "11 DateTimeFormat Objects",
+      "url": "https://tc39.es/ecma402/#datetimeformat-objects",
+      "fetched": "2026-09-01",
+      "chars": 57707,
+      "sha256": "af3cb3fbcdaf044e6896a8943c3a989700955e72db89ae2529f9e481b46821eb",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-12-intl-displaynames-objects.txt",
+      "id": "intl-displaynames-objects",
+      "title": "12 DisplayNames Objects",
+      "url": "https://tc39.es/ecma402/#intl-displaynames-objects",
+      "fetched": "2026-09-01",
+      "chars": 12664,
+      "sha256": "deca7dffb6a1d7a75821c9597f0acb3d64b9181f36ee7a29542b76c90089f480",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-13-durationformat-objects.txt",
+      "id": "durationformat-objects",
+      "title": "13 DurationFormat Objects",
+      "url": "https://tc39.es/ecma402/#durationformat-objects",
+      "fetched": "2026-09-01",
+      "chars": 39437,
+      "sha256": "a963f0bd0a2cabbdf91b1bdfd0ed32051214022d4f1146adf120d4234ee5c83c",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-14-listformat-objects.txt",
+      "id": "listformat-objects",
+      "title": "14 ListFormat Objects",
+      "url": "https://tc39.es/ecma402/#listformat-objects",
+      "fetched": "2026-09-01",
+      "chars": 12757,
+      "sha256": "83802507a172f7b27c1dd7977b41abe5a861b123c39042226cfaea90df0b4eda",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-15-locale-objects.txt",
+      "id": "locale-objects",
+      "title": "15 Locale Objects",
+      "url": "https://tc39.es/ecma402/#locale-objects",
+      "fetched": "2026-09-01",
+      "chars": 35677,
+      "sha256": "c8ce30dbafa834a35662355937516b7aa784b7eac355bd4cf2f21e48ba98f8c0",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-16-numberformat-objects.txt",
+      "id": "numberformat-objects",
+      "title": "16 NumberFormat Objects",
+      "url": "https://tc39.es/ecma402/#numberformat-objects",
+      "fetched": "2026-09-01",
+      "chars": 70689,
+      "sha256": "d0b789e4f75dfef24752478a1d8da2708293b79db21c0804000ff5fa241bdcc5",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-17-pluralrules-objects.txt",
+      "id": "pluralrules-objects",
+      "title": "17 PluralRules Objects",
+      "url": "https://tc39.es/ecma402/#pluralrules-objects",
+      "fetched": "2026-09-01",
+      "chars": 14015,
+      "sha256": "448e4603bc4be31c40c2ff3039ef86c3541c9fde8498ef83b3d9f2fae1242e15",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-18-relativetimeformat-objects.txt",
+      "id": "relativetimeformat-objects",
+      "title": "18 RelativeTimeFormat Objects",
+      "url": "https://tc39.es/ecma402/#relativetimeformat-objects",
+      "fetched": "2026-09-01",
+      "chars": 14382,
+      "sha256": "c7f377d0a25dbea8899af9a4aa5c4c9851e678e03a2700021dbac9b677eae4e5",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-19-segmenter-objects.txt",
+      "id": "segmenter-objects",
+      "title": "19 Segmenter Objects",
+      "url": "https://tc39.es/ecma402/#segmenter-objects",
+      "fetched": "2026-09-01",
+      "chars": 14746,
+      "sha256": "df1c752d8fd76cfc8ff0414df96e16443d7f022137a72cba7efca0862fe5323e",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-20-locale-sensitive-functions.txt",
+      "id": "locale-sensitive-functions",
+      "title": "20 Locale Sensitive Functions of the ECMAScript Language Specification",
+      "url": "https://tc39.es/ecma402/#locale-sensitive-functions",
+      "fetched": "2026-09-01",
+      "chars": 10686,
+      "sha256": "dc64bbe75a0f4d365f9233a232dc6aff33f63411471095cead1c721e0d0b8f12",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-A-implementation-dependent-behaviour.txt",
+      "id": "implementation-dependent-behaviour",
+      "title": "Annex A (informative) Implementation Dependent Behaviour",
+      "url": "https://tc39.es/ecma402/#annex-implementation-dependent-behaviour",
+      "fetched": "2026-09-01",
+      "chars": 4137,
+      "sha256": "e35c57ba41c73478765172119a501886054372871ba23f39c0bd995f71ae7fcf",
+      "source": "ecma402"
+    },
+    {
+      "file": "402-B-incompatibilities.txt",
+      "id": "incompatibilities",
+      "title": "Annex B (informative) Additions and Changes That Introduce Incompatibilities with Prior Editions",
+      "url": "https://tc39.es/ecma402/#annex-incompatibilities",
+      "fetched": "2026-09-01",
+      "chars": 1629,
+      "sha256": "5334836199e4c39617c8cc4bff2583d75d7af22c7a5230cc638104932e7707c2",
+      "source": "ecma402"
+    },
+    {
+      "file": "404-json.txt",
+      "id": "404-json",
+      "title": "ECMA-404 The JSON Data Interchange Syntax, 2nd edition",
+      "url": "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf",
+      "fetched": "2026-09-01",
+      "chars": 11773,
+      "sha256": "ccfe3f7991ec8e87b7293f342a292f3c31fd7bb077a9c4608b11209deaa2e485",
+      "source": "404-json"
+    },
+    {
+      "file": "414-suite.txt",
+      "id": "414-suite",
+      "title": "ECMA-414 ECMAScript Specification Suite, 3rd edition",
+      "url": "https://ecma-international.org/wp-content/uploads/ECMA-414_3rd_edition_december_2017.pdf",
+      "fetched": "2026-09-01",
+      "chars": 4088,
+      "sha256": "39f258ecff5bc8577c485e6e83d3903eed426c212a941b8e3e41f4f052c774d2",
+      "source": "414-suite"
+    },
+    {
+      "file": "rfc4647-matching-of-language-tags.txt",
+      "id": "rfc4647-matching-of-language-tags",
+      "title": "RFC 4647 Matching of Language Tags",
+      "url": "https://www.rfc-editor.org/rfc/rfc4647.txt",
+      "fetched": "2026-09-01",
+      "chars": 36843,
+      "sha256": "484b3fb8f4004bbeb4d5a2a9fc3c6199cb5e33b5fbfca0c85ec7c02648a87235",
+      "source": "rfc4647-matching-of-language-tags"
+    },
+    {
+      "file": "uax29-text-segmentation.txt",
+      "id": "uax29-text-segmentation",
+      "title": "Unicode Standard Annex #29: Unicode Text Segmentation",
+      "url": "https://www.unicode.org/reports/tr29/",
+      "fetched": "2026-09-01",
+      "chars": 81335,
+      "sha256": "bde7ce806cd646acf94e4cceb7b10c0b80dd2a4ef1a4e93ddd62e0fcded2b908",
+      "source": "uax29-text-segmentation"
+    },
+    {
+      "file": "uts10-collation-algorithm.txt",
+      "id": "uts10-collation-algorithm",
+      "title": "Unicode Technical Standard #10: Unicode Collation Algorithm",
+      "url": "https://www.unicode.org/reports/tr10/",
+      "fetched": "2026-09-01",
+      "chars": 189843,
+      "sha256": "2da9db19ad10f1feea3f20e619fb554334e6baf13f3c0b4e033a8314a6ba9bcc",
+      "source": "uts10-collation-algorithm"
+    },
+    {
+      "file": "uts35-1-core.txt",
+      "id": "uts35-1-core",
+      "title": "Unicode Technical Standard #35: LDML Part 1: Core",
+      "url": "https://www.unicode.org/reports/tr35/",
+      "fetched": "2026-09-01",
+      "chars": 258552,
+      "sha256": "e4a2dd184122140f62c7e055fe092e09d0709be8e6ddee1d81da4d9240bed686",
+      "source": "uts35-1-core"
+    },
+    {
+      "file": "uts35-2-general.txt",
+      "id": "uts35-2-general",
+      "title": "Unicode Technical Standard #35: LDML Part 2: General",
+      "url": "https://www.unicode.org/reports/tr35/tr35-general.html",
+      "fetched": "2026-09-01",
+      "chars": 174798,
+      "sha256": "125f8dc1670523a3bbcc57fa12a8d3bb05ad63384f19e592b27764139705cb72",
+      "source": "uts35-2-general"
+    },
+    {
+      "file": "uts35-3-numbers.txt",
+      "id": "uts35-3-numbers",
+      "title": "Unicode Technical Standard #35: LDML Part 3: Numbers",
+      "url": "https://www.unicode.org/reports/tr35/tr35-numbers.html",
+      "fetched": "2026-09-01",
+      "chars": 131739,
+      "sha256": "f8c59ef46ac620bd6b49f8726af73d7429578707f723fe636b3ad125feb4e16c",
+      "source": "uts35-3-numbers"
+    },
+    {
+      "file": "uts35-4-dates.txt",
+      "id": "uts35-4-dates",
+      "title": "Unicode Technical Standard #35: LDML Part 4: Dates",
+      "url": "https://www.unicode.org/reports/tr35/tr35-dates.html",
+      "fetched": "2026-09-01",
+      "chars": 161724,
+      "sha256": "5a7c3015c0b4c59eff3d3549dd84362e8e592f7bb508955f54f38d4a6f853e8f",
+      "source": "uts35-4-dates"
+    },
+    {
+      "file": "uts35-5-collation.txt",
+      "id": "uts35-5-collation",
+      "title": "Unicode Technical Standard #35: LDML Part 5: Collation",
+      "url": "https://www.unicode.org/reports/tr35/tr35-collation.html",
+      "fetched": "2026-09-01",
+      "chars": 81528,
+      "sha256": "b7bfb4563094210832b5366ce59297f85cbd2fba9d4f614c3ed97bbaf8e6ef55",
+      "source": "uts35-5-collation"
+    },
+    {
+      "file": "uts35-6-supplemental.txt",
+      "id": "uts35-6-supplemental",
+      "title": "Unicode Technical Standard #35: LDML Part 6: Supplemental",
+      "url": "https://www.unicode.org/reports/tr35/tr35-info.html",
+      "fetched": "2026-09-01",
+      "chars": 81780,
+      "sha256": "e5fa6984949f3001aeb702e8605bcb3d12f19036386a753f3b01fa4900600e00",
+      "source": "uts35-6-supplemental"
+    },
+    {
+      "file": "uts35-7-keyboards.txt",
+      "id": "uts35-7-keyboards",
+      "title": "Unicode Technical Standard #35: LDML Part 7: Keyboards",
+      "url": "https://www.unicode.org/reports/tr35/tr35-keyboards.html",
+      "fetched": "2026-09-01",
+      "chars": 117633,
+      "sha256": "374d7cdea6124614fd16c630f8d650dea0dd51b87956ed584ff2fe688a47caca",
+      "source": "uts35-7-keyboards"
+    }
+  ]
+}

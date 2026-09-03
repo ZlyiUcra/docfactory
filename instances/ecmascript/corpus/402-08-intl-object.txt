@@ -1,0 +1,120 @@
+# 8 The Intl Object
+# джерело: https://tc39.es/ecma402/#intl-object
+# отримано: 2026-09-01
+
+8 The Intl Object
+
+The Intl object :
+
+- is %Intl% .
+
+- is the initial value of the "Intl" property of the global object .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+- is not a function object .
+
+- does not have a [[Construct]] internal method; it cannot be used as a constructor with the new operator.
+
+- does not have a [[Call]] internal method; it cannot be invoked as a function.
+
+- has a [[FallbackSymbol]] internal slot, which is a new %Symbol% in the current realm with the [[Description]] "IntlLegacyConstructedSymbol" .
+
+8.1 Value Properties of the Intl Object
+
+8.1.1 Intl [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+8.2 Constructor Properties of the Intl Object
+
+With the exception of Intl.Locale, each of the following constructors is a service constructor that creates objects providing locale-sensitive services.
+
+8.2.1 Intl.Collator ( . . . )
+
+See 10 .
+
+8.2.2 Intl.DateTimeFormat ( . . . )
+
+See 11 .
+
+8.2.3 Intl.DisplayNames ( . . . )
+
+See 12 .
+
+8.2.4 Intl.DurationFormat ( . . . )
+
+See 13 .
+
+8.2.5 Intl.ListFormat ( . . . )
+
+See 14 .
+
+8.2.6 Intl.Locale ( . . . )
+
+See 15 .
+
+8.2.7 Intl.NumberFormat ( . . . )
+
+See 16 .
+
+8.2.8 Intl.PluralRules ( . . . )
+
+See 17 .
+
+8.2.9 Intl.RelativeTimeFormat ( . . . )
+
+See 18 .
+
+8.2.10 Intl.Segmenter ( . . . )
+
+See 19 .
+
+8.3 Function Properties of the Intl Object
+
+8.3.1 Intl.getCanonicalLocales ( locales )
+
+When the getCanonicalLocales method is called with argument locales , the following steps are taken:
+
+- Let localeList be ? CanonicalizeLocaleList ( locales ).
+
+- Return CreateArrayFromList ( localeList ).
+
+8.3.2 Intl.supportedValuesOf ( key )
+
+When the supportedValuesOf method is called with argument key , the following steps are taken:
+
+- Set key to ? ToString ( key ).
+
+- If key is "calendar" , then
+- Let list be a new empty List .
+
+- For each element identifier of AvailableCalendars (), do
+- Let canonical be CanonicalizeUValue ( "ca" , identifier ).
+
+- If identifier is canonical , then
+- Append identifier to list .
+
+- Else if key is "collation" , then
+- Let list be AvailableCanonicalCollations ( ).
+
+- Else if key is "currency" , then
+- Let list be AvailableCanonicalCurrencies ( ).
+
+- Else if key is "numberingSystem" , then
+- Let list be AvailableCanonicalNumberingSystems ( ).
+
+- Else if key is "timeZone" , then
+- Let list be AvailablePrimaryTimeZoneIdentifiers ( ).
+
+- Else if key is "unit" , then
+- Let list be AvailableCanonicalUnits ( ).
+
+- Else,
+- Throw a RangeError exception.
+
+- Return CreateArrayFromList ( list ).

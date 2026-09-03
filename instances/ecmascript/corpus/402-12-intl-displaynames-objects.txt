@@ -1,0 +1,325 @@
+# 12 DisplayNames Objects
+# джерело: https://tc39.es/ecma402/#intl-displaynames-objects
+# отримано: 2026-09-01
+
+12 DisplayNames Objects
+
+12.1 The Intl.DisplayNames Constructor
+
+The Intl.DisplayNames constructor :
+
+- is %Intl.DisplayNames% .
+
+- is the initial value of the "DisplayNames" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+12.1.1 Intl.DisplayNames ( locales , options )
+
+When the Intl.DisplayNames function is called with arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let displayNames be ? OrdinaryCreateFromConstructor (NewTarget, "%Intl.DisplayNames.prototype%" , « [[InitializedDisplayNames]] , [[Locale]] , [[Style]] , [[Type]] , [[Fallback]] , [[LanguageDisplay]] , [[Fields]] »).
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.DisplayNames% , %Intl.DisplayNames% . [[LocaleData]] , locales , options , « require-options »).
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Let style be ? GetOption ( options , "style" , string , « "narrow" , "short" , "long" », "long" ).
+
+- Set displayNames . [[Style]] to style .
+
+- Let type be ? GetOption ( options , "type" , string , « "language" , "region" , "script" , "currency" , "calendar" , "dateTimeField" », required ).
+
+- Set displayNames . [[Type]] to type .
+
+- Let fallback be ? GetOption ( options , "fallback" , string , « "code" , "none" », "code" ).
+
+- Set displayNames . [[Fallback]] to fallback .
+
+- Set displayNames . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Let resolvedLocaleData be resolvedLocale . [[LocaleData]] .
+
+- Let types be resolvedLocaleData . [[types]] .
+
+- Assert : types is a Record (see 12.2.3 ).
+
+- Let languageDisplay be ? GetOption ( options , "languageDisplay" , string , « "dialect" , "standard" », "dialect" ).
+
+- Let typeFields be types .[[< type >]].
+
+- Assert : typeFields is a Record (see 12.2.3 ).
+
+- If type is "language" , then
+- Set displayNames . [[LanguageDisplay]] to languageDisplay .
+
+- Set typeFields to typeFields .[[< languageDisplay >]].
+
+- Assert : typeFields is a Record (see 12.2.3 ).
+
+- Let styleFields be typeFields .[[< style >]].
+
+- Assert : styleFields is a Record (see 12.2.3 ).
+
+- Set displayNames . [[Fields]] to styleFields .
+
+- Return displayNames .
+
+12.2 Properties of the Intl.DisplayNames Constructor
+
+The Intl.DisplayNames constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+12.2.1 Intl.DisplayNames.prototype
+
+The value of Intl.DisplayNames.prototype is %Intl.DisplayNames.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+12.2.2 Intl.DisplayNames.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.DisplayNames% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+12.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « ».
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « ».
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 and the following additional constraints:
+
+- [[LocaleData]] .[[< locale >]] must have a [[types]] field for all locale values locale . The value of this field must be a Record , which must have fields with the names of all display name types: "language" , "region" , "script" , "currency" , "calendar" , and "dateTimeField" .
+
+- The value of the field "language" must be a Record which must have fields with the names of one of the valid language displays: "dialect" and "standard" .
+
+- The language display fields under display name type "language" should contain Records which must have fields with the names of one of the valid display name styles: "narrow" , "short" , and "long" .
+
+- The value of the fields "region" , "script" , "currency" , "calendar" , and "dateTimeField" must be Records , which must have fields with the names of all display name styles: "narrow" , "short" , and "long" .
+
+- The display name style fields under display name type "language" should contain Records with keys corresponding to language codes that can be matched by the unicode_language_id Unicode locale nonterminal . The value of these fields must be string values.
+
+- The display name style fields under display name type "region" should contain Records with keys corresponding to region codes. The value of these fields must be string values.
+
+- The display name style fields under display name type "script" should contain Records with keys corresponding to script codes. The value of these fields must be string values.
+
+- The display name style fields under display name type "currency" should contain Records with keys corresponding to currency codes. The value of these fields must be string values.
+
+- The display name style fields under display name type "calendar" should contain Records with keys corresponding to calendar identifiers that can be matched by the type Unicode locale nonterminal . The value of these fields must be string values.
+
+- The display name style fields under display name type "dateTimeField" should contain Records with keys corresponding to codes listed in Table 19 . The value of these fields must be string values.
+
+Note
+It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+12.3 Properties of the Intl.DisplayNames Prototype Object
+
+The Intl.DisplayNames prototype object :
+
+- is %Intl.DisplayNames.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.DisplayNames instance and does not have an [[InitializedDisplayNames]] internal slot or any of the other internal slots of Intl.DisplayNames instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+12.3.1 Intl.DisplayNames.prototype.constructor
+
+The initial value of Intl.DisplayNames.prototype.constructor is %Intl.DisplayNames% .
+
+12.3.2 Intl.DisplayNames.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let displayNames be this value.
+
+- Perform ? RequireInternalSlot ( displayNames , [[InitializedDisplayNames]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 18 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- Let value be the value of displayNames 's internal slot whose name is the Internal Slot value of the current row.
+
+- If value is not undefined , then
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 18: Resolved Options of DisplayNames Instances
+
+Internal Slot
+Property
+
+[[Locale]]
+"locale"
+
+[[Style]]
+"style"
+
+[[Type]]
+"type"
+
+[[Fallback]]
+"fallback"
+
+[[LanguageDisplay]]
+"languageDisplay"
+
+12.3.3 Intl.DisplayNames.prototype.of ( code )
+
+When the Intl.DisplayNames.prototype.of is called with an argument code , the following steps are taken:
+
+- Let displayNames be this value.
+
+- Perform ? RequireInternalSlot ( displayNames , [[InitializedDisplayNames]] ).
+
+- Set code to ? ToString ( code ).
+
+- Set code to ? CanonicalCodeForDisplayNames ( displayNames . [[Type]] , code ).
+
+- Let fields be displayNames . [[Fields]] .
+
+- If fields has a field [[< code >]], return fields .[[< code >]].
+
+- If displayNames . [[Fallback]] is "code" , return code .
+
+- Return undefined .
+
+12.3.4 Intl.DisplayNames.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String value "Intl.DisplayNames" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+12.4 Properties of Intl.DisplayNames Instances
+
+Intl.DisplayNames instances are ordinary objects that inherit properties from %Intl.DisplayNames.prototype% .
+
+Intl.DisplayNames instances have an [[InitializedDisplayNames]] internal slot.
+
+Intl.DisplayNames instances also have several internal slots that are computed by The Intl.DisplayNames Constructor :
+
+- [[Locale]] is a String value with the language tag of the locale whose localization is used for formatting.
+
+- [[Style]] is one of the String values "narrow" , "short" , or "long" , identifying the display name style used.
+
+- [[Type]] is one of the String values "language" , "region" , "script" , "currency" , "calendar" , or "dateTimeField" , identifying the type of the display names requested.
+
+- [[Fallback]] is one of the String values "code" or "none" , identifying the fallback return when the system does not have the requested display name.
+
+- [[LanguageDisplay]] is one of the String values "dialect" or "standard" , identifying the language display kind. It is only used when [[Type]] has the value "language" .
+
+- [[Fields]] is a Record (see 12.2.3 ) which must have fields with keys corresponding to codes according to [[Style]] , [[Type]] , and [[LanguageDisplay]] .
+
+12.5 Abstract Operations for DisplayNames Objects
+
+12.5.1 CanonicalCodeForDisplayNames ( type , code )
+
+The abstract operation CanonicalCodeForDisplayNames takes arguments type (a String) and code (a String) and returns either a normal completion containing a String or a throw completion . It verifies that code represents a well-formed code according to type and returns the case-regularized form of code . It performs the following steps when called:
+
+- If type is "language" , then
+- If code cannot be matched by the unicode_language_id Unicode locale nonterminal , throw a RangeError exception.
+
+- If IsWellFormedLanguageTag ( code ) is false , throw a RangeError exception.
+
+- Return CanonicalizeUnicodeLocaleId ( code ).
+
+- If type is "region" , then
+- If code cannot be matched by the unicode_region_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- Return the ASCII-uppercase of code .
+
+- If type is "script" , then
+- If code cannot be matched by the unicode_script_subtag Unicode locale nonterminal , throw a RangeError exception.
+
+- Assert : The length of code is 4, and every code unit of code represents an ASCII letter (0x0041 through 0x005A and 0x0061 through 0x007A, both inclusive).
+
+- Let first be the ASCII-uppercase of the substring of code from 0 to 1.
+
+- Let rest be the ASCII-lowercase of the substring of code from 1.
+
+- Return the string-concatenation of first and rest .
+
+- If type is "calendar" , then
+- If code cannot be matched by the type Unicode locale nonterminal , throw a RangeError exception.
+
+- If code uses any of the backwards compatibility syntax described in Unicode Technical Standard #35 Part 1 Core, Section 3.3 BCP 47 Conformance , throw a RangeError exception.
+
+- Return the ASCII-lowercase of code .
+
+- If type is "dateTimeField" , then
+- If the result of IsValidDateTimeFieldCode ( code ) is false , throw a RangeError exception.
+
+- Return code .
+
+- Assert : type is "currency" .
+
+- If IsWellFormedCurrencyCode ( code ) is false , throw a RangeError exception.
+
+- Return the ASCII-uppercase of code .
+
+12.5.2 IsValidDateTimeFieldCode ( field )
+
+The abstract operation IsValidDateTimeFieldCode takes argument field (a String) and returns a Boolean. It verifies that the field argument represents a valid date time field code. It performs the following steps when called:
+
+- If field is listed in the Code column of Table 19 , return true .
+
+- Return false .
+
+Table 19: Codes For Date Time Field of DisplayNames
+
+Code
+Description
+
+"era"
+The field indicating the era, e.g. AD or BC in the Gregorian or Julian calendar.
+
+"year"
+The field indicating the year (within an era).
+
+"quarter"
+The field indicating the quarter, e.g. Q2, 2nd quarter, etc.
+
+"month"
+The field indicating the month, e.g. Sep, September, etc.
+
+"weekOfYear"
+The field indicating the week number within a year.
+
+"weekday"
+The field indicating the day of week, e.g. Tue, Tuesday, etc.
+
+"day"
+The field indicating the day in month.
+
+"dayPeriod"
+The field indicating the day period, either am, pm, etc. or noon, evening, etc..
+
+"hour"
+The field indicating the hour.
+
+"minute"
+The field indicating the minute.
+
+"second"
+The field indicating the second.
+
+"timeZoneName"
+The field indicating the time zone name, e.g. PDT, Pacific Daylight Time, etc.

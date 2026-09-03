@@ -1,0 +1,5220 @@
+# 8 Syntax-Directed Operations
+# джерело: https://tc39.es/ecma262/multipage/syntax-directed-operations.html#sec-syntax-directed-operations
+# отримано: 2026-09-01
+
+8 Syntax-Directed Operations
+
+In addition to those defined in this section, specialized syntax-directed operations are defined throughout this specification.
+
+8.1 Runtime Semantics: Evaluation
+
+The syntax-directed operation Evaluation takes no arguments and returns a Completion Record .
+
+Note
+The definitions for this operation are distributed over the “ECMAScript Language” sections of this specification. Each definition appears after the defining occurrence of the relevant productions.
+
+8.2 Scope Analysis
+
+8.2.1 Static Semantics: BoundNames
+
+The syntax-directed operation BoundNames takes no arguments and returns a List of Strings.
+
+Note
+"*default*" is used within this specification as a synthetic name for a module's default export when it does not have another name. An entry in the module's [[Environment]] is created with that name and holds the corresponding value, and resolving the export named "default" by calling ResolveExport ( exportName [ , resolveSet ] ) for the module will return a ResolvedBinding Record whose [[BindingName]] is "*default*" , which will then resolve in the module's [[Environment]] to the above-mentioned value. This is done only for ease of specification, so that anonymous default exports can be resolved like any other export. This "*default*" string is never accessible to ECMAScript code or to the module linking algorithm.
+
+It is defined piecewise over the following productions:
+
+BindingIdentifier : Identifier
+
+- Return a List whose sole element is the StringValue of Identifier .
+
+BindingIdentifier : yield
+
+- Return « "yield" ».
+
+BindingIdentifier : await
+
+- Return « "await" ».
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+- Return the BoundNames of BindingList .
+
+UsingDeclaration :
+using
+BindingList
+;
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- Return the BoundNames of BindingList .
+
+BindingList :
+BindingList
+,
+LexicalBinding
+
+- Let names1 be the BoundNames of BindingList .
+
+- Let names2 be the BoundNames of LexicalBinding .
+
+- Return the list-concatenation of names1 and names2 .
+
+LexicalBinding :
+BindingIdentifier
+Initializer opt
+
+- Return the BoundNames of BindingIdentifier .
+
+LexicalBinding :
+BindingPattern
+Initializer
+
+- Return the BoundNames of BindingPattern .
+
+VariableDeclarationList :
+VariableDeclarationList
+,
+VariableDeclaration
+
+- Let names1 be the BoundNames of VariableDeclarationList .
+
+- Let names2 be the BoundNames of VariableDeclaration .
+
+- Return the list-concatenation of names1 and names2 .
+
+VariableDeclaration :
+BindingIdentifier
+Initializer opt
+
+- Return the BoundNames of BindingIdentifier .
+
+VariableDeclaration :
+BindingPattern
+Initializer
+
+- Return the BoundNames of BindingPattern .
+
+ObjectBindingPattern :
+{
+}
+
+- Return a new empty List .
+
+ObjectBindingPattern :
+{
+BindingPropertyList
+,
+BindingRestProperty
+}
+
+- Let names1 be the BoundNames of BindingPropertyList .
+
+- Let names2 be the BoundNames of BindingRestProperty .
+
+- Return the list-concatenation of names1 and names2 .
+
+ArrayBindingPattern :
+[
+Elision opt
+]
+
+- Return a new empty List .
+
+ArrayBindingPattern :
+[
+Elision opt
+BindingRestElement
+]
+
+- Return the BoundNames of BindingRestElement .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision opt
+]
+
+- Return the BoundNames of BindingElementList .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision opt
+BindingRestElement
+]
+
+- Let names1 be the BoundNames of BindingElementList .
+
+- Let names2 be the BoundNames of BindingRestElement .
+
+- Return the list-concatenation of names1 and names2 .
+
+BindingPropertyList :
+BindingPropertyList
+,
+BindingProperty
+
+- Let names1 be the BoundNames of BindingPropertyList .
+
+- Let names2 be the BoundNames of BindingProperty .
+
+- Return the list-concatenation of names1 and names2 .
+
+BindingElementList :
+BindingElementList
+,
+BindingElisionElement
+
+- Let names1 be the BoundNames of BindingElementList .
+
+- Let names2 be the BoundNames of BindingElisionElement .
+
+- Return the list-concatenation of names1 and names2 .
+
+BindingElisionElement :
+Elision opt
+BindingElement
+
+- Return the BoundNames of BindingElement .
+
+BindingProperty :
+PropertyName
+:
+BindingElement
+
+- Return the BoundNames of BindingElement .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer opt
+
+- Return the BoundNames of BindingIdentifier .
+
+BindingElement :
+BindingPattern
+Initializer opt
+
+- Return the BoundNames of BindingPattern .
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- Return the BoundNames of ForBinding .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return the BoundNames of BindingIdentifier .
+
+FunctionDeclaration :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return « "*default*" ».
+
+FormalParameters : [empty]
+
+- Return a new empty List .
+
+FormalParameters :
+FormalParameterList
+,
+FunctionRestParameter
+
+- Let names1 be the BoundNames of FormalParameterList .
+
+- Let names2 be the BoundNames of FunctionRestParameter .
+
+- Return the list-concatenation of names1 and names2 .
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- Let names1 be the BoundNames of FormalParameterList .
+
+- Let names2 be the BoundNames of FormalParameter .
+
+- Return the list-concatenation of names1 and names2 .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return the BoundNames of formals .
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return the BoundNames of BindingIdentifier .
+
+GeneratorDeclaration :
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return « "*default*" ».
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return the BoundNames of BindingIdentifier .
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return « "*default*" ».
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+- Return the BoundNames of BindingIdentifier .
+
+ClassDeclaration :
+class
+ClassTail
+
+- Return « "*default*" ».
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return the BoundNames of BindingIdentifier .
+
+AsyncFunctionDeclaration :
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return « "*default*" ».
+
+CoverCallExpressionAndAsyncArrowHead :
+MemberExpression
+Arguments
+
+- Let head be the AsyncArrowHead that is covered by CoverCallExpressionAndAsyncArrowHead .
+
+- Return the BoundNames of head .
+
+ImportDeclaration :
+import
+ImportClause
+FromClause
+WithClause opt
+;
+
+- Return the BoundNames of ImportClause .
+
+ImportDeclaration :
+import
+ModuleSpecifier
+WithClause opt
+;
+
+- Return a new empty List .
+
+ImportClause :
+ImportedDefaultBinding
+,
+NameSpaceImport
+
+- Let names1 be the BoundNames of ImportedDefaultBinding .
+
+- Let names2 be the BoundNames of NameSpaceImport .
+
+- Return the list-concatenation of names1 and names2 .
+
+ImportClause :
+ImportedDefaultBinding
+,
+NamedImports
+
+- Let names1 be the BoundNames of ImportedDefaultBinding .
+
+- Let names2 be the BoundNames of NamedImports .
+
+- Return the list-concatenation of names1 and names2 .
+
+NamedImports :
+{
+}
+
+- Return a new empty List .
+
+ImportsList :
+ImportsList
+,
+ImportSpecifier
+
+- Let names1 be the BoundNames of ImportsList .
+
+- Let names2 be the BoundNames of ImportSpecifier .
+
+- Return the list-concatenation of names1 and names2 .
+
+ImportSpecifier :
+ModuleExportName
+as
+ImportedBinding
+
+- Return the BoundNames of ImportedBinding .
+
+ExportDeclaration :
+export
+ExportFromClause
+FromClause
+WithClause opt
+;
+
+export
+NamedExports
+;
+
+- Return a new empty List .
+
+ExportDeclaration :
+export
+VariableStatement
+
+- Return the BoundNames of VariableStatement .
+
+ExportDeclaration :
+export
+Declaration
+
+- Return the BoundNames of Declaration .
+
+ExportDeclaration :
+export
+default
+HoistableDeclaration
+
+- Let declNames be the BoundNames of HoistableDeclaration .
+
+- If declNames does not include the element "*default*" , append "*default*" to declNames .
+
+- Return declNames .
+
+ExportDeclaration :
+export
+default
+ClassDeclaration
+
+- Let declNames be the BoundNames of ClassDeclaration .
+
+- If declNames does not include the element "*default*" , append "*default*" to declNames .
+
+- Return declNames .
+
+ExportDeclaration :
+export
+default
+AssignmentExpression
+;
+
+- Return « "*default*" ».
+
+8.2.2 Static Semantics: DeclarationPart
+
+The syntax-directed operation DeclarationPart takes no arguments and returns a Parse Node . It is defined piecewise over the following productions:
+
+HoistableDeclaration : FunctionDeclaration
+
+- Return FunctionDeclaration .
+
+HoistableDeclaration : GeneratorDeclaration
+
+- Return GeneratorDeclaration .
+
+HoistableDeclaration : AsyncFunctionDeclaration
+
+- Return AsyncFunctionDeclaration .
+
+HoistableDeclaration : AsyncGeneratorDeclaration
+
+- Return AsyncGeneratorDeclaration .
+
+Declaration : ClassDeclaration
+
+- Return ClassDeclaration .
+
+Declaration : LexicalDeclaration
+
+- Return LexicalDeclaration .
+
+8.2.3 Static Semantics: IsConstantDeclaration
+
+The syntax-directed operation IsConstantDeclaration takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+- Return IsConstantDeclaration of LetOrConst .
+
+LetOrConst : let
+
+- Return false .
+
+LetOrConst : const
+
+- Return true .
+
+UsingDeclaration :
+using
+BindingList
+;
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- Return true .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return false .
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+class
+ClassTail
+
+- Return false .
+
+ExportDeclaration :
+export
+ExportFromClause
+FromClause
+;
+
+export
+NamedExports
+;
+
+export
+default
+AssignmentExpression
+;
+
+- Return false .
+
+Note
+It is not necessary to treat export default AssignmentExpression as a constant declaration because there is no syntax that permits assignment to the internal bound name used to reference a module's default object.
+
+8.2.4 Static Semantics: IsUsingDeclaration
+
+The syntax-directed operation IsUsingDeclaration takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+- Return false .
+
+UsingDeclaration :
+using
+BindingList
+;
+
+- Return true .
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- Return false .
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- Return false .
+
+ForDeclaration :
+using
+ForBinding
+
+- Return true .
+
+ForDeclaration :
+await
+using
+ForBinding
+
+- Return false .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return false .
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+class
+ClassTail
+
+- Return false .
+
+8.2.5 Static Semantics: IsAwaitUsingDeclaration
+
+The syntax-directed operation IsAwaitUsingDeclaration takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+- Return false .
+
+UsingDeclaration :
+using
+BindingList
+;
+
+- Return false .
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- Return true .
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- Return false .
+
+ForDeclaration :
+using
+ForBinding
+
+- Return false .
+
+ForDeclaration :
+await
+using
+ForBinding
+
+- Return true .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return false .
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+class
+ClassTail
+
+- Return false .
+
+8.2.6 Static Semantics: LexicallyDeclaredNames
+
+The syntax-directed operation LexicallyDeclaredNames takes no arguments and returns a List of Strings. It is defined piecewise over the following productions:
+
+Block :
+{
+}
+
+- Return a new empty List .
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let names1 be the LexicallyDeclaredNames of StatementList .
+
+- Let names2 be the LexicallyDeclaredNames of StatementListItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+StatementListItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the LexicallyDeclaredNames of LabelledStatement .
+
+- Return a new empty List .
+
+StatementListItem : Declaration
+
+- Return the BoundNames of Declaration .
+
+CaseBlock :
+{
+}
+
+- Return a new empty List .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, let names1 be the LexicallyDeclaredNames of the first CaseClauses .
+
+- Else, let names1 be a new empty List .
+
+- Let names2 be the LexicallyDeclaredNames of DefaultClause .
+
+- If the second CaseClauses is present, let names3 be the LexicallyDeclaredNames of the second CaseClauses .
+
+- Else, let names3 be a new empty List .
+
+- Return the list-concatenation of names1 , names2 , and names3 .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let names1 be the LexicallyDeclaredNames of CaseClauses .
+
+- Let names2 be the LexicallyDeclaredNames of CaseClause .
+
+- Return the list-concatenation of names1 and names2 .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return the LexicallyDeclaredNames of StatementList .
+
+- Return a new empty List .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return the LexicallyDeclaredNames of StatementList .
+
+- Return a new empty List .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the LexicallyDeclaredNames of LabelledItem .
+
+LabelledItem : Statement
+
+- Return a new empty List .
+
+LabelledItem : FunctionDeclaration
+
+- Return the BoundNames of FunctionDeclaration .
+
+FunctionStatementList : [empty]
+
+- Return a new empty List .
+
+FunctionStatementList : StatementList
+
+- Return the TopLevelLexicallyDeclaredNames of StatementList .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return a new empty List .
+
+ClassStaticBlockStatementList : StatementList
+
+- Return the TopLevelLexicallyDeclaredNames of StatementList .
+
+ConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+AsyncConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+Script : [empty]
+
+- Return a new empty List .
+
+ScriptBody : StatementList
+
+- Return the TopLevelLexicallyDeclaredNames of StatementList .
+
+Note 1
+At the top level of a Script , function declarations are treated like var declarations rather than like lexical declarations.
+
+Note 2
+The LexicallyDeclaredNames of a Module includes the names of all of its imported bindings.
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let names1 be the LexicallyDeclaredNames of ModuleItemList .
+
+- Let names2 be the LexicallyDeclaredNames of ModuleItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+ModuleItem : ImportDeclaration
+
+- Return the BoundNames of ImportDeclaration .
+
+ModuleItem : ExportDeclaration
+
+- If ExportDeclaration is export VariableStatement , return a new empty List .
+
+- Return the BoundNames of ExportDeclaration .
+
+ModuleItem : StatementListItem
+
+- Return the LexicallyDeclaredNames of StatementListItem .
+
+Note 3
+At the top level of a Module , function declarations are treated like lexical declarations rather than like var declarations.
+
+8.2.7 Static Semantics: LexicallyScopedDeclarations
+
+The syntax-directed operation LexicallyScopedDeclarations takes no arguments and returns a List of Parse Nodes . It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let decls1 be the LexicallyScopedDeclarations of StatementList .
+
+- Let decls2 be the LexicallyScopedDeclarations of StatementListItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+StatementListItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the LexicallyScopedDeclarations of LabelledStatement .
+
+- Return a new empty List .
+
+StatementListItem : Declaration
+
+- Return a List whose sole element is the DeclarationPart of Declaration .
+
+CaseBlock :
+{
+}
+
+- Return a new empty List .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, let decls1 be the LexicallyScopedDeclarations of the first CaseClauses .
+
+- Else, let decls1 be a new empty List .
+
+- Let decls2 be the LexicallyScopedDeclarations of DefaultClause .
+
+- If the second CaseClauses is present, let decls3 be the LexicallyScopedDeclarations of the second CaseClauses .
+
+- Else, let decls3 be a new empty List .
+
+- Return the list-concatenation of decls1 , decls2 , and decls3 .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let decls1 be the LexicallyScopedDeclarations of CaseClauses .
+
+- Let decls2 be the LexicallyScopedDeclarations of CaseClause .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return the LexicallyScopedDeclarations of StatementList .
+
+- Return a new empty List .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return the LexicallyScopedDeclarations of StatementList .
+
+- Return a new empty List .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the LexicallyScopedDeclarations of LabelledItem .
+
+LabelledItem : Statement
+
+- Return a new empty List .
+
+LabelledItem : FunctionDeclaration
+
+- Return « FunctionDeclaration ».
+
+FunctionStatementList : [empty]
+
+- Return a new empty List .
+
+FunctionStatementList : StatementList
+
+- Return the TopLevelLexicallyScopedDeclarations of StatementList .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return a new empty List .
+
+ClassStaticBlockStatementList : StatementList
+
+- Return the TopLevelLexicallyScopedDeclarations of StatementList .
+
+ConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+AsyncConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+Script : [empty]
+
+- Return a new empty List .
+
+ScriptBody : StatementList
+
+- Return the TopLevelLexicallyScopedDeclarations of StatementList .
+
+Module : [empty]
+
+- Return a new empty List .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let decls1 be the LexicallyScopedDeclarations of ModuleItemList .
+
+- Let decls2 be the LexicallyScopedDeclarations of ModuleItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+ModuleItem : ImportDeclaration
+
+- Return a new empty List .
+
+ExportDeclaration :
+export
+ExportFromClause
+FromClause
+WithClause opt
+;
+
+export
+NamedExports
+;
+
+export
+VariableStatement
+
+- Return a new empty List .
+
+ExportDeclaration :
+export
+Declaration
+
+- Return a List whose sole element is the DeclarationPart of Declaration .
+
+ExportDeclaration :
+export
+default
+HoistableDeclaration
+
+- Return a List whose sole element is the DeclarationPart of HoistableDeclaration .
+
+ExportDeclaration :
+export
+default
+ClassDeclaration
+
+- Return a List whose sole element is ClassDeclaration .
+
+ExportDeclaration :
+export
+default
+AssignmentExpression
+;
+
+- Return a List whose sole element is this ExportDeclaration .
+
+8.2.8 Static Semantics: VarDeclaredNames
+
+The syntax-directed operation VarDeclaredNames takes no arguments and returns a List of Strings. It is defined piecewise over the following productions:
+
+Statement :
+EmptyStatement
+
+ExpressionStatement
+
+ContinueStatement
+
+BreakStatement
+
+ReturnStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+- Return a new empty List .
+
+Block :
+{
+}
+
+- Return a new empty List .
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let names1 be the VarDeclaredNames of StatementList .
+
+- Let names2 be the VarDeclaredNames of StatementListItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+StatementListItem : Declaration
+
+- Return a new empty List .
+
+VariableStatement :
+var
+VariableDeclarationList
+;
+
+- Return the BoundNames of VariableDeclarationList .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let names1 be the VarDeclaredNames of the first Statement .
+
+- Let names2 be the VarDeclaredNames of the second Statement .
+
+- Return the list-concatenation of names1 and names2 .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Return the VarDeclaredNames of Statement .
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+ForStatement :
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Let names1 be the BoundNames of VariableDeclarationList .
+
+- Let names2 be the VarDeclaredNames of Statement .
+
+- Return the list-concatenation of names1 and names2 .
+
+ForStatement :
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+ForInOfStatement :
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+- Let names1 be the BoundNames of ForBinding .
+
+- Let names2 be the VarDeclaredNames of Statement .
+
+- Return the list-concatenation of names1 and names2 .
+
+Note
+This section is extended by Annex B.3.5 .
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return the VarDeclaredNames of Statement .
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return the VarDeclaredNames of CaseBlock .
+
+CaseBlock :
+{
+}
+
+- Return a new empty List .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, let names1 be the VarDeclaredNames of the first CaseClauses .
+
+- Else, let names1 be a new empty List .
+
+- Let names2 be the VarDeclaredNames of DefaultClause .
+
+- If the second CaseClauses is present, let names3 be the VarDeclaredNames of the second CaseClauses .
+
+- Else, let names3 be a new empty List .
+
+- Return the list-concatenation of names1 , names2 , and names3 .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let names1 be the VarDeclaredNames of CaseClauses .
+
+- Let names2 be the VarDeclaredNames of CaseClause .
+
+- Return the list-concatenation of names1 and names2 .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return the VarDeclaredNames of StatementList .
+
+- Return a new empty List .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return the VarDeclaredNames of StatementList .
+
+- Return a new empty List .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the VarDeclaredNames of LabelledItem .
+
+LabelledItem : FunctionDeclaration
+
+- Return a new empty List .
+
+TryStatement :
+try
+Block
+Catch
+
+- Let names1 be the VarDeclaredNames of Block .
+
+- Let names2 be the VarDeclaredNames of Catch .
+
+- Return the list-concatenation of names1 and names2 .
+
+TryStatement :
+try
+Block
+Finally
+
+- Let names1 be the VarDeclaredNames of Block .
+
+- Let names2 be the VarDeclaredNames of Finally .
+
+- Return the list-concatenation of names1 and names2 .
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- Let names1 be the VarDeclaredNames of Block .
+
+- Let names2 be the VarDeclaredNames of Catch .
+
+- Let names3 be the VarDeclaredNames of Finally .
+
+- Return the list-concatenation of names1 , names2 , and names3 .
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return the VarDeclaredNames of Block .
+
+FunctionStatementList : [empty]
+
+- Return a new empty List .
+
+FunctionStatementList : StatementList
+
+- Return the TopLevelVarDeclaredNames of StatementList .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return a new empty List .
+
+ClassStaticBlockStatementList : StatementList
+
+- Return the TopLevelVarDeclaredNames of StatementList .
+
+ConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+AsyncConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+Script : [empty]
+
+- Return a new empty List .
+
+ScriptBody : StatementList
+
+- Return the TopLevelVarDeclaredNames of StatementList .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let names1 be the VarDeclaredNames of ModuleItemList .
+
+- Let names2 be the VarDeclaredNames of ModuleItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+ModuleItem : ImportDeclaration
+
+- Return a new empty List .
+
+ModuleItem : ExportDeclaration
+
+- If ExportDeclaration is export VariableStatement , return the BoundNames of ExportDeclaration .
+
+- Return a new empty List .
+
+8.2.9 Static Semantics: VarScopedDeclarations
+
+The syntax-directed operation VarScopedDeclarations takes no arguments and returns a List of Parse Nodes . It is defined piecewise over the following productions:
+
+Statement :
+EmptyStatement
+
+ExpressionStatement
+
+ContinueStatement
+
+BreakStatement
+
+ReturnStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+- Return a new empty List .
+
+Block :
+{
+}
+
+- Return a new empty List .
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let decls1 be the VarScopedDeclarations of StatementList .
+
+- Let decls2 be the VarScopedDeclarations of StatementListItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+StatementListItem : Declaration
+
+- Return a new empty List .
+
+VariableDeclarationList : VariableDeclaration
+
+- Return « VariableDeclaration ».
+
+VariableDeclarationList :
+VariableDeclarationList
+,
+VariableDeclaration
+
+- Let decls1 be the VarScopedDeclarations of VariableDeclarationList .
+
+- Return the list-concatenation of decls1 and « VariableDeclaration ».
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let decls1 be the VarScopedDeclarations of the first Statement .
+
+- Let decls2 be the VarScopedDeclarations of the second Statement .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Return the VarScopedDeclarations of Statement .
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+ForStatement :
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Let decls1 be the VarScopedDeclarations of VariableDeclarationList .
+
+- Let decls2 be the VarScopedDeclarations of Statement .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+ForStatement :
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+ForInOfStatement :
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+- Let decls1 be « ForBinding ».
+
+- Let decls2 be the VarScopedDeclarations of Statement .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+Note
+This section is extended by Annex B.3.5 .
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return the VarScopedDeclarations of Statement .
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return the VarScopedDeclarations of CaseBlock .
+
+CaseBlock :
+{
+}
+
+- Return a new empty List .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, let decls1 be the VarScopedDeclarations of the first CaseClauses .
+
+- Else, let decls1 be a new empty List .
+
+- Let decls2 be the VarScopedDeclarations of DefaultClause .
+
+- If the second CaseClauses is present, let decls3 be the VarScopedDeclarations of the second CaseClauses .
+
+- Else, let decls3 be a new empty List .
+
+- Return the list-concatenation of decls1 , decls2 , and decls3 .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let decls1 be the VarScopedDeclarations of CaseClauses .
+
+- Let decls2 be the VarScopedDeclarations of CaseClause .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return the VarScopedDeclarations of StatementList .
+
+- Return a new empty List .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return the VarScopedDeclarations of StatementList .
+
+- Return a new empty List .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the VarScopedDeclarations of LabelledItem .
+
+LabelledItem : FunctionDeclaration
+
+- Return a new empty List .
+
+TryStatement :
+try
+Block
+Catch
+
+- Let decls1 be the VarScopedDeclarations of Block .
+
+- Let decls2 be the VarScopedDeclarations of Catch .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+TryStatement :
+try
+Block
+Finally
+
+- Let decls1 be the VarScopedDeclarations of Block .
+
+- Let decls2 be the VarScopedDeclarations of Finally .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- Let decls1 be the VarScopedDeclarations of Block .
+
+- Let decls2 be the VarScopedDeclarations of Catch .
+
+- Let decls3 be the VarScopedDeclarations of Finally .
+
+- Return the list-concatenation of decls1 , decls2 , and decls3 .
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return the VarScopedDeclarations of Block .
+
+FunctionStatementList : [empty]
+
+- Return a new empty List .
+
+FunctionStatementList : StatementList
+
+- Return the TopLevelVarScopedDeclarations of StatementList .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return a new empty List .
+
+ClassStaticBlockStatementList : StatementList
+
+- Return the TopLevelVarScopedDeclarations of StatementList .
+
+ConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+AsyncConciseBody : ExpressionBody
+
+- Return a new empty List .
+
+Script : [empty]
+
+- Return a new empty List .
+
+ScriptBody : StatementList
+
+- Return the TopLevelVarScopedDeclarations of StatementList .
+
+Module : [empty]
+
+- Return a new empty List .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let decls1 be the VarScopedDeclarations of ModuleItemList .
+
+- Let decls2 be the VarScopedDeclarations of ModuleItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+ModuleItem : ImportDeclaration
+
+- Return a new empty List .
+
+ModuleItem : ExportDeclaration
+
+- If ExportDeclaration is export VariableStatement , return the VarScopedDeclarations of VariableStatement .
+
+- Return a new empty List .
+
+8.2.10 Static Semantics: TopLevelLexicallyDeclaredNames
+
+The syntax-directed operation TopLevelLexicallyDeclaredNames takes no arguments and returns a List of Strings. It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let names1 be the TopLevelLexicallyDeclaredNames of StatementList .
+
+- Let names2 be the TopLevelLexicallyDeclaredNames of StatementListItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+StatementListItem : Statement
+
+- Return a new empty List .
+
+StatementListItem : Declaration
+
+- If Declaration is
+Declaration : HoistableDeclaration
+
+, then
+- Return a new empty List .
+
+- Return the BoundNames of Declaration .
+
+Note
+At the top level of a function, or script, function declarations are treated like var declarations rather than like lexical declarations.
+
+8.2.11 Static Semantics: TopLevelLexicallyScopedDeclarations
+
+The syntax-directed operation TopLevelLexicallyScopedDeclarations takes no arguments and returns a List of Parse Nodes . It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let decls1 be the TopLevelLexicallyScopedDeclarations of StatementList .
+
+- Let decls2 be the TopLevelLexicallyScopedDeclarations of StatementListItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+StatementListItem : Statement
+
+- Return a new empty List .
+
+StatementListItem : Declaration
+
+- If Declaration is
+Declaration : HoistableDeclaration
+
+, then
+- Return a new empty List .
+
+- Return « Declaration ».
+
+8.2.12 Static Semantics: TopLevelVarDeclaredNames
+
+The syntax-directed operation TopLevelVarDeclaredNames takes no arguments and returns a List of Strings. It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let names1 be the TopLevelVarDeclaredNames of StatementList .
+
+- Let names2 be the TopLevelVarDeclaredNames of StatementListItem .
+
+- Return the list-concatenation of names1 and names2 .
+
+StatementListItem : Declaration
+
+- If Declaration is
+Declaration : HoistableDeclaration
+
+, then
+- Return the BoundNames of HoistableDeclaration .
+
+- Return a new empty List .
+
+StatementListItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the TopLevelVarDeclaredNames of Statement .
+
+- Return the VarDeclaredNames of Statement .
+
+Note
+At the top level of a function or script, inner function declarations are treated like var declarations.
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the TopLevelVarDeclaredNames of LabelledItem .
+
+LabelledItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the TopLevelVarDeclaredNames of Statement .
+
+- Return the VarDeclaredNames of Statement .
+
+LabelledItem : FunctionDeclaration
+
+- Return the BoundNames of FunctionDeclaration .
+
+8.2.13 Static Semantics: TopLevelVarScopedDeclarations
+
+The syntax-directed operation TopLevelVarScopedDeclarations takes no arguments and returns a List of Parse Nodes . It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let decls1 be the TopLevelVarScopedDeclarations of StatementList .
+
+- Let decls2 be the TopLevelVarScopedDeclarations of StatementListItem .
+
+- Return the list-concatenation of decls1 and decls2 .
+
+StatementListItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the TopLevelVarScopedDeclarations of Statement .
+
+- Return the VarScopedDeclarations of Statement .
+
+StatementListItem : Declaration
+
+- If Declaration is
+Declaration : HoistableDeclaration
+
+, then
+- Let decl be the DeclarationPart of HoistableDeclaration .
+
+- Return « decl ».
+
+- Return a new empty List .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return the TopLevelVarScopedDeclarations of LabelledItem .
+
+LabelledItem : Statement
+
+- If Statement is
+Statement : LabelledStatement
+
+, return the TopLevelVarScopedDeclarations of Statement .
+
+- Return the VarScopedDeclarations of Statement .
+
+LabelledItem : FunctionDeclaration
+
+- Return « FunctionDeclaration ».
+
+8.3 Labels
+
+8.3.1 Static Semantics: ContainsDuplicateLabels
+
+The syntax-directed operation ContainsDuplicateLabels takes argument labelSet (a List of Strings) and returns a Boolean. It is defined piecewise over the following productions:
+
+Statement :
+VariableStatement
+
+EmptyStatement
+
+ExpressionStatement
+
+ContinueStatement
+
+BreakStatement
+
+ReturnStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+Block :
+{
+}
+
+StatementListItem :
+Declaration
+
+- Return false .
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let hasDuplicates be ContainsDuplicateLabels of StatementList with argument labelSet .
+
+- If hasDuplicates is true , return true .
+
+- Return ContainsDuplicateLabels of StatementListItem with argument labelSet .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let hasDuplicate be ContainsDuplicateLabels of the first Statement with argument labelSet .
+
+- If hasDuplicate is true , return true .
+
+- Return ContainsDuplicateLabels of the second Statement with argument labelSet .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+Note
+This section is extended by Annex B.3.5 .
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return ContainsDuplicateLabels of Statement with argument labelSet .
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return ContainsDuplicateLabels of CaseBlock with argument labelSet .
+
+CaseBlock :
+{
+}
+
+- Return false .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, then
+- If ContainsDuplicateLabels of the first CaseClauses with argument labelSet is true , return true .
+
+- If ContainsDuplicateLabels of DefaultClause with argument labelSet is true , return true .
+
+- If the second CaseClauses is not present, return false .
+
+- Return ContainsDuplicateLabels of the second CaseClauses with argument labelSet .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let hasDuplicates be ContainsDuplicateLabels of CaseClauses with argument labelSet .
+
+- If hasDuplicates is true , return true .
+
+- Return ContainsDuplicateLabels of CaseClause with argument labelSet .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsDuplicateLabels of StatementList with argument labelSet .
+
+- Return false .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsDuplicateLabels of StatementList with argument labelSet .
+
+- Return false .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Let label be the StringValue of LabelIdentifier .
+
+- If labelSet contains label , return true .
+
+- Let newLabelSet be the list-concatenation of labelSet and « label ».
+
+- Return ContainsDuplicateLabels of LabelledItem with argument newLabelSet .
+
+LabelledItem : FunctionDeclaration
+
+- Return false .
+
+TryStatement :
+try
+Block
+Catch
+
+- Let hasDuplicates be ContainsDuplicateLabels of Block with argument labelSet .
+
+- If hasDuplicates is true , return true .
+
+- Return ContainsDuplicateLabels of Catch with argument labelSet .
+
+TryStatement :
+try
+Block
+Finally
+
+- Let hasDuplicates be ContainsDuplicateLabels of Block with argument labelSet .
+
+- If hasDuplicates is true , return true .
+
+- Return ContainsDuplicateLabels of Finally with argument labelSet .
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- If ContainsDuplicateLabels of Block with argument labelSet is true , return true .
+
+- If ContainsDuplicateLabels of Catch with argument labelSet is true , return true .
+
+- Return ContainsDuplicateLabels of Finally with argument labelSet .
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return ContainsDuplicateLabels of Block with argument labelSet .
+
+FunctionStatementList : [empty]
+
+- Return false .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return false .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let hasDuplicates be ContainsDuplicateLabels of ModuleItemList with argument labelSet .
+
+- If hasDuplicates is true , return true .
+
+- Return ContainsDuplicateLabels of ModuleItem with argument labelSet .
+
+ModuleItem :
+ImportDeclaration
+
+ExportDeclaration
+
+- Return false .
+
+8.3.2 Static Semantics: ContainsUndefinedBreakTarget
+
+The syntax-directed operation ContainsUndefinedBreakTarget takes argument labelSet (a List of Strings) and returns a Boolean. It is defined piecewise over the following productions:
+
+Statement :
+VariableStatement
+
+EmptyStatement
+
+ExpressionStatement
+
+ContinueStatement
+
+ReturnStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+Block :
+{
+}
+
+StatementListItem :
+Declaration
+
+- Return false .
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of StatementList with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of StatementListItem with argument labelSet .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of the first Statement with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of the second Statement with argument labelSet .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+Note
+This section is extended by Annex B.3.5 .
+
+BreakStatement :
+break
+;
+
+- Return false .
+
+BreakStatement :
+break
+LabelIdentifier
+;
+
+- If labelSet contains the StringValue of LabelIdentifier , return false .
+
+- Return true .
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedBreakTarget of Statement with argument labelSet .
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return ContainsUndefinedBreakTarget of CaseBlock with argument labelSet .
+
+CaseBlock :
+{
+}
+
+- Return false .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, then
+- If ContainsUndefinedBreakTarget of the first CaseClauses with argument labelSet is true , return true .
+
+- If ContainsUndefinedBreakTarget of DefaultClause with argument labelSet is true , return true .
+
+- If the second CaseClauses is not present, return false .
+
+- Return ContainsUndefinedBreakTarget of the second CaseClauses with argument labelSet .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of CaseClauses with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of CaseClause with argument labelSet .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsUndefinedBreakTarget of StatementList with argument labelSet .
+
+- Return false .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsUndefinedBreakTarget of StatementList with argument labelSet .
+
+- Return false .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Let label be the StringValue of LabelIdentifier .
+
+- Let newLabelSet be the list-concatenation of labelSet and « label ».
+
+- Return ContainsUndefinedBreakTarget of LabelledItem with argument newLabelSet .
+
+LabelledItem : FunctionDeclaration
+
+- Return false .
+
+TryStatement :
+try
+Block
+Catch
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of Block with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of Catch with argument labelSet .
+
+TryStatement :
+try
+Block
+Finally
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of Block with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of Finally with argument labelSet .
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- If ContainsUndefinedBreakTarget of Block with argument labelSet is true , return true .
+
+- If ContainsUndefinedBreakTarget of Catch with argument labelSet is true , return true .
+
+- Return ContainsUndefinedBreakTarget of Finally with argument labelSet .
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return ContainsUndefinedBreakTarget of Block with argument labelSet .
+
+FunctionStatementList : [empty]
+
+- Return false .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return false .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let hasUndefinedLabels be ContainsUndefinedBreakTarget of ModuleItemList with argument labelSet .
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedBreakTarget of ModuleItem with argument labelSet .
+
+ModuleItem :
+ImportDeclaration
+
+ExportDeclaration
+
+- Return false .
+
+8.3.3 Static Semantics: ContainsUndefinedContinueTarget
+
+The syntax-directed operation ContainsUndefinedContinueTarget takes arguments iterationSet (a List of Strings) and labelSet (a List of Strings) and returns a Boolean. It is defined piecewise over the following productions:
+
+Statement :
+VariableStatement
+
+EmptyStatement
+
+ExpressionStatement
+
+BreakStatement
+
+ReturnStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+Block :
+{
+}
+
+StatementListItem :
+Declaration
+
+- Return false .
+
+Statement : BlockStatement
+
+- Return ContainsUndefinedContinueTarget of BlockStatement with arguments iterationSet and « ».
+
+BreakableStatement : IterationStatement
+
+- Let newIterationSet be the list-concatenation of iterationSet and labelSet .
+
+- Return ContainsUndefinedContinueTarget of IterationStatement with arguments newIterationSet and « ».
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of StatementList with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of StatementListItem with arguments iterationSet and « ».
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of the first Statement with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of the second Statement with arguments iterationSet and « ».
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+Note
+This section is extended by Annex B.3.5 .
+
+ContinueStatement :
+continue
+;
+
+- Return false .
+
+ContinueStatement :
+continue
+LabelIdentifier
+;
+
+- If iterationSet contains the StringValue of LabelIdentifier , return false .
+
+- Return true .
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return ContainsUndefinedContinueTarget of Statement with arguments iterationSet and « ».
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return ContainsUndefinedContinueTarget of CaseBlock with arguments iterationSet and « ».
+
+CaseBlock :
+{
+}
+
+- Return false .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- If the first CaseClauses is present, then
+- If ContainsUndefinedContinueTarget of the first CaseClauses with arguments iterationSet and « » is true , return true .
+
+- If ContainsUndefinedContinueTarget of DefaultClause with arguments iterationSet and « » is true , return true .
+
+- If the second CaseClauses is not present, return false .
+
+- Return ContainsUndefinedContinueTarget of the second CaseClauses with arguments iterationSet and « ».
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of CaseClauses with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of CaseClause with arguments iterationSet and « ».
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsUndefinedContinueTarget of StatementList with arguments iterationSet and « ».
+
+- Return false .
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If the StatementList is present, return ContainsUndefinedContinueTarget of StatementList with arguments iterationSet and « ».
+
+- Return false .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Let label be the StringValue of LabelIdentifier .
+
+- Let newLabelSet be the list-concatenation of labelSet and « label ».
+
+- Return ContainsUndefinedContinueTarget of LabelledItem with arguments iterationSet and newLabelSet .
+
+LabelledItem : FunctionDeclaration
+
+- Return false .
+
+TryStatement :
+try
+Block
+Catch
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of Block with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of Catch with arguments iterationSet and « ».
+
+TryStatement :
+try
+Block
+Finally
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of Block with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of Finally with arguments iterationSet and « ».
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- If ContainsUndefinedContinueTarget of Block with arguments iterationSet and « » is true , return true .
+
+- If ContainsUndefinedContinueTarget of Catch with arguments iterationSet and « » is true , return true .
+
+- Return ContainsUndefinedContinueTarget of Finally with arguments iterationSet and « ».
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return ContainsUndefinedContinueTarget of Block with arguments iterationSet and « ».
+
+FunctionStatementList : [empty]
+
+- Return false .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return false .
+
+ModuleItemList :
+ModuleItemList
+ModuleItem
+
+- Let hasUndefinedLabels be ContainsUndefinedContinueTarget of ModuleItemList with arguments iterationSet and « ».
+
+- If hasUndefinedLabels is true , return true .
+
+- Return ContainsUndefinedContinueTarget of ModuleItem with arguments iterationSet and « ».
+
+ModuleItem :
+ImportDeclaration
+
+ExportDeclaration
+
+- Return false .
+
+8.4 Function Name Inference
+
+8.4.1 Static Semantics: HasName
+
+The syntax-directed operation HasName takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let expr be the ParenthesizedExpression that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- If IsFunctionDefinition of expr is false , return false .
+
+- Return HasName of expr .
+
+FunctionExpression :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorExpression :
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionExpression :
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+ClassExpression :
+class
+ClassTail
+
+- Return false .
+
+FunctionExpression :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+ClassExpression :
+class
+BindingIdentifier
+ClassTail
+
+- Return true .
+
+8.4.2 Static Semantics: IsFunctionDefinition
+
+The syntax-directed operation IsFunctionDefinition takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let expr be the ParenthesizedExpression that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return IsFunctionDefinition of expr .
+
+PrimaryExpression :
+this
+
+IdentifierReference
+
+Literal
+
+ArrayLiteral
+
+ObjectLiteral
+
+RegularExpressionLiteral
+
+TemplateLiteral
+
+MemberExpression :
+MemberExpression
+[
+Expression
+]
+
+MemberExpression
+.
+IdentifierName
+
+MemberExpression
+TemplateLiteral
+
+SuperProperty
+
+MetaProperty
+
+new
+MemberExpression
+Arguments
+
+MemberExpression
+.
+PrivateIdentifier
+
+NewExpression :
+new
+NewExpression
+
+LeftHandSideExpression :
+CallExpression
+
+OptionalExpression
+
+UpdateExpression :
+LeftHandSideExpression
+++
+
+LeftHandSideExpression
+--
+
+++
+UnaryExpression
+
+--
+UnaryExpression
+
+UnaryExpression :
+delete
+UnaryExpression
+
+void
+UnaryExpression
+
+typeof
+UnaryExpression
+
++
+UnaryExpression
+
+-
+UnaryExpression
+
+~
+UnaryExpression
+
+!
+UnaryExpression
+
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+
+ExponentiationExpression :
+UpdateExpression
+**
+ExponentiationExpression
+
+MultiplicativeExpression :
+MultiplicativeExpression
+MultiplicativeOperator
+ExponentiationExpression
+
+AdditiveExpression :
+AdditiveExpression
++
+MultiplicativeExpression
+
+AdditiveExpression
+-
+MultiplicativeExpression
+
+ShiftExpression :
+ShiftExpression
+<<
+AdditiveExpression
+
+ShiftExpression
+>>
+AdditiveExpression
+
+ShiftExpression
+>>>
+AdditiveExpression
+
+RelationalExpression :
+RelationalExpression
+<
+ShiftExpression
+
+RelationalExpression
+>
+ShiftExpression
+
+RelationalExpression
+<=
+ShiftExpression
+
+RelationalExpression
+>=
+ShiftExpression
+
+RelationalExpression
+instanceof
+ShiftExpression
+
+RelationalExpression
+in
+ShiftExpression
+
+PrivateIdentifier
+in
+ShiftExpression
+
+EqualityExpression :
+EqualityExpression
+==
+RelationalExpression
+
+EqualityExpression
+!=
+RelationalExpression
+
+EqualityExpression
+===
+RelationalExpression
+
+EqualityExpression
+!==
+RelationalExpression
+
+BitwiseANDExpression :
+BitwiseANDExpression
+&
+EqualityExpression
+
+BitwiseXORExpression :
+BitwiseXORExpression
+^
+BitwiseANDExpression
+
+BitwiseORExpression :
+BitwiseORExpression
+|
+BitwiseXORExpression
+
+LogicalANDExpression :
+LogicalANDExpression
+&&
+BitwiseORExpression
+
+LogicalORExpression :
+LogicalORExpression
+||
+LogicalANDExpression
+
+CoalesceExpression :
+CoalesceExpressionHead
+??
+BitwiseORExpression
+
+ConditionalExpression :
+ShortCircuitExpression
+?
+AssignmentExpression
+:
+AssignmentExpression
+
+AssignmentExpression :
+YieldExpression
+
+LeftHandSideExpression
+=
+AssignmentExpression
+
+LeftHandSideExpression
+AssignmentOperator
+AssignmentExpression
+
+LeftHandSideExpression
+&&=
+AssignmentExpression
+
+LeftHandSideExpression
+||=
+AssignmentExpression
+
+LeftHandSideExpression
+??=
+AssignmentExpression
+
+Expression :
+Expression
+,
+AssignmentExpression
+
+- Return false .
+
+AssignmentExpression :
+ArrowFunction
+
+AsyncArrowFunction
+
+FunctionExpression :
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+ClassExpression :
+class
+BindingIdentifier opt
+ClassTail
+
+- Return true .
+
+8.4.3 Static Semantics: IsAnonymousFunctionDefinition ( expr )
+
+The abstract operation IsAnonymousFunctionDefinition takes argument expr (an AssignmentExpression Parse Node , an Initializer Parse Node , or an Expression Parse Node ) and returns a Boolean. It determines if its argument is a function definition that does not bind a name. It performs the following steps when called:
+
+- If IsFunctionDefinition of expr is false , return false .
+
+- Let hasName be HasName of expr .
+
+- If hasName is true , return false .
+
+- Return true .
+
+8.4.4 Static Semantics: IsIdentifierRef
+
+The syntax-directed operation IsIdentifierRef takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+PrimaryExpression : IdentifierReference
+
+- Return true .
+
+PrimaryExpression :
+this
+
+Literal
+
+ArrayLiteral
+
+ObjectLiteral
+
+FunctionExpression
+
+ClassExpression
+
+GeneratorExpression
+
+AsyncFunctionExpression
+
+AsyncGeneratorExpression
+
+RegularExpressionLiteral
+
+TemplateLiteral
+
+CoverParenthesizedExpressionAndArrowParameterList
+
+MemberExpression :
+MemberExpression
+[
+Expression
+]
+
+MemberExpression
+.
+IdentifierName
+
+MemberExpression
+TemplateLiteral
+
+SuperProperty
+
+MetaProperty
+
+new
+MemberExpression
+Arguments
+
+MemberExpression
+.
+PrivateIdentifier
+
+NewExpression :
+new
+NewExpression
+
+LeftHandSideExpression :
+CallExpression
+
+OptionalExpression
+
+- Return false .
+
+8.4.5 Runtime Semantics: NamedEvaluation
+
+The syntax-directed operation NamedEvaluation takes argument name (a property key or a Private Name ) and returns either a normal completion containing a function object or an abrupt completion . It is defined piecewise over the following productions:
+
+PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let expr be the ParenthesizedExpression that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return ? NamedEvaluation of expr with argument name .
+
+ParenthesizedExpression :
+(
+Expression
+)
+
+- Assert : IsAnonymousFunctionDefinition ( Expression ) is true .
+
+- Return ? NamedEvaluation of Expression with argument name .
+
+FunctionExpression :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return InstantiateOrdinaryFunctionExpression of FunctionExpression with argument name .
+
+GeneratorExpression :
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return InstantiateGeneratorFunctionExpression of GeneratorExpression with argument name .
+
+AsyncGeneratorExpression :
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return InstantiateAsyncGeneratorFunctionExpression of AsyncGeneratorExpression with argument name .
+
+AsyncFunctionExpression :
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return InstantiateAsyncFunctionExpression of AsyncFunctionExpression with argument name .
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+- Return InstantiateArrowFunctionExpression of ArrowFunction with argument name .
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+- Return InstantiateAsyncArrowFunctionExpression of AsyncArrowFunction with argument name .
+
+ClassExpression :
+class
+ClassTail
+
+- Let sourceText be the source text matched by ClassExpression .
+
+- Return ? ClassDefinitionEvaluation of ClassTail with arguments undefined , name , and sourceText .
+
+8.5 Contains
+
+8.5.1 Static Semantics: Contains
+
+The syntax-directed operation Contains takes argument symbol (a grammar symbol) and returns a Boolean.
+
+Every grammar production alternative in this specification which is not listed below implicitly has the following default definition of Contains:
+
+- For each child node child of this Parse Node , do
+- If child is an instance of symbol , return true .
+
+- If child is an instance of a nonterminal, then
+- Let contained be the result of child Contains symbol .
+
+- If contained is true , return true .
+
+- Return false .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+FunctionExpression :
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return false .
+
+Note 1
+Static semantic rules that depend upon substructure generally do not look into function definitions.
+
+ClassTail :
+ClassHeritage opt
+{
+ClassBody
+}
+
+- If symbol is ClassBody , return true .
+
+- If symbol is ClassHeritage , then
+- If ClassHeritage is present, return true .
+
+- Return false .
+
+- If ClassHeritage is present, then
+- If ClassHeritage Contains symbol is true , return true .
+
+- Return the result of ComputedPropertyContains of ClassBody with argument symbol .
+
+Note 2
+Static semantic rules that depend upon substructure generally do not look into class bodies except for PropertyName s.
+
+ClassStaticBlock :
+static
+{
+ClassStaticBlockBody
+}
+
+- Return false .
+
+Note 3
+Static semantic rules that depend upon substructure generally do not look into static initialization blocks.
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+- If symbol is not one of NewTarget , SuperProperty , SuperCall , super , or this , return false .
+
+- If ArrowParameters Contains symbol is true , return true .
+
+- Return ConciseBody Contains symbol .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return formals Contains symbol .
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+- If symbol is not one of NewTarget , SuperProperty , SuperCall , super , or this , return false .
+
+- Return AsyncConciseBody Contains symbol .
+
+AsyncArrowFunction :
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+- If symbol is not one of NewTarget , SuperProperty , SuperCall , super , or this , return false .
+
+- Let head be the AsyncArrowHead that is covered by CoverCallExpressionAndAsyncArrowHead .
+
+- If head Contains symbol is true , return true .
+
+- Return AsyncConciseBody Contains symbol .
+
+Note 4
+Contains is used to detect new.target , this , and super usage within an ArrowFunction or AsyncArrowFunction .
+
+PropertyDefinition : MethodDefinition
+
+- If symbol is MethodDefinition , return true .
+
+- Return the result of ComputedPropertyContains of MethodDefinition with argument symbol .
+
+LiteralPropertyName : IdentifierName
+
+- Return false .
+
+MemberExpression :
+MemberExpression
+.
+IdentifierName
+
+- If MemberExpression Contains symbol is true , return true .
+
+- Return false .
+
+SuperProperty :
+super
+.
+IdentifierName
+
+- If symbol is the ReservedWord super , return true .
+
+- Return false .
+
+CallExpression :
+CallExpression
+.
+IdentifierName
+
+- If CallExpression Contains symbol is true , return true .
+
+- Return false .
+
+OptionalChain :
+?.
+IdentifierName
+
+- Return false .
+
+OptionalChain :
+OptionalChain
+.
+IdentifierName
+
+- If OptionalChain Contains symbol is true , return true .
+
+- Return false .
+
+8.5.2 Static Semantics: ComputedPropertyContains
+
+The syntax-directed operation ComputedPropertyContains takes argument symbol (a grammar symbol) and returns a Boolean. It is defined piecewise over the following productions:
+
+ClassElementName : PrivateIdentifier
+
+PropertyName : LiteralPropertyName
+
+- Return false .
+
+PropertyName : ComputedPropertyName
+
+- Return the result of ComputedPropertyName Contains symbol .
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+- Return the result of ComputedPropertyContains of ClassElementName with argument symbol .
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return the result of ComputedPropertyContains of ClassElementName with argument symbol .
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return the result of ComputedPropertyContains of ClassElementName with argument symbol .
+
+ClassElementList :
+ClassElementList
+ClassElement
+
+- Let inList be ComputedPropertyContains of ClassElementList with argument symbol .
+
+- If inList is true , return true .
+
+- Return the result of ComputedPropertyContains of ClassElement with argument symbol .
+
+ClassElement : ClassStaticBlock
+
+- Return false .
+
+ClassElement : ;
+
+- Return false .
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return the result of ComputedPropertyContains of ClassElementName with argument symbol .
+
+FieldDefinition :
+ClassElementName
+Initializer opt
+
+- Return the result of ComputedPropertyContains of ClassElementName with argument symbol .
+
+8.6 Miscellaneous
+
+These operations are used in multiple places throughout the specification.
+
+8.6.1 Runtime Semantics: InstantiateFunctionObject
+
+The syntax-directed operation InstantiateFunctionObject takes arguments envRecord (an Environment Record ) and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return InstantiateOrdinaryFunctionObject of FunctionDeclaration with arguments envRecord and privateEnv .
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return InstantiateGeneratorFunctionObject of GeneratorDeclaration with arguments envRecord and privateEnv .
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return InstantiateAsyncGeneratorFunctionObject of AsyncGeneratorDeclaration with arguments envRecord and privateEnv .
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return InstantiateAsyncFunctionObject of AsyncFunctionDeclaration with arguments envRecord and privateEnv .
+
+8.6.2 Runtime Semantics: BindingInitialization
+
+The syntax-directed operation BindingInitialization takes arguments value (an ECMAScript language value ) and envRecord (an Environment Record or undefined ) and returns either a normal completion containing unused or an abrupt completion .
+
+Note
+undefined is passed for envRecord to indicate that a PutValue operation should be used to assign the initialization value. This is the case for var statements and formal parameter lists of some non-strict functions (See 10.2.11 ). In those cases a lexical binding is hoisted and preinitialized prior to evaluation of its initializer.
+
+It is defined piecewise over the following productions:
+
+BindingIdentifier : Identifier
+
+- Let name be the StringValue of Identifier .
+
+- Return ? InitializeBoundName ( name , value , envRecord ).
+
+BindingIdentifier : yield
+
+- Return ? InitializeBoundName ( "yield" , value , envRecord ).
+
+BindingIdentifier : await
+
+- Return ? InitializeBoundName ( "await" , value , envRecord ).
+
+BindingPattern : ObjectBindingPattern
+
+- Perform ? RequireObjectCoercible ( value ).
+
+- Return ? BindingInitialization of ObjectBindingPattern with arguments value and envRecord .
+
+BindingPattern : ArrayBindingPattern
+
+- Let iteratorRecord be ? GetIterator ( value , sync ).
+
+- Let result be Completion ( IteratorBindingInitialization of ArrayBindingPattern with arguments iteratorRecord and envRecord ).
+
+- If iteratorRecord . [[Done]] is false , return ? IteratorClose ( iteratorRecord , result ).
+
+- Return ? result .
+
+ObjectBindingPattern :
+{
+}
+
+- Return unused .
+
+ObjectBindingPattern :
+{
+BindingPropertyList
+, opt
+}
+
+- Perform ? PropertyBindingInitialization of BindingPropertyList with arguments value and envRecord .
+
+- Return unused .
+
+ObjectBindingPattern :
+{
+BindingRestProperty
+}
+
+- Let excludedNames be a new empty List .
+
+- Return ? RestBindingInitialization of BindingRestProperty with arguments value , envRecord , and excludedNames .
+
+ObjectBindingPattern :
+{
+BindingPropertyList
+,
+BindingRestProperty
+}
+
+- Let excludedNames be ? PropertyBindingInitialization of BindingPropertyList with arguments value and envRecord .
+
+- Return ? RestBindingInitialization of BindingRestProperty with arguments value , envRecord , and excludedNames .
+
+8.6.2.1 InitializeBoundName ( name , value , envRecord )
+
+The abstract operation InitializeBoundName takes arguments name (a String), value (an ECMAScript language value ), and envRecord (an Environment Record or undefined ) and returns either a normal completion containing unused or an abrupt completion . It performs the following steps when called:
+
+- If envRecord is not undefined , then
+- Perform ! envRecord . InitializeBinding ( name , value ).
+
+- Return unused .
+
+- Let lhs be ? ResolveBinding ( name ).
+
+- Return ? PutValue ( lhs , value ).
+
+8.6.3 Runtime Semantics: IteratorBindingInitialization
+
+The syntax-directed operation IteratorBindingInitialization takes arguments iteratorRecord (an Iterator Record ) and envRecord (an Environment Record or undefined ) and returns either a normal completion containing unused or an abrupt completion .
+
+Note
+When undefined is passed for envRecord it indicates that a PutValue operation should be used to assign the initialization value. This is the case for formal parameter lists of non-strict functions . In that case the formal parameter bindings are preinitialized in order to deal with the possibility of multiple parameters with the same name.
+
+It is defined piecewise over the following productions:
+
+ArrayBindingPattern :
+[
+]
+
+- Return unused .
+
+ArrayBindingPattern :
+[
+Elision
+]
+
+- Return ? IteratorDestructuringAssignmentEvaluation of Elision with argument iteratorRecord .
+
+ArrayBindingPattern :
+[
+Elision opt
+BindingRestElement
+]
+
+- If Elision is present, then
+- Perform ? IteratorDestructuringAssignmentEvaluation of Elision with argument iteratorRecord .
+
+- Return ? IteratorBindingInitialization of BindingRestElement with arguments iteratorRecord and envRecord .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision
+]
+
+- Perform ? IteratorBindingInitialization of BindingElementList with arguments iteratorRecord and envRecord .
+
+- Return ? IteratorDestructuringAssignmentEvaluation of Elision with argument iteratorRecord .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision opt
+BindingRestElement
+]
+
+- Perform ? IteratorBindingInitialization of BindingElementList with arguments iteratorRecord and envRecord .
+
+- If Elision is present, then
+- Perform ? IteratorDestructuringAssignmentEvaluation of Elision with argument iteratorRecord .
+
+- Return ? IteratorBindingInitialization of BindingRestElement with arguments iteratorRecord and envRecord .
+
+BindingElementList :
+BindingElementList
+,
+BindingElisionElement
+
+- Perform ? IteratorBindingInitialization of BindingElementList with arguments iteratorRecord and envRecord .
+
+- Return ? IteratorBindingInitialization of BindingElisionElement with arguments iteratorRecord and envRecord .
+
+BindingElisionElement :
+Elision
+BindingElement
+
+- Perform ? IteratorDestructuringAssignmentEvaluation of Elision with argument iteratorRecord .
+
+- Return ? IteratorBindingInitialization of BindingElement with arguments iteratorRecord and envRecord .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer opt
+
+- Let bindingId be the StringValue of BindingIdentifier .
+
+- Let lhs be ? ResolveBinding ( bindingId , envRecord ).
+
+- Let v be undefined .
+
+- If iteratorRecord . [[Done]] is false , then
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is not done , then
+- Set v to next .
+
+- If Initializer is present and v is undefined , then
+- If IsAnonymousFunctionDefinition ( Initializer ) is true , then
+- Set v to ? NamedEvaluation of Initializer with argument bindingId .
+
+- Else,
+- Let defaultValue be ? Evaluation of Initializer .
+
+- Set v to ? GetValue ( defaultValue ).
+
+- If envRecord is undefined , return ? PutValue ( lhs , v ).
+
+- Return ? InitializeReferencedBinding ( lhs , v ).
+
+BindingElement :
+BindingPattern
+Initializer opt
+
+- Let v be undefined .
+
+- If iteratorRecord . [[Done]] is false , then
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is not done , then
+- Set v to next .
+
+- If Initializer is present and v is undefined , then
+- Let defaultValue be ? Evaluation of Initializer .
+
+- Set v to ? GetValue ( defaultValue ).
+
+- Return ? BindingInitialization of BindingPattern with arguments v and envRecord .
+
+BindingRestElement :
+...
+BindingIdentifier
+
+- Let lhs be ? ResolveBinding ( StringValue of BindingIdentifier , envRecord ).
+
+- Let array be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- Repeat,
+- Let next be done .
+
+- If iteratorRecord . [[Done]] is false , then
+- Set next to ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- If envRecord is undefined , return ? PutValue ( lhs , array ).
+
+- Return ? InitializeReferencedBinding ( lhs , array ).
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( n )), next ).
+
+- Set n to n + 1.
+
+BindingRestElement :
+...
+BindingPattern
+
+- Let array be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- Repeat,
+- Let next be done .
+
+- If iteratorRecord . [[Done]] is false , then
+- Set next to ? IteratorStepValue ( iteratorRecord ).
+
+- If next is done , then
+- Return ? BindingInitialization of BindingPattern with arguments array and envRecord .
+
+- Perform ! CreateDataPropertyOrThrow ( array , ! ToString ( 𝔽 ( n )), next ).
+
+- Set n to n + 1.
+
+FormalParameters : [empty]
+
+- Return unused .
+
+FormalParameters :
+FormalParameterList
+,
+FunctionRestParameter
+
+- Perform ? IteratorBindingInitialization of FormalParameterList with arguments iteratorRecord and envRecord .
+
+- Return ? IteratorBindingInitialization of FunctionRestParameter with arguments iteratorRecord and envRecord .
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- Perform ? IteratorBindingInitialization of FormalParameterList with arguments iteratorRecord and envRecord .
+
+- Return ? IteratorBindingInitialization of FormalParameter with arguments iteratorRecord and envRecord .
+
+ArrowParameters : BindingIdentifier
+
+- Let v be undefined .
+
+- Assert : iteratorRecord . [[Done]] is false .
+
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is not done , then
+- Set v to next .
+
+- Return ? BindingInitialization of BindingIdentifier with arguments v and envRecord .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return ? IteratorBindingInitialization of formals with arguments iteratorRecord and envRecord .
+
+AsyncArrowBindingIdentifier : BindingIdentifier
+
+- Let v be undefined .
+
+- Assert : iteratorRecord . [[Done]] is false .
+
+- Let next be ? IteratorStepValue ( iteratorRecord ).
+
+- If next is not done , then
+- Set v to next .
+
+- Return ? BindingInitialization of BindingIdentifier with arguments v and envRecord .
+
+8.6.4 Static Semantics: AssignmentTargetType
+
+The syntax-directed operation AssignmentTargetType takes no arguments and returns simple , web-compat , or invalid . It is defined piecewise over the following productions:
+
+IdentifierReference : Identifier
+
+- If IsStrict (this IdentifierReference ) is true and the StringValue of Identifier is either "eval" or "arguments" , return invalid .
+
+- Return simple .
+
+IdentifierReference :
+yield
+
+await
+
+CallExpression :
+CallExpression
+[
+Expression
+]
+
+CallExpression
+.
+IdentifierName
+
+CallExpression
+.
+PrivateIdentifier
+
+MemberExpression :
+MemberExpression
+[
+Expression
+]
+
+MemberExpression
+.
+IdentifierName
+
+SuperProperty
+
+MemberExpression
+.
+PrivateIdentifier
+
+- Return simple .
+
+PrimaryExpression :
+CoverParenthesizedExpressionAndArrowParameterList
+
+- Let expr be the ParenthesizedExpression that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return the AssignmentTargetType of expr .
+
+CallExpression :
+CoverCallExpressionAndAsyncArrowHead
+
+CallExpression
+Arguments
+
+- Normative Optional
+If the host is a web browser or otherwise supports Runtime Errors for Function Call Assignment Targets and IsStrict (this CallExpression ) is false , then
+- Return web-compat .
+
+- Return invalid .
+
+PrimaryExpression :
+this
+
+Literal
+
+ArrayLiteral
+
+ObjectLiteral
+
+FunctionExpression
+
+ClassExpression
+
+GeneratorExpression
+
+AsyncFunctionExpression
+
+AsyncGeneratorExpression
+
+RegularExpressionLiteral
+
+TemplateLiteral
+
+CallExpression :
+SuperCall
+
+ImportCall
+
+CallExpression
+TemplateLiteral
+
+NewExpression :
+new
+NewExpression
+
+MemberExpression :
+MemberExpression
+TemplateLiteral
+
+new
+MemberExpression
+Arguments
+
+NewTarget :
+new
+.
+target
+
+ImportMeta :
+import
+.
+meta
+
+LeftHandSideExpression :
+OptionalExpression
+
+UpdateExpression :
+LeftHandSideExpression
+++
+
+LeftHandSideExpression
+--
+
+++
+UnaryExpression
+
+--
+UnaryExpression
+
+UnaryExpression :
+delete
+UnaryExpression
+
+void
+UnaryExpression
+
+typeof
+UnaryExpression
+
++
+UnaryExpression
+
+-
+UnaryExpression
+
+~
+UnaryExpression
+
+!
+UnaryExpression
+
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+
+ExponentiationExpression :
+UpdateExpression
+**
+ExponentiationExpression
+
+MultiplicativeExpression :
+MultiplicativeExpression
+MultiplicativeOperator
+ExponentiationExpression
+
+AdditiveExpression :
+AdditiveExpression
++
+MultiplicativeExpression
+
+AdditiveExpression
+-
+MultiplicativeExpression
+
+ShiftExpression :
+ShiftExpression
+<<
+AdditiveExpression
+
+ShiftExpression
+>>
+AdditiveExpression
+
+ShiftExpression
+>>>
+AdditiveExpression
+
+RelationalExpression :
+RelationalExpression
+<
+ShiftExpression
+
+RelationalExpression
+>
+ShiftExpression
+
+RelationalExpression
+<=
+ShiftExpression
+
+RelationalExpression
+>=
+ShiftExpression
+
+RelationalExpression
+instanceof
+ShiftExpression
+
+RelationalExpression
+in
+ShiftExpression
+
+PrivateIdentifier
+in
+ShiftExpression
+
+EqualityExpression :
+EqualityExpression
+==
+RelationalExpression
+
+EqualityExpression
+!=
+RelationalExpression
+
+EqualityExpression
+===
+RelationalExpression
+
+EqualityExpression
+!==
+RelationalExpression
+
+BitwiseANDExpression :
+BitwiseANDExpression
+&
+EqualityExpression
+
+BitwiseXORExpression :
+BitwiseXORExpression
+^
+BitwiseANDExpression
+
+BitwiseORExpression :
+BitwiseORExpression
+|
+BitwiseXORExpression
+
+LogicalANDExpression :
+LogicalANDExpression
+&&
+BitwiseORExpression
+
+LogicalORExpression :
+LogicalORExpression
+||
+LogicalANDExpression
+
+CoalesceExpression :
+CoalesceExpressionHead
+??
+BitwiseORExpression
+
+ConditionalExpression :
+ShortCircuitExpression
+?
+AssignmentExpression
+:
+AssignmentExpression
+
+AssignmentExpression :
+YieldExpression
+
+ArrowFunction
+
+AsyncArrowFunction
+
+LeftHandSideExpression
+=
+AssignmentExpression
+
+LeftHandSideExpression
+AssignmentOperator
+AssignmentExpression
+
+LeftHandSideExpression
+&&=
+AssignmentExpression
+
+LeftHandSideExpression
+||=
+AssignmentExpression
+
+LeftHandSideExpression
+??=
+AssignmentExpression
+
+Expression :
+Expression
+,
+AssignmentExpression
+
+- Return invalid .
+
+8.6.5 Static Semantics: PropName
+
+The syntax-directed operation PropName takes no arguments and returns a String or empty . It is defined piecewise over the following productions:
+
+PropertyDefinition : IdentifierReference
+
+- Return the StringValue of IdentifierReference .
+
+PropertyDefinition :
+...
+AssignmentExpression
+
+- Return empty .
+
+PropertyDefinition :
+PropertyName
+:
+AssignmentExpression
+
+- Return the PropName of PropertyName .
+
+LiteralPropertyName : IdentifierName
+
+AttributeKey : IdentifierName
+
+- Return the StringValue of IdentifierName .
+
+LiteralPropertyName : StringLiteral
+
+AttributeKey : StringLiteral
+
+- Return the SV of StringLiteral .
+
+LiteralPropertyName : NumericLiteral
+
+- Let number be the NumericValue of NumericLiteral .
+
+- Return ! ToString ( number ).
+
+ComputedPropertyName :
+[
+AssignmentExpression
+]
+
+- Return empty .
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+- Return the PropName of ClassElementName .
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return the PropName of ClassElementName .
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return the PropName of ClassElementName .
+
+ClassElement : ClassStaticBlock
+
+- Return empty .
+
+ClassElement : ;
+
+- Return empty .
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return the PropName of ClassElementName .
+
+FieldDefinition :
+ClassElementName
+Initializer opt
+
+- Return the PropName of ClassElementName .
+
+ClassElementName : PrivateIdentifier
+
+- Return empty .
+
+8.6.6 Static Semantics: ContainsUsing
+
+The syntax-directed operation ContainsUsing takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- If ContainsUsing of the derived StatementList is true , return true .
+
+- If ContainsUsing of StatementListItem is true , return true .
+
+- Return false .
+
+StatementListItem : Statement
+
+- Return false .
+
+StatementListItem : Declaration
+
+- If IsUsingDeclaration of Declaration is true , return true .
+
+- If IsAwaitUsingDeclaration of Declaration is true , return true .
+
+- Return false .

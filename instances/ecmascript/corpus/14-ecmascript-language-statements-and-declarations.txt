@@ -1,0 +1,2873 @@
+# 14 ECMAScript Language: Statements and Declarations
+# джерело: https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-ecmascript-language-statements-and-declarations
+# отримано: 2026-09-01
+
+14 ECMAScript Language: Statements and Declarations
+
+Syntax
+
+Statement [Yield, Await, Return] :
+BlockStatement [?Yield, ?Await, ?Return]
+
+VariableStatement [?Yield, ?Await]
+
+EmptyStatement
+
+ExpressionStatement [?Yield, ?Await]
+
+IfStatement [?Yield, ?Await, ?Return]
+
+BreakableStatement [?Yield, ?Await, ?Return]
+
+ContinueStatement [?Yield, ?Await]
+
+BreakStatement [?Yield, ?Await]
+
+[+Return]
+ReturnStatement [?Yield, ?Await]
+
+WithStatement [?Yield, ?Await, ?Return]
+
+LabelledStatement [?Yield, ?Await, ?Return]
+
+ThrowStatement [?Yield, ?Await]
+
+TryStatement [?Yield, ?Await, ?Return]
+
+DebuggerStatement
+
+Declaration [Yield, Await] :
+HoistableDeclaration [?Yield, ?Await, ~Default]
+
+ClassDeclaration [?Yield, ?Await, ~Default]
+
+LexicalDeclaration [+In, ?Yield, ?Await]
+
+HoistableDeclaration [Yield, Await, Default] :
+FunctionDeclaration [?Yield, ?Await, ?Default]
+
+GeneratorDeclaration [?Yield, ?Await, ?Default]
+
+AsyncFunctionDeclaration [?Yield, ?Await, ?Default]
+
+AsyncGeneratorDeclaration [?Yield, ?Await, ?Default]
+
+BreakableStatement [Yield, Await, Return] :
+IterationStatement [?Yield, ?Await, ?Return]
+
+SwitchStatement [?Yield, ?Await, ?Return]
+
+14.1 Statement Semantics
+
+14.1.1 Runtime Semantics: Evaluation
+
+HoistableDeclaration :
+GeneratorDeclaration
+
+AsyncFunctionDeclaration
+
+AsyncGeneratorDeclaration
+
+- Return empty .
+
+HoistableDeclaration : FunctionDeclaration
+
+- Return ? Evaluation of FunctionDeclaration .
+
+BreakableStatement :
+IterationStatement
+
+SwitchStatement
+
+- Let newLabelSet be a new empty List .
+
+- Return ? LabelledEvaluation of this BreakableStatement with argument newLabelSet .
+
+14.2 Block
+
+Syntax
+
+BlockStatement [Yield, Await, Return] :
+Block [?Yield, ?Await, ?Return]
+
+Block [Yield, Await, Return] :
+{
+StatementList [?Yield, ?Await, ?Return] opt
+}
+
+StatementList [Yield, Await, Return] :
+StatementListItem [?Yield, ?Await, ?Return]
+
+StatementList [?Yield, ?Await, ?Return]
+StatementListItem [?Yield, ?Await, ?Return]
+
+StatementListItem [Yield, Await, Return] :
+Statement [?Yield, ?Await, ?Return]
+
+Declaration [?Yield, ?Await]
+
+14.2.1 Static Semantics: Early Errors
+
+Block :
+{
+StatementList
+}
+
+-
+It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate entries , unless the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , and both of the following conditions are true:
+
+- IsStrict (this production) is false .
+
+- The duplicate entries are only bound by FunctionDeclarations.
+
+-
+It is a Syntax Error if any element of the LexicallyDeclaredNames of StatementList also occurs in the VarDeclaredNames of StatementList .
+
+14.2.2 Runtime Semantics: Evaluation
+
+Block :
+{
+}
+
+- Return empty .
+
+Block :
+{
+StatementList
+}
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let blockEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- Perform BlockDeclarationInstantiation ( StatementList , blockEnv ).
+
+- Set the running execution context 's LexicalEnvironment to blockEnv .
+
+- Let blockValue be Completion ( Evaluation of StatementList ).
+
+- Set blockValue to Completion ( DisposeResources ( blockEnv . [[DisposableResourceStack]] , blockValue )).
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? blockValue .
+
+Note 1
+No matter how control leaves the Block the LexicalEnvironment is always restored to its former state.
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let sl be ? Evaluation of StatementList .
+
+- Let s be Completion ( Evaluation of StatementListItem ).
+
+- Return ? UpdateEmpty ( s , sl ).
+
+Note 2
+The value of a StatementList is the value of the last value-producing item in the StatementList . For example, the following calls to the eval function all return the value 1:
+
+eval ( "1;;;;;" )
+eval ( "1;{}" )
+eval ( "1;var a;" )
+
+14.2.3 BlockDeclarationInstantiation ( code , envRecord )
+
+The abstract operation BlockDeclarationInstantiation takes arguments code (a Parse Node ) and envRecord (a Declarative Environment Record ) and returns unused . code is the Parse Node corresponding to the body of the block. envRecord is the Environment Record in which bindings are to be created.
+
+Note
+When a Block or CaseBlock is evaluated a new Declarative Environment Record is created and bindings for each block scoped variable, constant, function, or class declared in the block are instantiated in the Environment Record .
+
+It performs the following steps when called:
+
+- Let decls be the LexicallyScopedDeclarations of code .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- For each element decl of decls , do
+- For each element name of the BoundNames of decl , do
+- If IsConstantDeclaration of decl is true , then
+- Perform ! envRecord . CreateImmutableBinding ( name , true ).
+
+- Else,
+- Normative Optional
+If the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , then
+- If ! envRecord . HasBinding ( name ) is false , then
+- Perform ! envRecord . CreateMutableBinding ( name , false ).
+
+- Else,
+- Perform ! envRecord . CreateMutableBinding ( name , false ).
+
+- If decl is either a FunctionDeclaration , a GeneratorDeclaration , an AsyncFunctionDeclaration , or an AsyncGeneratorDeclaration , then
+- Let funcName be the sole element of the BoundNames of decl .
+
+- Let funcObj be InstantiateFunctionObject of decl with arguments envRecord and privateEnv .
+
+- Normative Optional
+If the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , then
+- If the binding for funcName in envRecord is an uninitialized binding, then
+- Perform ! envRecord . InitializeBinding ( funcName , funcObj ).
+
+- Else,
+- Assert : decl is a FunctionDeclaration .
+
+- Perform ! envRecord . SetMutableBinding ( funcName , funcObj , false ).
+
+- Else,
+- Perform ! envRecord . InitializeBinding ( funcName , funcObj ).
+
+- Return unused .
+
+14.3 Declarations and the Variable Statement
+
+14.3.1 Let, Const, Using, and Await Using Declarations
+
+Note
+let , const , using , and await using declarations define variables that are scoped to the running execution context 's LexicalEnvironment. The variables are created when their containing Environment Record is instantiated but may not be accessed in any way until the variable's LexicalBinding is evaluated. A variable defined by a LexicalBinding with an Initializer is assigned the value of its Initializer 's AssignmentExpression when the LexicalBinding is evaluated, not when the variable is created. If a LexicalBinding in a let declaration does not have an Initializer the variable is assigned the value undefined when the LexicalBinding is evaluated.
+
+Syntax
+
+LexicalDeclaration [In, Yield, Await] :
+LetOrConst
+BindingList [?In, ?Yield, ?Await, +Pattern]
+;
+
+UsingDeclaration [?In, ?Yield, ?Await]
+
+[+Await]
+AwaitUsingDeclaration [?In, ?Yield]
+
+LetOrConst :
+let
+
+const
+
+UsingDeclaration [In, Yield, Await] :
+using
+[no LineTerminator here]
+BindingList [?In, ?Yield, ?Await, ~Pattern]
+;
+
+AwaitUsingDeclaration [In, Yield] :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead [?Yield]
+[no LineTerminator here]
+BindingList [?In, ?Yield, +Await, ~Pattern]
+;
+
+BindingList [In, Yield, Await, Pattern] :
+LexicalBinding [?In, ?Yield, ?Await, ?Pattern]
+
+BindingList [?In, ?Yield, ?Await, ?Pattern]
+,
+LexicalBinding [?In, ?Yield, ?Await, ?Pattern]
+
+LexicalBinding [In, Yield, Await, Pattern] :
+BindingIdentifier [?Yield, ?Await]
+Initializer [?In, ?Yield, ?Await] opt
+
+[+Pattern]
+BindingPattern [?Yield, ?Await]
+Initializer [?In, ?Yield, ?Await]
+
+Supplemental Syntax
+
+When processing an instance of the production
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+the interpretation of CoverAwaitExpressionAndAwaitUsingDeclarationHead is refined using the following grammar:
+
+AwaitUsingDeclarationHead :
+await
+[no LineTerminator here]
+using
+
+14.3.1.1 Static Semantics: Early Errors
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains "let" .
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains any duplicate entries.
+
+UsingDeclaration :
+using
+BindingList
+;
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains "let" .
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains any duplicate entries.
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- CoverAwaitExpressionAndAwaitUsingDeclarationHead must cover an AwaitUsingDeclarationHead .
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains "let" .
+
+-
+It is a Syntax Error if the BoundNames of BindingList contains any duplicate entries.
+
+LexicalBinding :
+BindingIdentifier
+Initializer opt
+
+-
+It is a Syntax Error if Initializer is not present and IsConstantDeclaration of the LexicalDeclaration containing this LexicalBinding is true .
+
+14.3.1.2 Runtime Semantics: Evaluation
+
+LexicalDeclaration :
+LetOrConst
+BindingList
+;
+
+- Perform ? BindingEvaluation of BindingList with argument normal .
+
+- Return empty .
+
+UsingDeclaration :
+using
+BindingList
+;
+
+- Perform ? BindingEvaluation of BindingList with argument sync-dispose .
+
+- Return empty .
+
+AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+BindingList
+;
+
+- Perform ? BindingEvaluation of BindingList with argument async-dispose .
+
+- Return empty .
+
+14.3.1.3 Runtime Semantics: BindingEvaluation
+
+The syntax-directed operation BindingEvaluation takes argument kind ( normal , sync-dispose , or async-dispose ) and returns either a normal completion containing unused or an abrupt completion . It is defined piecewise over the following productions:
+
+BindingList :
+BindingList
+,
+LexicalBinding
+
+- Perform ? BindingEvaluation of the derived BindingList with argument kind .
+
+- Return ? BindingEvaluation of LexicalBinding with argument kind .
+
+LexicalBinding : BindingIdentifier
+
+- Assert : kind is normal .
+
+- Let lhs be ! ResolveBinding ( StringValue of BindingIdentifier ).
+
+- Perform ! InitializeReferencedBinding ( lhs , undefined ).
+
+- Return unused .
+
+Note
+A static semantics rule ensures that this form of LexicalBinding never occurs in a const , using , or await using declaration.
+
+LexicalBinding :
+BindingIdentifier
+Initializer
+
+- Let bindingId be the StringValue of BindingIdentifier .
+
+- Let lhs be ! ResolveBinding ( bindingId ).
+
+- If IsAnonymousFunctionDefinition ( Initializer ) is true , then
+- Let value be ? NamedEvaluation of Initializer with argument bindingId .
+
+- Else,
+- Let rhs be ? Evaluation of Initializer .
+
+- Let value be ? GetValue ( rhs ).
+
+- If kind is not normal , then
+- Assert : IsUnresolvableReference ( lhs ) is false .
+
+- Let base be lhs . [[Base]] .
+
+- Assert : base is a Declarative Environment Record .
+
+- Perform ? AddDisposableResource ( base . [[DisposableResourceStack]] , value , kind ).
+
+- Perform ? InitializeReferencedBinding ( lhs , value ).
+
+- Return unused .
+
+LexicalBinding :
+BindingPattern
+Initializer
+
+- Assert : kind is normal .
+
+- Let rhs be ? Evaluation of Initializer .
+
+- Let value be ? GetValue ( rhs ).
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Return ? BindingInitialization of BindingPattern with arguments value and envRecord .
+
+14.3.2 Variable Statement
+
+Note
+A var statement declares variables that are scoped to the running execution context 's VariableEnvironment. Var variables are created when their containing Environment Record is instantiated and are initialized to undefined when created. Within the scope of any VariableEnvironment a common BindingIdentifier may appear in more than one VariableDeclaration but those declarations collectively define only one variable. A variable defined by a VariableDeclaration with an Initializer is assigned the value of its Initializer 's AssignmentExpression when the VariableDeclaration is executed, not when the variable is created.
+
+Syntax
+
+VariableStatement [Yield, Await] :
+var
+VariableDeclarationList [+In, ?Yield, ?Await]
+;
+
+VariableDeclarationList [In, Yield, Await] :
+VariableDeclaration [?In, ?Yield, ?Await]
+
+VariableDeclarationList [?In, ?Yield, ?Await]
+,
+VariableDeclaration [?In, ?Yield, ?Await]
+
+VariableDeclaration [In, Yield, Await] :
+BindingIdentifier [?Yield, ?Await]
+Initializer [?In, ?Yield, ?Await] opt
+
+BindingPattern [?Yield, ?Await]
+Initializer [?In, ?Yield, ?Await]
+
+14.3.2.1 Runtime Semantics: Evaluation
+
+VariableStatement :
+var
+VariableDeclarationList
+;
+
+- Perform ? Evaluation of VariableDeclarationList .
+
+- Return empty .
+
+VariableDeclarationList :
+VariableDeclarationList
+,
+VariableDeclaration
+
+- Perform ? Evaluation of VariableDeclarationList .
+
+- Return ? Evaluation of VariableDeclaration .
+
+VariableDeclaration : BindingIdentifier
+
+- Return empty .
+
+VariableDeclaration :
+BindingIdentifier
+Initializer
+
+- Let bindingId be the StringValue of BindingIdentifier .
+
+- Let lhs be ? ResolveBinding ( bindingId ).
+
+- If IsAnonymousFunctionDefinition ( Initializer ) is true , then
+- Let value be ? NamedEvaluation of Initializer with argument bindingId .
+
+- Else,
+- Let rhs be ? Evaluation of Initializer .
+
+- Let value be ? GetValue ( rhs ).
+
+- Perform ? PutValue ( lhs , value ).
+
+- Return empty .
+
+Note
+If a VariableDeclaration is nested within a with statement and the BindingIdentifier in the VariableDeclaration is the same as a property name of the binding object of the with statement's Object Environment Record , then step 5 will assign value to the property instead of assigning to the VariableEnvironment binding of the Identifier .
+
+VariableDeclaration :
+BindingPattern
+Initializer
+
+- Let rhs be ? Evaluation of Initializer .
+
+- Let rightValue be ? GetValue ( rhs ).
+
+- Return ? BindingInitialization of BindingPattern with arguments rightValue and undefined .
+
+14.3.3 Destructuring Binding Patterns
+
+Syntax
+
+BindingPattern [Yield, Await] :
+ObjectBindingPattern [?Yield, ?Await]
+
+ArrayBindingPattern [?Yield, ?Await]
+
+ObjectBindingPattern [Yield, Await] :
+{
+}
+
+{
+BindingRestProperty [?Yield, ?Await]
+}
+
+{
+BindingPropertyList [?Yield, ?Await]
+, opt
+}
+
+{
+BindingPropertyList [?Yield, ?Await]
+,
+BindingRestProperty [?Yield, ?Await]
+}
+
+ArrayBindingPattern [Yield, Await] :
+[
+Elision opt
+BindingRestElement [?Yield, ?Await] opt
+]
+
+[
+BindingElementList [?Yield, ?Await]
+]
+
+[
+BindingElementList [?Yield, ?Await]
+,
+Elision opt
+BindingRestElement [?Yield, ?Await] opt
+]
+
+BindingRestProperty [Yield, Await] :
+...
+BindingIdentifier [?Yield, ?Await]
+
+BindingPropertyList [Yield, Await] :
+BindingProperty [?Yield, ?Await]
+
+BindingPropertyList [?Yield, ?Await]
+,
+BindingProperty [?Yield, ?Await]
+
+BindingElementList [Yield, Await] :
+BindingElisionElement [?Yield, ?Await]
+
+BindingElementList [?Yield, ?Await]
+,
+BindingElisionElement [?Yield, ?Await]
+
+BindingElisionElement [Yield, Await] :
+Elision opt
+BindingElement [?Yield, ?Await]
+
+BindingProperty [Yield, Await] :
+SingleNameBinding [?Yield, ?Await]
+
+PropertyName [?Yield, ?Await]
+:
+BindingElement [?Yield, ?Await]
+
+BindingElement [Yield, Await] :
+SingleNameBinding [?Yield, ?Await]
+
+BindingPattern [?Yield, ?Await]
+Initializer [+In, ?Yield, ?Await] opt
+
+SingleNameBinding [Yield, Await] :
+BindingIdentifier [?Yield, ?Await]
+Initializer [+In, ?Yield, ?Await] opt
+
+BindingRestElement [Yield, Await] :
+...
+BindingIdentifier [?Yield, ?Await]
+
+...
+BindingPattern [?Yield, ?Await]
+
+14.3.3.1 Runtime Semantics: PropertyBindingInitialization
+
+The syntax-directed operation PropertyBindingInitialization takes arguments value (an ECMAScript language value ) and envRecord (an Environment Record or undefined ) and returns either a normal completion containing a List of property keys or an abrupt completion . It collects a list of all bound property names . It is defined piecewise over the following productions:
+
+BindingPropertyList :
+BindingPropertyList
+,
+BindingProperty
+
+- Let boundNames be ? PropertyBindingInitialization of BindingPropertyList with arguments value and envRecord .
+
+- Let nextNames be ? PropertyBindingInitialization of BindingProperty with arguments value and envRecord .
+
+- Return the list-concatenation of boundNames and nextNames .
+
+BindingProperty : SingleNameBinding
+
+- Let name be the sole element of the BoundNames of SingleNameBinding .
+
+- Perform ? KeyedBindingInitialization of SingleNameBinding with arguments value , envRecord , and name .
+
+- Return « name ».
+
+BindingProperty :
+PropertyName
+:
+BindingElement
+
+- Let propertyKey be ? Evaluation of PropertyName .
+
+- Perform ? KeyedBindingInitialization of BindingElement with arguments value , envRecord , and propertyKey .
+
+- Return « propertyKey ».
+
+14.3.3.2 Runtime Semantics: RestBindingInitialization
+
+The syntax-directed operation RestBindingInitialization takes arguments value (an ECMAScript language value ), envRecord (an Environment Record or undefined ), and excludedNames (a List of property keys ) and returns either a normal completion containing unused or an abrupt completion . It is defined piecewise over the following productions:
+
+BindingRestProperty :
+...
+BindingIdentifier
+
+- Let lhs be ? ResolveBinding ( StringValue of BindingIdentifier , envRecord ).
+
+- Let restObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ? CopyDataProperties ( restObj , value , excludedNames ).
+
+- If envRecord is undefined , return ? PutValue ( lhs , restObj ).
+
+- Return ? InitializeReferencedBinding ( lhs , restObj ).
+
+14.3.3.3 Runtime Semantics: KeyedBindingInitialization
+
+The syntax-directed operation KeyedBindingInitialization takes arguments value (an ECMAScript language value ), envRecord (an Environment Record or undefined ), and propertyName (a property key ) and returns either a normal completion containing unused or an abrupt completion .
+
+Note
+When undefined is passed for envRecord it indicates that a PutValue operation should be used to assign the initialization value. This is the case for formal parameter lists of non-strict functions . In that case the formal parameter bindings are preinitialized in order to deal with the possibility of multiple parameters with the same name.
+
+It is defined piecewise over the following productions:
+
+BindingElement :
+BindingPattern
+Initializer opt
+
+- Set value to ? GetV ( value , propertyName ).
+
+- If Initializer is present and value is undefined , then
+- Let defaultValue be ? Evaluation of Initializer .
+
+- Set value to ? GetValue ( defaultValue ).
+
+- Return ? BindingInitialization of BindingPattern with arguments value and envRecord .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer opt
+
+- Let bindingId be the StringValue of BindingIdentifier .
+
+- Let lhs be ? ResolveBinding ( bindingId , envRecord ).
+
+- Set value to ? GetV ( value , propertyName ).
+
+- If Initializer is present and value is undefined , then
+- If IsAnonymousFunctionDefinition ( Initializer ) is true , then
+- Set value to ? NamedEvaluation of Initializer with argument bindingId .
+
+- Else,
+- Let defaultValue be ? Evaluation of Initializer .
+
+- Set value to ? GetValue ( defaultValue ).
+
+- If envRecord is undefined , return ? PutValue ( lhs , value ).
+
+- Return ? InitializeReferencedBinding ( lhs , value ).
+
+14.4 Empty Statement
+
+Syntax
+
+EmptyStatement :
+;
+
+14.4.1 Runtime Semantics: Evaluation
+
+EmptyStatement : ;
+
+- Return empty .
+
+14.5 Expression Statement
+
+Syntax
+
+ExpressionStatement [Yield, Await] :
+[lookahead ∉ { { , function , async
+[no LineTerminator here]
+function , class , let
+[ }]
+Expression [+In, ?Yield, ?Await]
+;
+
+Note
+An ExpressionStatement cannot start with a U+007B (LEFT CURLY BRACKET) because that might make it ambiguous with a Block . An ExpressionStatement cannot start with the function or class keywords because that would make it ambiguous with a FunctionDeclaration , a GeneratorDeclaration , or a ClassDeclaration . An ExpressionStatement cannot start with async function because that would make it ambiguous with an AsyncFunctionDeclaration or a AsyncGeneratorDeclaration . An ExpressionStatement cannot start with the two token sequence let [ because that would make it ambiguous with a let LexicalDeclaration whose first LexicalBinding was an ArrayBindingPattern .
+
+14.5.1 Runtime Semantics: Evaluation
+
+ExpressionStatement :
+Expression
+;
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Return ? GetValue ( exprRef ).
+
+14.6 The if Statement
+
+Syntax
+
+IfStatement [Yield, Await, Return] :
+if
+(
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+else
+Statement [?Yield, ?Await, ?Return]
+
+if
+(
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+[lookahead ≠ else ]
+
+Note The lookahead-restriction [lookahead ≠ else ] resolves the classic “dangling else” problem in the usual way. That is, when the choice of associated if is otherwise ambiguous, the else is associated with the nearest (innermost) of the candidate if s
+
+14.6.1 Static Semantics: Early Errors
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+-
+It is a Syntax Error if IsLabelledFunction (the first Statement ) is true .
+
+-
+It is a Syntax Error if IsLabelledFunction (the second Statement ) is true .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply this rule if the extension specified in B.3.1 is implemented.
+
+14.6.2 Runtime Semantics: Evaluation
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ToBoolean (? GetValue ( exprRef )).
+
+- If exprValue is true , then
+- Let stmtCompletion be Completion ( Evaluation of the first Statement ).
+
+- Else,
+- Let stmtCompletion be Completion ( Evaluation of the second Statement ).
+
+- Return ? UpdateEmpty ( stmtCompletion , undefined ).
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ToBoolean (? GetValue ( exprRef )).
+
+- If exprValue is false , return undefined .
+
+- Let stmtCompletion be Completion ( Evaluation of Statement ).
+
+- Return ? UpdateEmpty ( stmtCompletion , undefined ).
+
+14.7 Iteration Statements
+
+Syntax
+
+IterationStatement [Yield, Await, Return] :
+DoWhileStatement [?Yield, ?Await, ?Return]
+
+WhileStatement [?Yield, ?Await, ?Return]
+
+ForStatement [?Yield, ?Await, ?Return]
+
+ForInOfStatement [?Yield, ?Await, ?Return]
+
+14.7.1 Semantics
+
+14.7.1.1 LoopContinues ( completion , labelSet )
+
+The abstract operation LoopContinues takes arguments completion (a Completion Record ) and labelSet (a List of Strings) and returns a Boolean. It performs the following steps when called:
+
+- If completion is a normal completion , return true .
+
+- If completion is not a continue completion , return false .
+
+- If completion . [[Target]] is empty , return true .
+
+- If labelSet contains completion . [[Target]] , return true .
+
+- Return false .
+
+Note
+Within the Statement part of an IterationStatement a ContinueStatement may be used to begin a new iteration.
+
+14.7.1.2 Runtime Semantics: LoopEvaluation
+
+The syntax-directed operation LoopEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+IterationStatement : DoWhileStatement
+
+- Return ? DoWhileLoopEvaluation of DoWhileStatement with argument labelSet .
+
+IterationStatement : WhileStatement
+
+- Return ? WhileLoopEvaluation of WhileStatement with argument labelSet .
+
+IterationStatement : ForStatement
+
+- Return ? ForLoopEvaluation of ForStatement with argument labelSet .
+
+IterationStatement : ForInOfStatement
+
+- Return ? ForInOfLoopEvaluation of ForInOfStatement with argument labelSet .
+
+14.7.2 The do - while Statement
+
+Syntax
+
+DoWhileStatement [Yield, Await, Return] :
+do
+Statement [?Yield, ?Await, ?Return]
+while
+(
+Expression [+In, ?Yield, ?Await]
+)
+;
+
+14.7.2.1 Static Semantics: Early Errors
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply this rule if the extension specified in B.3.1 is implemented.
+
+14.7.2.2 Runtime Semantics: DoWhileLoopEvaluation
+
+The syntax-directed operation DoWhileLoopEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+- Let iterationResult be undefined .
+
+- Repeat,
+- Let stmtResult be Completion ( Evaluation of Statement ).
+
+- If LoopContinues ( stmtResult , labelSet ) is false , return ? UpdateEmpty ( stmtResult , iterationResult ).
+
+- If stmtResult . [[Value]] is not empty , set iterationResult to stmtResult . [[Value]] .
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ? GetValue ( exprRef ).
+
+- If ToBoolean ( exprValue ) is false , return iterationResult .
+
+14.7.3 The while Statement
+
+Syntax
+
+WhileStatement [Yield, Await, Return] :
+while
+(
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+14.7.3.1 Static Semantics: Early Errors
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply this rule if the extension specified in B.3.1 is implemented.
+
+14.7.3.2 Runtime Semantics: WhileLoopEvaluation
+
+The syntax-directed operation WhileLoopEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+- Let iterationResult be undefined .
+
+- Repeat,
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ? GetValue ( exprRef ).
+
+- If ToBoolean ( exprValue ) is false , return iterationResult .
+
+- Let stmtResult be Completion ( Evaluation of Statement ).
+
+- If LoopContinues ( stmtResult , labelSet ) is false , return ? UpdateEmpty ( stmtResult , iterationResult ).
+
+- If stmtResult . [[Value]] is not empty , set iterationResult to stmtResult . [[Value]] .
+
+14.7.4 The for Statement
+
+Syntax
+
+ForStatement [Yield, Await, Return] :
+for
+(
+[lookahead ≠ let
+[ ]
+Expression [~In, ?Yield, ?Await] opt
+;
+Expression [+In, ?Yield, ?Await] opt
+;
+Expression [+In, ?Yield, ?Await] opt
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+var
+VariableDeclarationList [~In, ?Yield, ?Await]
+;
+Expression [+In, ?Yield, ?Await] opt
+;
+Expression [+In, ?Yield, ?Await] opt
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+LexicalDeclaration [~In, ?Yield, ?Await]
+Expression [+In, ?Yield, ?Await] opt
+;
+Expression [+In, ?Yield, ?Await] opt
+)
+Statement [?Yield, ?Await, ?Return]
+
+14.7.4.1 Static Semantics: Early Errors
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply this rule if the extension specified in B.3.1 is implemented.
+
+ForStatement :
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+-
+It is a Syntax Error if any element of the BoundNames of LexicalDeclaration also occurs in the VarDeclaredNames of Statement .
+
+14.7.4.2 Runtime Semantics: ForLoopEvaluation
+
+The syntax-directed operation ForLoopEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- If the first Expression is present, then
+- Let exprRef be ? Evaluation of the first Expression .
+
+- Perform ? GetValue ( exprRef ).
+
+- If the second Expression is present, let test be the second Expression ; else let test be empty .
+
+- If the third Expression is present, let increment be the third Expression ; else let increment be empty .
+
+- Return ? ForBodyEvaluation ( test , increment , Statement , « », labelSet ).
+
+ForStatement :
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Perform ? Evaluation of VariableDeclarationList .
+
+- If the first Expression is present, let test be the first Expression ; else let test be empty .
+
+- If the second Expression is present, let increment be the second Expression ; else let increment be empty .
+
+- Return ? ForBodyEvaluation ( test , increment , Statement , « », labelSet ).
+
+ForStatement :
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let loopEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- Let isConst be IsConstantDeclaration of LexicalDeclaration .
+
+- Let boundNames be the BoundNames of LexicalDeclaration .
+
+- For each element name of boundNames , do
+- If isConst is true , then
+- Perform ! loopEnv . CreateImmutableBinding ( name , true ).
+
+- Else,
+- Perform ! loopEnv . CreateMutableBinding ( name , false ).
+
+- Set the running execution context 's LexicalEnvironment to loopEnv .
+
+- Let forDecl be Completion ( Evaluation of LexicalDeclaration ).
+
+- If forDecl is an abrupt completion , then
+- Set forDecl to Completion ( DisposeResources ( loopEnv . [[DisposableResourceStack]] , forDecl )).
+
+- Assert : forDecl is an abrupt completion .
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? forDecl .
+
+- If isConst is false , let perIterationLets be boundNames ; else let perIterationLets be a new empty List .
+
+- If the first Expression is present, let test be the first Expression ; else let test be empty .
+
+- If the second Expression is present, let increment be the second Expression ; else let increment be empty .
+
+- Let bodyResult be Completion ( ForBodyEvaluation ( test , increment , Statement , perIterationLets , labelSet )).
+
+- Set bodyResult to Completion ( DisposeResources ( loopEnv . [[DisposableResourceStack]] , bodyResult )).
+
+- Assert : If bodyResult is a normal completion , then bodyResult . [[Value]] is not empty .
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? bodyResult .
+
+14.7.4.3 ForBodyEvaluation ( test , increment , stmt , perIterationBindings , labelSet )
+
+The abstract operation ForBodyEvaluation takes arguments test (an Expression Parse Node or empty ), increment (an Expression Parse Node or empty ), stmt (a Statement Parse Node ), perIterationBindings (a List of Strings), and labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- Let iterationResult be undefined .
+
+- Perform ? CreatePerIterationEnvironment ( perIterationBindings ).
+
+- Repeat,
+- If test is not empty , then
+- Let testRef be ? Evaluation of test .
+
+- Let testValue be ? GetValue ( testRef ).
+
+- If ToBoolean ( testValue ) is false , return iterationResult .
+
+- Let result be Completion ( Evaluation of stmt ).
+
+- If LoopContinues ( result , labelSet ) is false , return ? UpdateEmpty ( result , iterationResult ).
+
+- If result . [[Value]] is not empty , set iterationResult to result . [[Value]] .
+
+- Perform ? CreatePerIterationEnvironment ( perIterationBindings ).
+
+- If increment is not empty , then
+- Let incRef be ? Evaluation of increment .
+
+- Perform ? GetValue ( incRef ).
+
+14.7.4.4 CreatePerIterationEnvironment ( perIterationBindings )
+
+The abstract operation CreatePerIterationEnvironment takes argument perIterationBindings (a List of Strings) and returns either a normal completion containing unused or a throw completion . It performs the following steps when called:
+
+- If perIterationBindings has any elements, then
+- Let lastIterationEnv be the running execution context 's LexicalEnvironment.
+
+- Let outer be lastIterationEnv . [[OuterEnv]] .
+
+- Assert : outer is not null .
+
+- Let thisIterationEnv be NewDeclarativeEnvironment ( outer ).
+
+- For each element name of perIterationBindings , do
+- Perform ! thisIterationEnv . CreateMutableBinding ( name , false ).
+
+- Let lastValue be ? lastIterationEnv . GetBindingValue ( name , true ).
+
+- Perform ! thisIterationEnv . InitializeBinding ( name , lastValue ).
+
+- Set the running execution context 's LexicalEnvironment to thisIterationEnv .
+
+- Return unused .
+
+14.7.5 The for - in , for - of , and for - await - of Statements
+
+Syntax
+
+ForInOfStatement [Yield, Await, Return] :
+for
+(
+[lookahead ≠ let
+[ ]
+LeftHandSideExpression [?Yield, ?Await]
+in
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+var
+ForBinding [?Yield, ?Await, +Pattern]
+in
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+ForDeclaration [?Yield, ?Await, ~Using]
+in
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+[lookahead ∉ { let , async
+of }]
+LeftHandSideExpression [?Yield, ?Await]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+var
+ForBinding [?Yield, ?Await, +Pattern]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+for
+(
+[lookahead ≠ using
+of ]
+ForDeclaration [?Yield, ?Await, +Using]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+[+Await]
+for
+await
+(
+[lookahead ≠ let ]
+LeftHandSideExpression [?Yield, ?Await]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+[+Await]
+for
+await
+(
+var
+ForBinding [?Yield, ?Await, +Pattern]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+[+Await]
+for
+await
+(
+[lookahead ≠ using
+of ]
+ForDeclaration [?Yield, ?Await, +Using]
+of
+AssignmentExpression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+ForDeclaration [Yield, Await, Using] :
+LetOrConst
+ForBinding [?Yield, ?Await, +Pattern]
+
+[+Using]
+using
+[no LineTerminator here]
+ForBinding [?Yield, ?Await, ~Pattern]
+
+[+Using, +Await]
+await
+[no LineTerminator here]
+using
+[no LineTerminator here]
+ForBinding [?Yield, +Await, ~Pattern]
+
+ForBinding [Yield, Await, Pattern] :
+BindingIdentifier [?Yield, ?Await]
+
+[+Pattern]
+BindingPattern [?Yield, ?Await]
+
+Note
+This section is extended by Annex B.3.5 .
+
+14.7.5.1 Static Semantics: Early Errors
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply this rule if the extension specified in B.3.1 is implemented.
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+-
+If LeftHandSideExpression is either an ObjectLiteral or an ArrayLiteral , LeftHandSideExpression must cover an AssignmentPattern .
+
+-
+If LeftHandSideExpression is neither an ObjectLiteral nor an ArrayLiteral , it is a Syntax Error if the AssignmentTargetType of LeftHandSideExpression is invalid .
+
+ForInOfStatement :
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+-
+It is a Syntax Error if the BoundNames of ForDeclaration contains "let" .
+
+-
+It is a Syntax Error if any element of the BoundNames of ForDeclaration also occurs in the VarDeclaredNames of Statement .
+
+-
+It is a Syntax Error if the BoundNames of ForDeclaration contains any duplicate entries.
+
+14.7.5.2 Static Semantics: IsDestructuring
+
+The syntax-directed operation IsDestructuring takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+MemberExpression : PrimaryExpression
+
+- If PrimaryExpression is either an ObjectLiteral or an ArrayLiteral , return true .
+
+- Return false .
+
+MemberExpression :
+MemberExpression
+[
+Expression
+]
+
+MemberExpression
+.
+IdentifierName
+
+MemberExpression
+TemplateLiteral
+
+SuperProperty
+
+MetaProperty
+
+new
+MemberExpression
+Arguments
+
+MemberExpression
+.
+PrivateIdentifier
+
+NewExpression :
+new
+NewExpression
+
+LeftHandSideExpression :
+CallExpression
+
+OptionalExpression
+
+- Return false .
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- Return IsDestructuring of ForBinding .
+
+ForBinding : BindingIdentifier
+
+- Return false .
+
+ForBinding : BindingPattern
+
+- Return true .
+
+Note
+This section is extended by Annex B.3.5 .
+
+14.7.5.3 Runtime Semantics: ForDeclarationBindingInitialization
+
+The syntax-directed operation ForDeclarationBindingInitialization takes arguments value (an ECMAScript language value ) and envRecord (an Environment Record ) and returns either a normal completion containing unused or an abrupt completion . It is defined piecewise over the following productions:
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- Return ? BindingInitialization of ForBinding with arguments value and envRecord .
+
+ForDeclaration :
+using
+ForBinding
+
+await
+using
+ForBinding
+
+- Throw a SyntaxError exception.
+
+14.7.5.4 Runtime Semantics: ForDeclarationBindingInstantiation
+
+The syntax-directed operation ForDeclarationBindingInstantiation takes argument envRecord (a Declarative Environment Record ) and returns unused . It is defined piecewise over the following productions:
+
+ForDeclaration :
+LetOrConst
+ForBinding
+
+- For each element name of the BoundNames of ForBinding , do
+- If IsConstantDeclaration of LetOrConst is true , then
+- Perform ! envRecord . CreateImmutableBinding ( name , true ).
+
+- Else,
+- Perform ! envRecord . CreateMutableBinding ( name , false ).
+
+- Return unused .
+
+ForDeclaration :
+using
+ForBinding
+
+await
+using
+ForBinding
+
+- For each element name of the BoundNames of ForBinding , do
+- Perform ! envRecord . CreateImmutableBinding ( name , true ).
+
+- Return unused .
+
+14.7.5.5 Runtime Semantics: ForInOfLoopEvaluation
+
+The syntax-directed operation ForInOfLoopEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », Expression , enumerate ).
+
+- Return ? ForIn/OfBodyEvaluation ( LeftHandSideExpression , Statement , keyResult , enumerate , assignment , labelSet ).
+
+ForInOfStatement :
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », Expression , enumerate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForBinding , Statement , keyResult , enumerate , var-binding , labelSet ).
+
+ForInOfStatement :
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation ( BoundNames of ForDeclaration , Expression , enumerate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForDeclaration , Statement , keyResult , enumerate , lexical-binding , labelSet ).
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », AssignmentExpression , iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( LeftHandSideExpression , Statement , keyResult , iterate , assignment , labelSet ).
+
+ForInOfStatement :
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », AssignmentExpression , iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForBinding , Statement , keyResult , iterate , var-binding , labelSet ).
+
+ForInOfStatement :
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation ( BoundNames of ForDeclaration , AssignmentExpression , iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForDeclaration , Statement , keyResult , iterate , lexical-binding , labelSet ).
+
+ForInOfStatement :
+for
+await
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », AssignmentExpression , async-iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( LeftHandSideExpression , Statement , keyResult , iterate , assignment , labelSet , async ).
+
+ForInOfStatement :
+for
+await
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation (« », AssignmentExpression , async-iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForBinding , Statement , keyResult , iterate , var-binding , labelSet , async ).
+
+ForInOfStatement :
+for
+await
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+- Let keyResult be ? ForIn/OfHeadEvaluation ( BoundNames of ForDeclaration , AssignmentExpression , async-iterate ).
+
+- Return ? ForIn/OfBodyEvaluation ( ForDeclaration , Statement , keyResult , iterate , lexical-binding , labelSet , async ).
+
+Note
+This section is extended by Annex B.3.5 .
+
+14.7.5.6 ForIn/OfHeadEvaluation ( uninitializedBoundNames , expr , iterationKind )
+
+The abstract operation ForIn/OfHeadEvaluation takes arguments uninitializedBoundNames (a List of Strings), expr (an Expression Parse Node or an AssignmentExpression Parse Node ), and iterationKind ( enumerate , iterate , or async-iterate ) and returns either a normal completion containing an Iterator Record or an abrupt completion . It performs the following steps when called:
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- If uninitializedBoundNames is not empty, then
+- Assert : uninitializedBoundNames has no duplicate entries.
+
+- Let newEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- For each String name of uninitializedBoundNames , do
+- Perform ! newEnv . CreateMutableBinding ( name , false ).
+
+- Set the running execution context 's LexicalEnvironment to newEnv .
+
+- Let exprRef be Completion ( Evaluation of expr ).
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Let exprValue be ? GetValue (? exprRef ).
+
+- If iterationKind is enumerate , then
+- If exprValue is either undefined or null , then
+- Return Completion Record { [[Type]] : break , [[Value]] : empty , [[Target]] : empty }.
+
+- Let obj be ! ToObject ( exprValue ).
+
+- Let iterator be EnumerateObjectProperties ( obj ).
+
+- Let nextMethod be ! GetV ( iterator , "next" ).
+
+- Return the Iterator Record { [[Iterator]] : iterator , [[NextMethod]] : nextMethod , [[Done]] : false }.
+
+- Assert : iterationKind is either iterate or async-iterate .
+
+- If iterationKind is async-iterate , let iteratorKind be async .
+
+- Else, let iteratorKind be sync .
+
+- Return ? GetIterator ( exprValue , iteratorKind ).
+
+14.7.5.7 ForIn/OfBodyEvaluation ( lhs , stmt , iteratorRecord , iterationKind , lhsKind , labelSet [ , iteratorKind ] )
+
+The abstract operation ForIn/OfBodyEvaluation takes arguments lhs (a Parse Node ), stmt (a Statement Parse Node ), iteratorRecord (an Iterator Record ), iterationKind ( enumerate or iterate ), lhsKind ( assignment , var-binding , or lexical-binding ), and labelSet (a List of Strings) and optional argument iteratorKind ( sync or async ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It performs the following steps when called:
+
+- If iteratorKind is not present, set iteratorKind to sync .
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let iterationResult be undefined .
+
+- If lhsKind is lexical-binding , then
+- Assert : lhs is a ForDeclaration .
+
+- If IsAwaitUsingDeclaration of lhs is true , then
+- Let declKind be async-dispose .
+
+- Else if IsUsingDeclaration of lhs is true , then
+- Let declKind be sync-dispose .
+
+- Else,
+- Let declKind be normal .
+
+- Else,
+- Let declKind be normal .
+
+- Let destructuring be IsDestructuring of lhs .
+
+- If destructuring is true and lhsKind is assignment , then
+- Assert : lhs is a LeftHandSideExpression .
+
+- Let assignmentPattern be the AssignmentPattern that is covered by lhs .
+
+- Repeat,
+- Let nextResult be ? Call ( iteratorRecord . [[NextMethod]] , iteratorRecord . [[Iterator]] ).
+
+- If iteratorKind is async , set nextResult to ? Await ( nextResult ).
+
+- If nextResult is not an Object , throw a TypeError exception.
+
+- Let done be ? IteratorComplete ( nextResult ).
+
+- If done is true , return iterationResult .
+
+- Let nextValue be ? IteratorValue ( nextResult ).
+
+- If lhsKind is either assignment or var-binding , then
+- If destructuring is true , then
+- If lhsKind is assignment , then
+- Let status be Completion ( DestructuringAssignmentEvaluation of assignmentPattern with argument nextValue ).
+
+- Else,
+- Assert : lhsKind is var-binding .
+
+- Assert : lhs is a ForBinding .
+
+- Let status be Completion ( BindingInitialization of lhs with arguments nextValue and undefined ).
+
+- Else,
+- Let lhsRef be Completion ( Evaluation of lhs ). (It may be evaluated repeatedly.)
+
+- If lhsKind is assignment and the AssignmentTargetType of lhs is web-compat , throw a ReferenceError exception.
+
+- If lhsRef is an abrupt completion , then
+- Let status be lhsRef .
+
+- Else,
+- Let status be Completion ( PutValue ( lhsRef . [[Value]] , nextValue )).
+
+- Let iterationEnv be undefined .
+
+- Else,
+- Assert : lhsKind is lexical-binding .
+
+- Assert : lhs is a ForDeclaration .
+
+- Let iterationEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- Perform ForDeclarationBindingInstantiation of lhs with argument iterationEnv .
+
+- Set the running execution context 's LexicalEnvironment to iterationEnv .
+
+- If destructuring is true , then
+- Let status be Completion ( ForDeclarationBindingInitialization of lhs with arguments nextValue and iterationEnv ).
+
+- Else,
+- Assert : lhs binds a single name.
+
+- Let lhsName be the sole element of the BoundNames of lhs .
+
+- Let lhsRef be ! ResolveBinding ( lhsName ).
+
+- If declKind is not normal , then
+- Assert : IsUnresolvableReference ( lhsRef ) is false .
+
+- Let base be lhsRef . [[Base]] .
+
+- Assert : base is a Declarative Environment Record .
+
+- Let status be Completion ( AddDisposableResource ( base . [[DisposableResourceStack]] , nextValue , declKind )).
+
+- Else,
+- Let status be NormalCompletion ( unused ).
+
+- If status is a normal completion , then
+- Set status to Completion ( InitializeReferencedBinding ( lhsRef , nextValue )).
+
+- If status is an abrupt completion , then
+- If iterationEnv is not undefined , then
+- Set status to Completion ( DisposeResources ( iterationEnv . [[DisposableResourceStack]] , status )).
+
+- Assert : status is an abrupt completion .
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- If iterationKind is enumerate , return ? status .
+
+- Assert : iterationKind is iterate .
+
+- If iteratorKind is async , return ? AsyncIteratorClose ( iteratorRecord , status ).
+
+- Return ? IteratorClose ( iteratorRecord , status ).
+
+- Let result be Completion ( Evaluation of stmt ).
+
+- If iterationEnv is not undefined , then
+- Set result to Completion ( DisposeResources ( iterationEnv . [[DisposableResourceStack]] , result )).
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- If LoopContinues ( result , labelSet ) is false , then
+- Set status to Completion ( UpdateEmpty ( result , iterationResult )).
+
+- If iterationKind is enumerate , return ? status .
+
+- Assert : iterationKind is iterate .
+
+- If iteratorKind is async , return ? AsyncIteratorClose ( iteratorRecord , status ).
+
+- Return ? IteratorClose ( iteratorRecord , status ).
+
+- If result . [[Value]] is not empty , set iterationResult to result . [[Value]] .
+
+14.7.5.8 Runtime Semantics: Evaluation
+
+BindingIdentifier :
+Identifier
+
+yield
+
+await
+
+- Let bindingId be the StringValue of BindingIdentifier .
+
+- Return ? ResolveBinding ( bindingId ).
+
+14.7.5.9 EnumerateObjectProperties ( obj )
+
+The abstract operation EnumerateObjectProperties takes argument obj (an Object) and returns an iterator object . It performs the following steps when called:
+
+- Return an iterator object whose next method iterates over all the String-valued keys of enumerable properties of obj . The iterator object is never directly accessible to ECMAScript code. The mechanics and order of enumerating the properties is not specified but must conform to the rules specified below.
+
+The iterator 's throw and return methods are null and are never invoked. The iterator 's next method processes object properties to determine whether the property key should be returned as an iterator value. Returned property keys do not include keys that are Symbols. Properties of the target object may be deleted during enumeration. A property that is deleted before it is processed by the iterator 's next method is ignored. If new properties are added to the target object during enumeration, the newly added properties are not guaranteed to be processed in the active enumeration. A property name will be returned by the iterator 's next method at most once in any enumeration.
+
+Enumerating the properties of the target object includes enumerating properties of its prototype, and the prototype of the prototype, and so on, recursively; but a property of a prototype is not processed if it has the same name as a property that has already been processed by the iterator 's next method. The values of [[Enumerable]] attributes are not considered when determining if a property of a prototype object has already been processed. The enumerable property names of prototype objects must be obtained by invoking EnumerateObjectProperties passing the prototype object as the argument. EnumerateObjectProperties must obtain the own property keys of the target object by calling its [[OwnPropertyKeys]] internal method. Property attributes of the target object must be obtained by calling its [[GetOwnProperty]] internal method.
+
+In addition, if neither obj nor any object in its prototype chain is a Proxy exotic object , TypedArray , module namespace exotic object , or implementation provided exotic object , then the iterator must behave as would the iterator given by CreateForInIterator ( obj ) until one of the following occurs:
+
+- the value of the [[Prototype]] internal slot of obj or an object in its prototype chain changes,
+
+- a property is removed from obj or an object in its prototype chain,
+
+- a property is added to an object in obj 's prototype chain, or
+
+- the value of the [[Enumerable]] attribute of a property of obj or an object in its prototype chain changes.
+
+Note 1
+ECMAScript implementations are not required to implement the algorithm in 14.7.5.10.2.1 directly. They may choose any implementation whose behaviour will not deviate from that algorithm unless one of the constraints in the previous paragraph is violated.
+
+The following is an informative definition of an ECMAScript generator function that conforms to these rules:
+
+function * EnumerateObjectProperties (obj) {
+const visited = new Set ();
+for ( const key of Reflect . ownKeys (obj)) {
+if ( typeof key === "symbol" ) continue ;
+const desc = Reflect . getOwnPropertyDescriptor (obj, key);
+if (desc) {
+visited. add (key);
+if (desc. enumerable ) yield key;
+}
+}
+const proto = Reflect . getPrototypeOf (obj);
+if (proto === null ) return ;
+for ( const protoKey of EnumerateObjectProperties (proto)) {
+if (!visited. has (protoKey)) yield protoKey;
+}
+}
+
+Note 2
+The list of exotic objects for which implementations are not required to match CreateForInIterator was chosen because implementations historically differed in behaviour for those cases, and agreed in all others.
+
+14.7.5.10 For-In Iterator Objects
+
+A For-In Iterator is an object that represents a specific iteration over some specific object. For-In Iterator objects are never directly accessible to ECMAScript code; they exist solely to illustrate the behaviour of EnumerateObjectProperties .
+
+14.7.5.10.1 CreateForInIterator ( obj )
+
+The abstract operation CreateForInIterator takes argument obj (an Object) and returns a For-In Iterator . It is used to create a For-In Iterator object which iterates over the own and inherited enumerable string properties of obj in a specific order. It performs the following steps when called:
+
+- Let iterator be OrdinaryObjectCreate ( %ForInIteratorPrototype% , « [[Object]] , [[ObjectWasVisited]] , [[VisitedKeys]] , [[RemainingKeys]] »).
+
+- Set iterator . [[Object]] to obj .
+
+- Set iterator . [[ObjectWasVisited]] to false .
+
+- Set iterator . [[VisitedKeys]] to a new empty List .
+
+- Set iterator . [[RemainingKeys]] to a new empty List .
+
+- Return iterator .
+
+14.7.5.10.2 The %ForInIteratorPrototype% Object
+
+The %ForInIteratorPrototype% object:
+
+- has properties that are inherited by all For-In Iterator objects .
+
+- is an ordinary object .
+
+- has a [[Prototype]] internal slot whose value is %Iterator.prototype% .
+
+- is never directly accessible to ECMAScript code.
+
+- has the following properties:
+
+14.7.5.10.2.1 %ForInIteratorPrototype%.next ( )
+
+- Let iterator be the this value.
+
+- Assert : iterator is an Object .
+
+- Assert : iterator has all of the internal slots of a For-In Iterator instance ( 14.7.5.10.3 ).
+
+- Let obj be iterator . [[Object]] .
+
+- Repeat,
+- If iterator . [[ObjectWasVisited]] is false , then
+- Let keys be ? obj . [[OwnPropertyKeys]] () .
+
+- For each element key of keys , do
+- If key is a String , then
+- Append key to iterator . [[RemainingKeys]] .
+
+- Set iterator . [[ObjectWasVisited]] to true .
+
+- Repeat, while iterator . [[RemainingKeys]] is not empty,
+- Let key be the first element of iterator . [[RemainingKeys]] .
+
+- Remove the first element from iterator . [[RemainingKeys]] .
+
+- If iterator . [[VisitedKeys]] does not contain key , then
+- Let propertyDesc be ? obj . [[GetOwnProperty]] ( key ) .
+
+- If propertyDesc is not undefined , then
+- Append key to iterator . [[VisitedKeys]] .
+
+- If propertyDesc . [[Enumerable]] is true , return CreateIteratorResultObject ( key , false ).
+
+- Set obj to ? obj . [[GetPrototypeOf]] () .
+
+- Set iterator . [[Object]] to obj .
+
+- Set iterator . [[ObjectWasVisited]] to false .
+
+- If obj is null , return CreateIteratorResultObject ( undefined , true ).
+
+14.7.5.10.3 Properties of For-In Iterator Instances
+
+For-In Iterator instances are ordinary objects that inherit properties from the %ForInIteratorPrototype% intrinsic object. For-In Iterator instances are initially created with the internal slots listed in Table 34 .
+
+Table 34: Internal Slots of For-In Iterator Instances
+
+Internal Slot
+
+Type
+
+Description
+
+[[Object]]
+
+an Object
+
+The Object value whose properties are being iterated.
+
+[[ObjectWasVisited]]
+
+a Boolean
+
+true if the iterator has invoked [[OwnPropertyKeys]] on [[Object]] , false otherwise.
+
+[[VisitedKeys]]
+
+a List of Strings
+
+The values that have been emitted by this iterator thus far.
+
+[[RemainingKeys]]
+
+a List of Strings
+
+The values remaining to be emitted for the current object, before iterating the properties of its prototype (if its prototype is not null ).
+
+14.8 The continue Statement
+
+Syntax
+
+ContinueStatement [Yield, Await] :
+continue
+;
+
+continue
+[no LineTerminator here]
+LabelIdentifier [?Yield, ?Await]
+;
+
+14.8.1 Static Semantics: Early Errors
+
+ContinueStatement :
+continue
+;
+
+continue
+LabelIdentifier
+;
+
+-
+It is a Syntax Error if this ContinueStatement is not nested, directly or indirectly (but not crossing function or static initialization block boundaries), within an IterationStatement .
+
+14.8.2 Runtime Semantics: Evaluation
+
+ContinueStatement :
+continue
+;
+
+- Return Completion Record { [[Type]] : continue , [[Value]] : empty , [[Target]] : empty }.
+
+ContinueStatement :
+continue
+LabelIdentifier
+;
+
+- Let label be the StringValue of LabelIdentifier .
+
+- Return Completion Record { [[Type]] : continue , [[Value]] : empty , [[Target]] : label }.
+
+14.9 The break Statement
+
+Syntax
+
+BreakStatement [Yield, Await] :
+break
+;
+
+break
+[no LineTerminator here]
+LabelIdentifier [?Yield, ?Await]
+;
+
+14.9.1 Static Semantics: Early Errors
+
+BreakStatement :
+break
+;
+
+-
+It is a Syntax Error if this BreakStatement is not nested, directly or indirectly (but not crossing function or static initialization block boundaries), within an IterationStatement or a SwitchStatement .
+
+14.9.2 Runtime Semantics: Evaluation
+
+BreakStatement :
+break
+;
+
+- Return Completion Record { [[Type]] : break , [[Value]] : empty , [[Target]] : empty }.
+
+BreakStatement :
+break
+LabelIdentifier
+;
+
+- Let label be the StringValue of LabelIdentifier .
+
+- Return Completion Record { [[Type]] : break , [[Value]] : empty , [[Target]] : label }.
+
+14.10 The return Statement
+
+Syntax
+
+ReturnStatement [Yield, Await] :
+return
+;
+
+return
+[no LineTerminator here]
+Expression [+In, ?Yield, ?Await]
+;
+
+Note
+A return statement causes a function to cease execution and, in most cases, returns a value to the caller. If Expression is omitted, the return value is undefined . Otherwise, the return value is the value of Expression . A return statement may not actually return a value to the caller depending on surrounding context. For example, in a try block, a return statement's Completion Record may be replaced with another Completion Record during evaluation of the finally block.
+
+14.10.1 Runtime Semantics: Evaluation
+
+ReturnStatement :
+return
+;
+
+- Return ReturnCompletion ( undefined ).
+
+ReturnStatement :
+return
+Expression
+;
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ? GetValue ( exprRef ).
+
+- If GetGeneratorKind () is async , set exprValue to ? Await ( exprValue ).
+
+- Return ReturnCompletion ( exprValue ).
+
+Legacy
+
+14.11 The with Statement
+
+Note 1
+Use of the Legacy with statement is discouraged in new ECMAScript code. Consider alternatives that are permitted in both strict mode code and non-strict code , such as destructuring assignment .
+
+Syntax
+
+WithStatement [Yield, Await, Return] :
+with
+(
+Expression [+In, ?Yield, ?Await]
+)
+Statement [?Yield, ?Await, ?Return]
+
+Note 2
+The with statement adds an Object Environment Record for a computed object to the lexical environment of the running execution context . It then executes a statement using this augmented lexical environment. Finally, it restores the original lexical environment.
+
+14.11.1 Static Semantics: Early Errors
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+-
+It is a Syntax Error if IsStrict (this production) is true .
+
+-
+It is a Syntax Error if IsLabelledFunction ( Statement ) is true .
+
+Note
+It is only necessary to apply the second rule if the extension specified in B.3.1 is implemented.
+
+14.11.2 Runtime Semantics: Evaluation
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Let value be ? Evaluation of Expression .
+
+- Let obj be ? ToObject (? GetValue ( value )).
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let newEnv be NewObjectEnvironment ( obj , true , oldEnv ).
+
+- Set the running execution context 's LexicalEnvironment to newEnv .
+
+- Let stmtCompletion be Completion ( Evaluation of Statement ).
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? UpdateEmpty ( stmtCompletion , undefined ).
+
+Note
+No matter how control leaves the embedded Statement , whether normally or by some form of abrupt completion or exception, the LexicalEnvironment is always restored to its former state.
+
+14.12 The switch Statement
+
+Syntax
+
+SwitchStatement [Yield, Await, Return] :
+switch
+(
+Expression [+In, ?Yield, ?Await]
+)
+CaseBlock [?Yield, ?Await, ?Return]
+
+CaseBlock [Yield, Await, Return] :
+{
+CaseClauses [?Yield, ?Await, ?Return] opt
+}
+
+{
+CaseClauses [?Yield, ?Await, ?Return] opt
+DefaultClause [?Yield, ?Await, ?Return]
+CaseClauses [?Yield, ?Await, ?Return] opt
+}
+
+CaseClauses [Yield, Await, Return] :
+CaseClause [?Yield, ?Await, ?Return]
+
+CaseClauses [?Yield, ?Await, ?Return]
+CaseClause [?Yield, ?Await, ?Return]
+
+CaseClause [Yield, Await, Return] :
+case
+Expression [+In, ?Yield, ?Await]
+:
+StatementList [?Yield, ?Await, ?Return] opt
+
+DefaultClause [Yield, Await, Return] :
+default
+:
+StatementList [?Yield, ?Await, ?Return] opt
+
+14.12.1 Static Semantics: Early Errors
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+-
+It is a Syntax Error if the LexicallyDeclaredNames of CaseBlock contains any duplicate entries , unless the host is a web browser or otherwise supports Block-Level Function Declarations Web Legacy Compatibility Semantics , and both of the following conditions are true:
+
+- IsStrict (this production) is false .
+
+- The duplicate entries are only bound by FunctionDeclarations.
+
+-
+It is a Syntax Error if any element of the LexicallyDeclaredNames of CaseBlock also occurs in the VarDeclaredNames of CaseBlock .
+
+CaseClause :
+case
+Expression
+:
+StatementList
+
+-
+It is a Syntax Error if ContainsUsing of StatementList is true .
+
+DefaultClause :
+default
+:
+StatementList
+
+-
+It is a Syntax Error if ContainsUsing of StatementList is true .
+
+14.12.2 Runtime Semantics: CaseBlockEvaluation
+
+The syntax-directed operation CaseBlockEvaluation takes argument input (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or an abrupt completion . It is defined piecewise over the following productions:
+
+CaseBlock :
+{
+}
+
+- Return undefined .
+
+CaseBlock :
+{
+CaseClauses
+}
+
+- Let resultValue be undefined .
+
+- Let caseClauses be the List of CaseClause items in CaseClauses , in source text order.
+
+- Let found be false .
+
+- For each CaseClause clause of caseClauses , do
+- If found is false , then
+- Set found to ? CaseClauseIsSelected ( clause , input ).
+
+- If found is true , then
+- Let completion be Completion ( Evaluation of clause ).
+
+- If completion . [[Value]] is not empty , set resultValue to completion . [[Value]] .
+
+- If completion is an abrupt completion , return ? UpdateEmpty ( completion , resultValue ).
+
+- Return resultValue .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- Let resultValue be undefined .
+
+- If the first CaseClauses is present, then
+- Let caseClauses be the List of CaseClause items in the first CaseClauses , in source text order.
+
+- Else,
+- Let caseClauses be a new empty List .
+
+- Let found be false .
+
+- For each CaseClause clause of caseClauses , do
+- If found is false , then
+- Set found to ? CaseClauseIsSelected ( clause , input ).
+
+- If found is true , then
+- Let completion be Completion ( Evaluation of clause ).
+
+- If completion . [[Value]] is not empty , set resultValue to completion . [[Value]] .
+
+- If completion is an abrupt completion , return ? UpdateEmpty ( completion , resultValue ).
+
+- Let foundInB be false .
+
+- If the second CaseClauses is present, then
+- Let secondCaseClauses be the List of CaseClause items in the second CaseClauses , in source text order.
+
+- Else,
+- Let secondCaseClauses be a new empty List .
+
+- If found is false , then
+- For each CaseClause clause of secondCaseClauses , do
+- If foundInB is false , then
+- Set foundInB to ? CaseClauseIsSelected ( clause , input ).
+
+- If foundInB is true , then
+- Let completion be Completion ( Evaluation of CaseClause clause ).
+
+- If completion . [[Value]] is not empty , set resultValue to completion . [[Value]] .
+
+- If completion is an abrupt completion , return ? UpdateEmpty ( completion , resultValue ).
+
+- If foundInB is true , return resultValue .
+
+- Let defaultR be Completion ( Evaluation of DefaultClause ).
+
+- If defaultR . [[Value]] is not empty , set resultValue to defaultR . [[Value]] .
+
+- If defaultR is an abrupt completion , return ? UpdateEmpty ( defaultR , resultValue ).
+
+- NOTE : The following is another complete iteration of the second CaseClauses .
+
+- For each CaseClause clause of secondCaseClauses , do
+- Let completion be Completion ( Evaluation of CaseClause clause ).
+
+- If completion . [[Value]] is not empty , set resultValue to completion . [[Value]] .
+
+- If completion is an abrupt completion , return ? UpdateEmpty ( completion , resultValue ).
+
+- Return resultValue .
+
+14.12.3 CaseClauseIsSelected ( caseClauseNode , input )
+
+The abstract operation CaseClauseIsSelected takes arguments caseClauseNode (a CaseClause Parse Node ) and input (an ECMAScript language value ) and returns either a normal completion containing a Boolean or an abrupt completion . It determines whether caseClauseNode matches input . It performs the following steps when called:
+
+- Assert : caseClauseNode is an instance of the production
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+.
+
+- Let exprRef be ? Evaluation of the Expression of caseClauseNode .
+
+- Let clauseSelector be ? GetValue ( exprRef ).
+
+- Return IsStrictlyEqual ( input , clauseSelector ).
+
+Note
+This operation does not execute caseClauseNode 's StatementList (if any). The CaseBlock algorithm uses its return value to determine which StatementList to start executing.
+
+14.12.4 Runtime Semantics: Evaluation
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let switchValue be ? GetValue ( exprRef ).
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let blockEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- Perform BlockDeclarationInstantiation ( CaseBlock , blockEnv ).
+
+- Set the running execution context 's LexicalEnvironment to blockEnv .
+
+- Let blockResult be Completion ( CaseBlockEvaluation of CaseBlock with argument switchValue ).
+
+- Assert : blockEnv . [[DisposableResourceStack]] is an empty List .
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return blockResult .
+
+Note
+No matter how control leaves the SwitchStatement the LexicalEnvironment is always restored to its former state.
+
+CaseClause :
+case
+Expression
+:
+
+- Return empty .
+
+CaseClause :
+case
+Expression
+:
+StatementList
+
+- Return ? Evaluation of StatementList .
+
+DefaultClause :
+default
+:
+
+- Return empty .
+
+DefaultClause :
+default
+:
+StatementList
+
+- Return ? Evaluation of StatementList .
+
+14.13 Labelled Statements
+
+Syntax
+
+LabelledStatement [Yield, Await, Return] :
+LabelIdentifier [?Yield, ?Await]
+:
+LabelledItem [?Yield, ?Await, ?Return]
+
+LabelledItem [Yield, Await, Return] :
+Statement [?Yield, ?Await, ?Return]
+
+FunctionDeclaration [?Yield, ?Await, ~Default]
+
+Note
+A Statement may be prefixed by a label. Labelled statements are only used in conjunction with labelled break and continue statements. ECMAScript has no goto statement. A Statement can be part of a LabelledStatement , which itself can be part of a LabelledStatement , and so on. The labels introduced this way are collectively referred to as the “current label set” when describing the semantics of individual statements.
+
+14.13.1 Static Semantics: Early Errors
+
+LabelledItem : FunctionDeclaration
+
+-
+It is a Syntax Error if any source text is matched by this production , unless that source text is non-strict code and the host is a web browser or otherwise supports Labelled Function Declarations .
+
+14.13.2 Static Semantics: IsLabelledFunction ( stmt )
+
+The abstract operation IsLabelledFunction takes argument stmt (a Statement Parse Node ) and returns a Boolean. It performs the following steps when called:
+
+- If stmt is not a LabelledStatement , return false .
+
+- Let item be the LabelledItem of stmt .
+
+- If item is
+LabelledItem : FunctionDeclaration
+
+, return true .
+
+- Let subStmt be the Statement of item .
+
+- Return IsLabelledFunction ( subStmt ).
+
+14.13.3 Runtime Semantics: Evaluation
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return ? LabelledEvaluation of this LabelledStatement with argument « ».
+
+14.13.4 Runtime Semantics: LabelledEvaluation
+
+The syntax-directed operation LabelledEvaluation takes argument labelSet (a List of Strings) and returns either a normal completion containing either an ECMAScript language value or empty , or an abrupt completion . It is defined piecewise over the following productions:
+
+BreakableStatement : IterationStatement
+
+- Let stmtResult be Completion ( LoopEvaluation of IterationStatement with argument labelSet ).
+
+- If stmtResult is a break completion , then
+- If stmtResult . [[Target]] is empty , then
+- If stmtResult . [[Value]] is empty , set stmtResult to NormalCompletion ( undefined ).
+
+- Else, set stmtResult to NormalCompletion ( stmtResult . [[Value]] ).
+
+- Return ? stmtResult .
+
+BreakableStatement : SwitchStatement
+
+- Let stmtResult be Completion ( Evaluation of SwitchStatement ).
+
+- If stmtResult is a break completion , then
+- If stmtResult . [[Target]] is empty , then
+- If stmtResult . [[Value]] is empty , set stmtResult to NormalCompletion ( undefined ).
+
+- Else, set stmtResult to NormalCompletion ( stmtResult . [[Value]] ).
+
+- Return ? stmtResult .
+
+Note 1
+A BreakableStatement is one that can be exited via an unlabelled BreakStatement .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Let label be the StringValue of LabelIdentifier .
+
+- Let newLabelSet be the list-concatenation of labelSet and « label ».
+
+- Let stmtResult be Completion ( LabelledEvaluation of LabelledItem with argument newLabelSet ).
+
+- If stmtResult is a break completion and stmtResult . [[Target]] is label , then
+- Set stmtResult to NormalCompletion ( stmtResult . [[Value]] ).
+
+- Return ? stmtResult .
+
+LabelledItem : FunctionDeclaration
+
+- Return ? Evaluation of FunctionDeclaration .
+
+Statement :
+BlockStatement
+
+VariableStatement
+
+EmptyStatement
+
+ExpressionStatement
+
+IfStatement
+
+ContinueStatement
+
+BreakStatement
+
+ReturnStatement
+
+WithStatement
+
+ThrowStatement
+
+TryStatement
+
+DebuggerStatement
+
+- Return ? Evaluation of Statement .
+
+Note 2
+The only two productions of Statement which have special semantics for LabelledEvaluation are BreakableStatement and LabelledStatement .
+
+14.14 The throw Statement
+
+Syntax
+
+ThrowStatement [Yield, Await] :
+throw
+[no LineTerminator here]
+Expression [+In, ?Yield, ?Await]
+;
+
+14.14.1 Runtime Semantics: Evaluation
+
+ThrowStatement :
+throw
+Expression
+;
+
+- Let exprRef be ? Evaluation of Expression .
+
+- Let exprValue be ? GetValue ( exprRef ).
+
+- Throw exprValue .
+
+14.15 The try Statement
+
+Syntax
+
+TryStatement [Yield, Await, Return] :
+try
+Block [?Yield, ?Await, ?Return]
+Catch [?Yield, ?Await, ?Return]
+
+try
+Block [?Yield, ?Await, ?Return]
+Finally [?Yield, ?Await, ?Return]
+
+try
+Block [?Yield, ?Await, ?Return]
+Catch [?Yield, ?Await, ?Return]
+Finally [?Yield, ?Await, ?Return]
+
+Catch [Yield, Await, Return] :
+catch
+(
+CatchParameter [?Yield, ?Await]
+)
+Block [?Yield, ?Await, ?Return]
+
+catch
+Block [?Yield, ?Await, ?Return]
+
+Finally [Yield, Await, Return] :
+finally
+Block [?Yield, ?Await, ?Return]
+
+CatchParameter [Yield, Await] :
+BindingIdentifier [?Yield, ?Await]
+
+BindingPattern [?Yield, ?Await]
+
+Note
+The try statement encloses a block of code in which an exceptional condition can occur, such as a runtime error or a throw statement. The catch clause provides the exception-handling code. When a catch clause catches an exception, its CatchParameter is bound to that exception.
+
+14.15.1 Static Semantics: Early Errors
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+-
+It is a Syntax Error if the BoundNames of CatchParameter contains any duplicate elements.
+
+-
+It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the LexicallyDeclaredNames of Block .
+
+-
+It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames of Block , unless CatchParameter is
+CatchParameter : BindingIdentifier
+
+and the host is a web browser or otherwise supports VariableStatements in Catch Blocks .
+
+14.15.2 Runtime Semantics: CatchClauseEvaluation
+
+The syntax-directed operation CatchClauseEvaluation takes argument thrownValue (an ECMAScript language value ) and returns either a normal completion containing either an ECMAScript language value or empty , or an abrupt completion . It is defined piecewise over the following productions:
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Let oldEnv be the running execution context 's LexicalEnvironment.
+
+- Let catchEnv be NewDeclarativeEnvironment ( oldEnv ).
+
+- For each element argName of the BoundNames of CatchParameter , do
+- Perform ! catchEnv . CreateMutableBinding ( argName , false ).
+
+- Set the running execution context 's LexicalEnvironment to catchEnv .
+
+- Let status be Completion ( BindingInitialization of CatchParameter with arguments thrownValue and catchEnv ).
+
+- If status is an abrupt completion , then
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? status .
+
+- Let blockCompletion be Completion ( Evaluation of Block ).
+
+- Set the running execution context 's LexicalEnvironment to oldEnv .
+
+- Return ? blockCompletion .
+
+Catch :
+catch
+Block
+
+- Return ? Evaluation of Block .
+
+Note
+No matter how control leaves the Block the LexicalEnvironment is always restored to its former state.
+
+14.15.3 Runtime Semantics: Evaluation
+
+TryStatement :
+try
+Block
+Catch
+
+- Let blockResult be Completion ( Evaluation of Block ).
+
+- If blockResult is a throw completion , let catchResult be Completion ( CatchClauseEvaluation of Catch with argument blockResult . [[Value]] ).
+
+- Else, let catchResult be blockResult .
+
+- Return ? UpdateEmpty ( catchResult , undefined ).
+
+TryStatement :
+try
+Block
+Finally
+
+- Let blockResult be Completion ( Evaluation of Block ).
+
+- Let finallyResult be Completion ( Evaluation of Finally ).
+
+- If finallyResult is a normal completion , set finallyResult to blockResult .
+
+- Return ? UpdateEmpty ( finallyResult , undefined ).
+
+TryStatement :
+try
+Block
+Catch
+Finally
+
+- Let blockResult be Completion ( Evaluation of Block ).
+
+- If blockResult is a throw completion , let catchResult be Completion ( CatchClauseEvaluation of Catch with argument blockResult . [[Value]] ).
+
+- Else, let catchResult be blockResult .
+
+- Let finallyResult be Completion ( Evaluation of Finally ).
+
+- If finallyResult is a normal completion , set finallyResult to catchResult .
+
+- Return ? UpdateEmpty ( finallyResult , undefined ).
+
+14.16 The debugger Statement
+
+Syntax
+
+DebuggerStatement :
+debugger
+;
+
+14.16.1 Runtime Semantics: Evaluation
+
+Note
+Evaluating a DebuggerStatement may allow an implementation to cause a breakpoint when run under a debugger. If a debugger is not present or active this statement has no observable effect.
+
+DebuggerStatement :
+debugger
+;
+
+- If an implementation-defined debugging facility is available and enabled, then
+- Perform an implementation-defined debugging action.
+
+- Return a new implementation-defined Completion Record .
+
+- Return empty .

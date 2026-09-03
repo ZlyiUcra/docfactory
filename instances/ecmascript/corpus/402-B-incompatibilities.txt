@@ -1,0 +1,29 @@
+# Annex B (informative) Additions and Changes That Introduce Incompatibilities with Prior Editions
+# джерело: https://tc39.es/ecma402/#annex-incompatibilities
+# отримано: 2026-09-01
+
+Annex B (informative) Additions and Changes That Introduce Incompatibilities with Prior Editions
+
+-
+10.1 , 16.1 , 11.1 In ECMA-402, 1 st Edition, constructors could be used to create Intl objects from arbitrary objects. This is no longer possible in 2nd Edition.
+
+-
+11.3.3 In ECMA-402, 1 st Edition, the "length" property of the function object F was set to +0 𝔽 . In 2nd Edition, "length" is set to 1 𝔽 .
+
+-
+10.3.4 In ECMA-402, 7 th Edition, the %Symbol.toStringTag% property of Intl.Collator.prototype was set to "Object" . In 8 th Edition, %Symbol.toStringTag% is set to "Intl.Collator" .
+
+-
+11.3.7 In ECMA-402, 7 th Edition, the %Symbol.toStringTag% property of Intl.DateTimeFormat.prototype was set to "Object" . In 8 th Edition, %Symbol.toStringTag% is set to "Intl.DateTimeFormat" .
+
+-
+16.3.7 In ECMA-402, 7 th Edition, the %Symbol.toStringTag% property of Intl.NumberFormat.prototype was set to "Object" . In 8 th Edition, %Symbol.toStringTag% is set to "Intl.NumberFormat" .
+
+-
+17.3.5 In ECMA-402, 7 th Edition, the %Symbol.toStringTag% property of Intl.PluralRules.prototype was set to "Object" . In 8 th Edition, %Symbol.toStringTag% is set to "Intl.PluralRules" .
+
+-
+8.1.1 In ECMA-402, 7 th Edition, the %Symbol.toStringTag% property of Intl was not defined. In 8 th Edition, %Symbol.toStringTag% is set to "Intl" .
+
+-
+16.1 In ECMA-402, 8 th Edition, the NumberFormat constructor used to throw an error when style is "currency" and maximumFractionDigits was set to a value lower than the default fractional digits for that currency. This behaviour was corrected in the 9 th edition, and it no longer throws an error.

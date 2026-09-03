@@ -1,0 +1,7 @@
+# 7 Requirements for Standard Built-in ECMAScript Objects
+# джерело: https://tc39.es/ecma402/#requirements
+# отримано: 2026-09-01
+
+7 Requirements for Standard Built-in ECMAScript Objects
+
+Unless specified otherwise in this document, the objects, functions, and constructors described in this standard are subject to the generic requirements and restrictions specified for standard built-in ECMAScript objects in ECMAScript Standard Built-in Objects .

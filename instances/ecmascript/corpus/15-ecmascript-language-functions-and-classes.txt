@@ -1,0 +1,4228 @@
+# 15 ECMAScript Language: Functions and Classes
+# джерело: https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#sec-ecmascript-language-functions-and-classes
+# отримано: 2026-09-01
+
+15 ECMAScript Language: Functions and Classes
+
+Note
+Various ECMAScript language elements cause the creation of ECMAScript function objects ( 10.2 ). Evaluation of such functions starts with the execution of their [[Call]] internal method ( 10.2.1 ).
+
+15.1 Parameter Lists
+
+Syntax
+
+UniqueFormalParameters [Yield, Await] :
+FormalParameters [?Yield, ?Await]
+
+FormalParameters [Yield, Await] :
+[empty]
+
+FunctionRestParameter [?Yield, ?Await]
+
+FormalParameterList [?Yield, ?Await]
+
+FormalParameterList [?Yield, ?Await]
+,
+
+FormalParameterList [?Yield, ?Await]
+,
+FunctionRestParameter [?Yield, ?Await]
+
+FormalParameterList [Yield, Await] :
+FormalParameter [?Yield, ?Await]
+
+FormalParameterList [?Yield, ?Await]
+,
+FormalParameter [?Yield, ?Await]
+
+FunctionRestParameter [Yield, Await] :
+BindingRestElement [?Yield, ?Await]
+
+FormalParameter [Yield, Await] :
+BindingElement [?Yield, ?Await]
+
+15.1.1 Static Semantics: Early Errors
+
+UniqueFormalParameters : FormalParameters
+
+-
+It is a Syntax Error if the BoundNames of FormalParameters contains any duplicate elements.
+
+FormalParameters : FormalParameterList
+
+-
+It is a Syntax Error if IsSimpleParameterList of FormalParameterList is false and the BoundNames of FormalParameterList contains any duplicate elements.
+
+Note
+Multiple occurrences of the same BindingIdentifier in a FormalParameterList is only allowed for functions which have simple parameter lists and which are not defined in strict mode code .
+
+15.1.2 Static Semantics: ContainsExpression
+
+The syntax-directed operation ContainsExpression takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+ObjectBindingPattern :
+{
+}
+
+{
+BindingRestProperty
+}
+
+- Return false .
+
+ObjectBindingPattern :
+{
+BindingPropertyList
+,
+BindingRestProperty
+}
+
+- Return ContainsExpression of BindingPropertyList .
+
+ArrayBindingPattern :
+[
+Elision opt
+]
+
+- Return false .
+
+ArrayBindingPattern :
+[
+Elision opt
+BindingRestElement
+]
+
+- Return ContainsExpression of BindingRestElement .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision opt
+]
+
+- Return ContainsExpression of BindingElementList .
+
+ArrayBindingPattern :
+[
+BindingElementList
+,
+Elision opt
+BindingRestElement
+]
+
+- Let has be ContainsExpression of BindingElementList .
+
+- If has is true , return true .
+
+- Return ContainsExpression of BindingRestElement .
+
+BindingPropertyList :
+BindingPropertyList
+,
+BindingProperty
+
+- Let has be ContainsExpression of BindingPropertyList .
+
+- If has is true , return true .
+
+- Return ContainsExpression of BindingProperty .
+
+BindingElementList :
+BindingElementList
+,
+BindingElisionElement
+
+- Let has be ContainsExpression of BindingElementList .
+
+- If has is true , return true .
+
+- Return ContainsExpression of BindingElisionElement .
+
+BindingElisionElement :
+Elision opt
+BindingElement
+
+- Return ContainsExpression of BindingElement .
+
+BindingProperty :
+PropertyName
+:
+BindingElement
+
+- Let has be IsComputedPropertyKey of PropertyName .
+
+- If has is true , return true .
+
+- Return ContainsExpression of BindingElement .
+
+BindingElement :
+BindingPattern
+Initializer
+
+- Return true .
+
+SingleNameBinding : BindingIdentifier
+
+- Return false .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer
+
+- Return true .
+
+BindingRestElement :
+...
+BindingIdentifier
+
+- Return false .
+
+BindingRestElement :
+...
+BindingPattern
+
+- Return ContainsExpression of BindingPattern .
+
+FormalParameters : [empty]
+
+- Return false .
+
+FormalParameters :
+FormalParameterList
+,
+FunctionRestParameter
+
+- If ContainsExpression of FormalParameterList is true , return true .
+
+- Return ContainsExpression of FunctionRestParameter .
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- If ContainsExpression of FormalParameterList is true , return true .
+
+- Return ContainsExpression of FormalParameter .
+
+ArrowParameters : BindingIdentifier
+
+- Return false .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return ContainsExpression of formals .
+
+AsyncArrowBindingIdentifier : BindingIdentifier
+
+- Return false .
+
+15.1.3 Static Semantics: IsSimpleParameterList
+
+The syntax-directed operation IsSimpleParameterList takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+BindingElement : BindingPattern
+
+- Return false .
+
+BindingElement :
+BindingPattern
+Initializer
+
+- Return false .
+
+SingleNameBinding : BindingIdentifier
+
+- Return true .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer
+
+- Return false .
+
+FormalParameters : [empty]
+
+- Return true .
+
+FormalParameters : FunctionRestParameter
+
+- Return false .
+
+FormalParameters :
+FormalParameterList
+,
+FunctionRestParameter
+
+- Return false .
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- If IsSimpleParameterList of FormalParameterList is false , return false .
+
+- Return IsSimpleParameterList of FormalParameter .
+
+FormalParameter : BindingElement
+
+- Return IsSimpleParameterList of BindingElement .
+
+ArrowParameters : BindingIdentifier
+
+- Return true .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return IsSimpleParameterList of formals .
+
+AsyncArrowBindingIdentifier : BindingIdentifier
+
+- Return true .
+
+CoverCallExpressionAndAsyncArrowHead :
+MemberExpression
+Arguments
+
+- Let head be the AsyncArrowHead that is covered by CoverCallExpressionAndAsyncArrowHead .
+
+- Return IsSimpleParameterList of head .
+
+15.1.4 Static Semantics: HasInitializer
+
+The syntax-directed operation HasInitializer takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+BindingElement : BindingPattern
+
+- Return false .
+
+BindingElement :
+BindingPattern
+Initializer
+
+- Return true .
+
+SingleNameBinding : BindingIdentifier
+
+- Return false .
+
+SingleNameBinding :
+BindingIdentifier
+Initializer
+
+- Return true .
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- If HasInitializer of FormalParameterList is true , return true .
+
+- Return HasInitializer of FormalParameter .
+
+15.1.5 Static Semantics: ExpectedArgumentCount
+
+The syntax-directed operation ExpectedArgumentCount takes no arguments and returns a non-negative integer . It is defined piecewise over the following productions:
+
+FormalParameters :
+[empty]
+
+FunctionRestParameter
+
+- Return 0.
+
+FormalParameters :
+FormalParameterList
+,
+FunctionRestParameter
+
+- Return the ExpectedArgumentCount of FormalParameterList .
+
+Note
+The ExpectedArgumentCount of a FormalParameterList is the number of FormalParameters to the left of either the rest parameter or the first FormalParameter with an Initializer. A FormalParameter without an initializer is allowed after the first parameter with an initializer but such parameters are considered to be optional with undefined as their default value.
+
+FormalParameterList : FormalParameter
+
+- If HasInitializer of FormalParameter is true , return 0.
+
+- Return 1.
+
+FormalParameterList :
+FormalParameterList
+,
+FormalParameter
+
+- Let count be the ExpectedArgumentCount of FormalParameterList .
+
+- If HasInitializer of FormalParameterList is true or HasInitializer of FormalParameter is true , return count .
+
+- Return count + 1.
+
+ArrowParameters : BindingIdentifier
+
+- Return 1.
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let formals be the ArrowFormalParameters that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return the ExpectedArgumentCount of formals .
+
+PropertySetParameterList : FormalParameter
+
+- If HasInitializer of FormalParameter is true , return 0.
+
+- Return 1.
+
+AsyncArrowBindingIdentifier : BindingIdentifier
+
+- Return 1.
+
+15.2 Function Definitions
+
+Syntax
+
+FunctionDeclaration [Yield, Await, Default] :
+function
+BindingIdentifier [?Yield, ?Await]
+(
+FormalParameters [~Yield, ~Await]
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+[+Default]
+function
+(
+FormalParameters [~Yield, ~Await]
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+FunctionExpression :
+function
+BindingIdentifier [~Yield, ~Await] opt
+(
+FormalParameters [~Yield, ~Await]
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+FunctionBody [Yield, Await] :
+FunctionStatementList [?Yield, ?Await]
+
+FunctionStatementList [Yield, Await] :
+StatementList [?Yield, ?Await, +Return] opt
+
+15.2.1 Static Semantics: Early Errors
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+FunctionExpression :
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+-
+If IsStrict ( FormalParameters ) is true , the Early Error rules for
+UniqueFormalParameters : FormalParameters
+
+are applied.
+
+-
+If BindingIdentifier is present and IsStrict ( BindingIdentifier ) is true , it is a Syntax Error if the StringValue of BindingIdentifier is either "eval" or "arguments" .
+
+-
+It is a Syntax Error if FunctionBodyContainsUseStrict of FunctionBody is true and IsSimpleParameterList of FormalParameters is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of FormalParameters also occurs in the LexicallyDeclaredNames of FunctionBody .
+
+-
+It is a Syntax Error if FormalParameters Contains SuperProperty is true .
+
+-
+It is a Syntax Error if FunctionBody Contains SuperProperty is true .
+
+-
+It is a Syntax Error if FormalParameters Contains SuperCall is true .
+
+-
+It is a Syntax Error if FunctionBody Contains SuperCall is true .
+
+Note
+The LexicallyDeclaredNames of a FunctionBody does not include identifiers bound using var or function declarations.
+
+FunctionBody : FunctionStatementList
+
+-
+It is a Syntax Error if the LexicallyDeclaredNames of FunctionStatementList contains any duplicate entries.
+
+-
+It is a Syntax Error if any element of the LexicallyDeclaredNames of FunctionStatementList also occurs in the VarDeclaredNames of FunctionStatementList .
+
+-
+It is a Syntax Error if ContainsDuplicateLabels of FunctionStatementList with argument « » is true .
+
+-
+It is a Syntax Error if ContainsUndefinedBreakTarget of FunctionStatementList with argument « » is true .
+
+-
+It is a Syntax Error if ContainsUndefinedContinueTarget of FunctionStatementList with arguments « » and « » is true .
+
+15.2.2 Static Semantics: FunctionBodyContainsUseStrict
+
+The syntax-directed operation FunctionBodyContainsUseStrict takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+FunctionBody : FunctionStatementList
+
+- If the Directive Prologue of FunctionBody contains a Use Strict Directive , return true .
+
+- Return false .
+
+15.2.3 Runtime Semantics: EvaluateFunctionBody
+
+The syntax-directed operation EvaluateFunctionBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion or a throw completion . It is defined piecewise over the following productions:
+
+FunctionBody : FunctionStatementList
+
+- Perform ? FunctionDeclarationInstantiation ( funcObj , argList ).
+
+- Perform ? Evaluation of FunctionStatementList .
+
+- NOTE : If the previous step resulted in a normal completion , then evaluation finished by proceeding past the end of the FunctionStatementList .
+
+- Return ReturnCompletion ( undefined ).
+
+15.2.4 Runtime Semantics: InstantiateOrdinaryFunctionObject
+
+The syntax-directed operation InstantiateOrdinaryFunctionObject takes arguments envRecord (an Environment Record ) and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Let name be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by FunctionDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , FormalParameters , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Perform MakeConstructor ( closure ).
+
+- Return closure .
+
+FunctionDeclaration :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Let sourceText be the source text matched by FunctionDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , FormalParameters , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , "default" ).
+
+- Perform MakeConstructor ( closure ).
+
+- Return closure .
+
+Note
+An anonymous FunctionDeclaration can only occur as part of an export default declaration, and its function code is therefore always strict mode code .
+
+15.2.5 Runtime Semantics: InstantiateOrdinaryFunctionExpression
+
+The syntax-directed operation InstantiateOrdinaryFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+FunctionExpression :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by FunctionExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , FormalParameters , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Perform MakeConstructor ( closure ).
+
+- Return closure .
+
+FunctionExpression :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Assert : name is not present.
+
+- Set name to the StringValue of BindingIdentifier .
+
+- Let outerEnv be the running execution context 's LexicalEnvironment.
+
+- Let funcEnv be NewDeclarativeEnvironment ( outerEnv ).
+
+- Perform ! funcEnv . CreateImmutableBinding ( name , false ).
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by FunctionExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , FormalParameters , FunctionBody , non-lexical-this , funcEnv , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Perform MakeConstructor ( closure ).
+
+- Perform ! funcEnv . InitializeBinding ( name , closure ).
+
+- Return closure .
+
+Note
+The BindingIdentifier in a FunctionExpression can be referenced from inside the FunctionExpression 's FunctionBody to allow the function to call itself recursively. However, unlike in a FunctionDeclaration , the BindingIdentifier in a FunctionExpression cannot be referenced from and does not affect the scope enclosing the FunctionExpression .
+
+15.2.6 Runtime Semantics: Evaluation
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return empty .
+
+Note 1
+An alternative semantics is provided by Block-Level Function Declarations Web Legacy Compatibility Semantics at step 32.a.i.2.c of FunctionDeclarationInstantiation , step 12.b.ii.2.a.ii.iii of GlobalDeclarationInstantiation , and step 13.b.ii.7.b of EvalDeclarationInstantiation .
+
+FunctionDeclaration :
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return empty .
+
+FunctionExpression :
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+- Return InstantiateOrdinaryFunctionExpression of FunctionExpression .
+
+Note 2
+A "prototype" property is automatically created for every function defined using a FunctionDeclaration or FunctionExpression , to allow for the possibility that the function will be used as a constructor .
+
+FunctionStatementList : [empty]
+
+- Return undefined .
+
+FunctionStatementList : StatementList
+
+- Let result be Completion ( Evaluation of StatementList ).
+
+- Let env be the running execution context 's LexicalEnvironment.
+
+- Assert : env is a Declarative Environment Record .
+
+- Return ? DisposeResources ( env . [[DisposableResourceStack]] , result ).
+
+15.3 Arrow Function Definitions
+
+Syntax
+
+ArrowFunction [In, Yield, Await] :
+ArrowParameters [?Yield, ?Await]
+[no LineTerminator here]
+=>
+ConciseBody [?In]
+
+ArrowParameters [Yield, Await] :
+BindingIdentifier [?Yield, ?Await]
+
+CoverParenthesizedExpressionAndArrowParameterList [?Yield, ?Await]
+
+ConciseBody [In] :
+[lookahead ≠ { ]
+ExpressionBody [?In, ~Await]
+
+{
+FunctionBody [~Yield, ~Await]
+}
+
+ExpressionBody [In, Await] :
+AssignmentExpression [?In, ~Yield, ?Await]
+
+Supplemental Syntax
+
+When processing an instance of the production
+
+ArrowParameters [Yield, Await] : CoverParenthesizedExpressionAndArrowParameterList [?Yield, ?Await]
+
+the interpretation of CoverParenthesizedExpressionAndArrowParameterList is refined using the following grammar:
+
+ArrowFormalParameters [Yield, Await] :
+(
+UniqueFormalParameters [?Yield, ?Await]
+)
+
+15.3.1 Static Semantics: Early Errors
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+-
+It is a Syntax Error if ArrowParameters Contains YieldExpression is true .
+
+-
+It is a Syntax Error if ArrowParameters Contains AwaitExpression is true .
+
+-
+It is a Syntax Error if ConciseBodyContainsUseStrict of ConciseBody is true and IsSimpleParameterList of ArrowParameters is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of ArrowParameters also occurs in the LexicallyDeclaredNames of ConciseBody .
+
+ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
+
+-
+CoverParenthesizedExpressionAndArrowParameterList must cover an ArrowFormalParameters .
+
+15.3.2 Static Semantics: ConciseBodyContainsUseStrict
+
+The syntax-directed operation ConciseBodyContainsUseStrict takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+ConciseBody : ExpressionBody
+
+- Return false .
+
+ConciseBody :
+{
+FunctionBody
+}
+
+- Return FunctionBodyContainsUseStrict of FunctionBody .
+
+15.3.3 Runtime Semantics: EvaluateConciseBody
+
+The syntax-directed operation EvaluateConciseBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion or a throw completion . It is defined piecewise over the following productions:
+
+ConciseBody : ExpressionBody
+
+- Perform ? FunctionDeclarationInstantiation ( funcObj , argList ).
+
+- Return ? Evaluation of ExpressionBody .
+
+15.3.4 Runtime Semantics: InstantiateArrowFunctionExpression
+
+The syntax-directed operation InstantiateArrowFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by ArrowFunction .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , ArrowParameters , ConciseBody , lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Return closure .
+
+Note
+An ArrowFunction does not define local bindings for arguments , super , this , or new.target . Any reference to arguments , super , this , or new.target within an ArrowFunction must resolve to a binding in a lexically enclosing environment. Typically this will be the Function Environment of an immediately enclosing function. Even though an ArrowFunction may contain references to super , the function object created in step 5 is not made into a method by performing MakeMethod . An ArrowFunction that references super is always contained within a non- ArrowFunction and the necessary state to implement super is accessible via the envRecord that is captured by the function object of the ArrowFunction .
+
+15.3.5 Runtime Semantics: Evaluation
+
+ArrowFunction :
+ArrowParameters
+=>
+ConciseBody
+
+- Return InstantiateArrowFunctionExpression of ArrowFunction .
+
+ExpressionBody : AssignmentExpression
+
+- Let exprRef be ? Evaluation of AssignmentExpression .
+
+- Let exprValue be ? GetValue ( exprRef ).
+
+- Return ReturnCompletion ( exprValue ).
+
+15.4 Method Definitions
+
+Syntax
+
+MethodDefinition [Yield, Await] :
+ClassElementName [?Yield, ?Await]
+(
+UniqueFormalParameters [~Yield, ~Await]
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+GeneratorMethod [?Yield, ?Await]
+
+AsyncMethod [?Yield, ?Await]
+
+AsyncGeneratorMethod [?Yield, ?Await]
+
+get
+ClassElementName [?Yield, ?Await]
+(
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+set
+ClassElementName [?Yield, ?Await]
+(
+PropertySetParameterList
+)
+{
+FunctionBody [~Yield, ~Await]
+}
+
+PropertySetParameterList :
+FormalParameter [~Yield, ~Await]
+
+15.4.1 Static Semantics: Early Errors
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+-
+It is a Syntax Error if FunctionBodyContainsUseStrict of FunctionBody is true and IsSimpleParameterList of UniqueFormalParameters is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of UniqueFormalParameters also occurs in the LexicallyDeclaredNames of FunctionBody .
+
+MethodDefinition :
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+-
+It is a Syntax Error if the BoundNames of PropertySetParameterList contains any duplicate elements.
+
+-
+It is a Syntax Error if FunctionBodyContainsUseStrict of FunctionBody is true and IsSimpleParameterList of PropertySetParameterList is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of PropertySetParameterList also occurs in the LexicallyDeclaredNames of FunctionBody .
+
+15.4.2 Static Semantics: HasDirectSuper
+
+The syntax-directed operation HasDirectSuper takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+- If UniqueFormalParameters Contains SuperCall is true , return true .
+
+- Return FunctionBody Contains SuperCall .
+
+MethodDefinition :
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+- Return FunctionBody Contains SuperCall .
+
+MethodDefinition :
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+- If PropertySetParameterList Contains SuperCall is true , return true .
+
+- Return FunctionBody Contains SuperCall .
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+- If UniqueFormalParameters Contains SuperCall is true , return true .
+
+- Return GeneratorBody Contains SuperCall .
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- If UniqueFormalParameters Contains SuperCall is true , return true .
+
+- Return AsyncGeneratorBody Contains SuperCall .
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- If UniqueFormalParameters Contains SuperCall is true , return true .
+
+- Return AsyncFunctionBody Contains SuperCall .
+
+15.4.3 Static Semantics: SpecialMethod
+
+The syntax-directed operation SpecialMethod takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+- Return false .
+
+MethodDefinition :
+GeneratorMethod
+
+AsyncMethod
+
+AsyncGeneratorMethod
+
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+- Return true .
+
+15.4.4 Runtime Semantics: DefineMethod
+
+The syntax-directed operation DefineMethod takes argument obj (an Object) and optional argument proto (an Object) and returns either a normal completion containing a Record with fields [[Key]] (a property key ) and [[Closure]] (an ECMAScript function object ) or an abrupt completion . It is defined piecewise over the following productions:
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- If proto is not present, set proto to %Function.prototype% .
+
+- Let sourceText be the source text matched by MethodDefinition .
+
+- Let closure be OrdinaryFunctionCreate ( proto , sourceText , UniqueFormalParameters , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Return the Record { [[Key]] : propertyKey , [[Closure]] : closure }.
+
+15.4.5 Runtime Semantics: MethodDefinitionEvaluation
+
+The syntax-directed operation MethodDefinitionEvaluation takes arguments obj (an Object) and enumerable (a Boolean) and returns either a normal completion containing either a PrivateElement or empty , or an abrupt completion . It is defined piecewise over the following productions:
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+- Let methodDef be ? DefineMethod of MethodDefinition with argument obj .
+
+- Perform SetFunctionName ( methodDef . [[Closure]] , methodDef . [[Key]] ).
+
+- Return ? DefineMethodProperty ( obj , methodDef . [[Key]] , methodDef . [[Closure]] , enumerable ).
+
+MethodDefinition :
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by MethodDefinition .
+
+- Let formalParamList be an instance of the production
+FormalParameters : [empty]
+
+.
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , formalParamList , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Perform SetFunctionName ( closure , propertyKey , "get" ).
+
+- If propertyKey is a Private Name , then
+- Return PrivateElement { [[Key]] : propertyKey , [[Kind]] : accessor , [[Getter]] : closure , [[Setter]] : undefined }.
+
+- Let propertyDesc be the PropertyDescriptor { [[Getter]] : closure , [[Enumerable]] : enumerable , [[Configurable]] : true }.
+
+- Perform ? DefinePropertyOrThrow ( obj , propertyKey , propertyDesc ).
+
+- Return empty .
+
+MethodDefinition :
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by MethodDefinition .
+
+- Let closure be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , PropertySetParameterList , FunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Perform SetFunctionName ( closure , propertyKey , "set" ).
+
+- If propertyKey is a Private Name , then
+- Return PrivateElement { [[Key]] : propertyKey , [[Kind]] : accessor , [[Getter]] : undefined , [[Setter]] : closure }.
+
+- Let propertyDesc be the PropertyDescriptor { [[Setter]] : closure , [[Enumerable]] : enumerable , [[Configurable]] : true }.
+
+- Perform ? DefinePropertyOrThrow ( obj , propertyKey , propertyDesc ).
+
+- Return empty .
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by GeneratorMethod .
+
+- Let closure be OrdinaryFunctionCreate ( %GeneratorFunction.prototype% , sourceText , UniqueFormalParameters , GeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Perform SetFunctionName ( closure , propertyKey ).
+
+- Let proto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return ? DefineMethodProperty ( obj , propertyKey , closure , enumerable ).
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncGeneratorMethod .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncGeneratorFunction.prototype% , sourceText , UniqueFormalParameters , AsyncGeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Perform SetFunctionName ( closure , propertyKey ).
+
+- Let proto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return ? DefineMethodProperty ( obj , propertyKey , closure , enumerable ).
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Let propertyKey be ? Evaluation of ClassElementName .
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncMethod .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , UniqueFormalParameters , AsyncFunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( closure , obj ).
+
+- Perform SetFunctionName ( closure , propertyKey ).
+
+- Return ? DefineMethodProperty ( obj , propertyKey , closure , enumerable ).
+
+15.5 Generator Function Definitions
+
+Syntax
+
+GeneratorDeclaration [Yield, Await, Default] :
+function
+*
+BindingIdentifier [?Yield, ?Await]
+(
+FormalParameters [+Yield, ~Await]
+)
+{
+GeneratorBody
+}
+
+[+Default]
+function
+*
+(
+FormalParameters [+Yield, ~Await]
+)
+{
+GeneratorBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier [+Yield, ~Await] opt
+(
+FormalParameters [+Yield, ~Await]
+)
+{
+GeneratorBody
+}
+
+GeneratorMethod [Yield, Await] :
+*
+ClassElementName [?Yield, ?Await]
+(
+UniqueFormalParameters [+Yield, ~Await]
+)
+{
+GeneratorBody
+}
+
+GeneratorBody :
+FunctionBody [+Yield, ~Await]
+
+YieldExpression [In, Await] :
+yield
+
+yield
+[no LineTerminator here]
+AssignmentExpression [?In, +Yield, ?Await]
+
+yield
+[no LineTerminator here]
+*
+AssignmentExpression [?In, +Yield, ?Await]
+
+Note 1
+The syntactic context immediately following yield requires use of the InputElementRegExpOrTemplateTail lexical goal.
+
+Note 2
+YieldExpression cannot be used within the FormalParameters of a generator function because any expressions that are part of FormalParameters are evaluated before the resulting Generator is in a resumable state.
+
+Note 3
+Abstract operations relating to Generators are defined in 27.8.3 .
+
+15.5.1 Static Semantics: Early Errors
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+-
+It is a Syntax Error if HasDirectSuper of GeneratorMethod is true .
+
+-
+It is a Syntax Error if UniqueFormalParameters Contains YieldExpression is true .
+
+-
+It is a Syntax Error if FunctionBodyContainsUseStrict of GeneratorBody is true and IsSimpleParameterList of UniqueFormalParameters is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of UniqueFormalParameters also occurs in the LexicallyDeclaredNames of GeneratorBody .
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+-
+If IsStrict ( FormalParameters ) is true , the Early Error rules for
+UniqueFormalParameters : FormalParameters
+
+are applied.
+
+-
+If BindingIdentifier is present and IsStrict ( BindingIdentifier ) is true , it is a Syntax Error if the StringValue of BindingIdentifier is either "eval" or "arguments" .
+
+-
+It is a Syntax Error if FunctionBodyContainsUseStrict of GeneratorBody is true and IsSimpleParameterList of FormalParameters is false .
+
+-
+It is a Syntax Error if any element of the BoundNames of FormalParameters also occurs in the LexicallyDeclaredNames of GeneratorBody .
+
+-
+It is a Syntax Error if FormalParameters Contains YieldExpression is true .
+
+-
+It is a Syntax Error if FormalParameters Contains SuperProperty is true .
+
+-
+It is a Syntax Error if GeneratorBody Contains SuperProperty is true .
+
+-
+It is a Syntax Error if FormalParameters Contains SuperCall is true .
+
+-
+It is a Syntax Error if GeneratorBody Contains SuperCall is true .
+
+15.5.2 Runtime Semantics: EvaluateGeneratorBody
+
+The syntax-directed operation EvaluateGeneratorBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a throw completion or a return completion . It is defined piecewise over the following productions:
+
+GeneratorBody : FunctionBody
+
+- Perform ? FunctionDeclarationInstantiation ( funcObj , argList ).
+
+- Let gen be ? OrdinaryCreateFromConstructor ( funcObj , "%GeneratorPrototype%" , « [[GeneratorState]] , [[GeneratorContext]] , [[GeneratorBrand]] »).
+
+- Set gen . [[GeneratorBrand]] to empty .
+
+- Set gen . [[GeneratorState]] to suspended-start .
+
+- Perform GeneratorStart ( gen , FunctionBody ).
+
+- Return ReturnCompletion ( gen ).
+
+15.5.3 Runtime Semantics: InstantiateGeneratorFunctionObject
+
+The syntax-directed operation InstantiateGeneratorFunctionObject takes arguments envRecord (an Environment Record ) and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Let name be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by GeneratorDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %GeneratorFunction.prototype% , sourceText , FormalParameters , GeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+GeneratorDeclaration :
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Let sourceText be the source text matched by GeneratorDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %GeneratorFunction.prototype% , sourceText , FormalParameters , GeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , "default" ).
+
+- Let proto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+Note
+An anonymous GeneratorDeclaration can only occur as part of an export default declaration, and its function code is therefore always strict mode code .
+
+15.5.4 Runtime Semantics: InstantiateGeneratorFunctionExpression
+
+The syntax-directed operation InstantiateGeneratorFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+GeneratorExpression :
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by GeneratorExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %GeneratorFunction.prototype% , sourceText , FormalParameters , GeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+GeneratorExpression :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Assert : name is not present.
+
+- Set name to the StringValue of BindingIdentifier .
+
+- Let outerEnv be the running execution context 's LexicalEnvironment.
+
+- Let funcEnv be NewDeclarativeEnvironment ( outerEnv ).
+
+- Perform ! funcEnv . CreateImmutableBinding ( name , false ).
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by GeneratorExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %GeneratorFunction.prototype% , sourceText , FormalParameters , GeneratorBody , non-lexical-this , funcEnv , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %GeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Perform ! funcEnv . InitializeBinding ( name , closure ).
+
+- Return closure .
+
+Note
+The BindingIdentifier in a GeneratorExpression can be referenced from inside the GeneratorExpression 's FunctionBody to allow the generator code to call itself recursively. However, unlike in a GeneratorDeclaration , the BindingIdentifier in a GeneratorExpression cannot be referenced from and does not affect the scope enclosing the GeneratorExpression .
+
+15.5.5 Runtime Semantics: Evaluation
+
+GeneratorExpression :
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+- Return InstantiateGeneratorFunctionExpression of GeneratorExpression .
+
+YieldExpression : yield
+
+- Return ? Yield ( undefined ).
+
+YieldExpression :
+yield
+AssignmentExpression
+
+- Let exprRef be ? Evaluation of AssignmentExpression .
+
+- Let value be ? GetValue ( exprRef ).
+
+- Return ? Yield ( value ).
+
+YieldExpression :
+yield
+*
+AssignmentExpression
+
+- Let genKind be GetGeneratorKind ().
+
+- Assert : genKind is either sync or async .
+
+- Let exprRef be ? Evaluation of AssignmentExpression .
+
+- Let value be ? GetValue ( exprRef ).
+
+- Let iteratorRecord be ? GetIterator ( value , genKind ).
+
+- Let iterator be iteratorRecord . [[Iterator]] .
+
+- Let received be NormalCompletion ( undefined ).
+
+- Repeat,
+- If received is a normal completion , then
+- Let innerResult be ? Call ( iteratorRecord . [[NextMethod]] , iteratorRecord . [[Iterator]] , « received . [[Value]] »).
+
+- If genKind is async , set innerResult to ? Await ( innerResult ).
+
+- If innerResult is not an Object , throw a TypeError exception.
+
+- Let done be ? IteratorComplete ( innerResult ).
+
+- If done is true , then
+- Return ? IteratorValue ( innerResult ).
+
+- If genKind is async , set received to Completion ( AsyncGeneratorYield (? IteratorValue ( innerResult ))).
+
+- Else, set received to Completion ( GeneratorYield ( innerResult )).
+
+- Else if received is a throw completion , then
+- Let throw be ? GetMethod ( iterator , "throw" ).
+
+- If throw is not undefined , then
+- Let innerResult be ? Call ( throw , iterator , « received . [[Value]] »).
+
+- If genKind is async , set innerResult to ? Await ( innerResult ).
+
+- NOTE : Exceptions from the inner iterator throw method are propagated. Normal completions from an inner throw method are processed similarly to an inner next .
+
+- If innerResult is not an Object , throw a TypeError exception.
+
+- Let done be ? IteratorComplete ( innerResult ).
+
+- If done is true , then
+- Return ? IteratorValue ( innerResult ).
+
+- If genKind is async , set received to Completion ( AsyncGeneratorYield (? IteratorValue ( innerResult ))).
+
+- Else, set received to Completion ( GeneratorYield ( innerResult )).
+
+- Else,
+- NOTE : If iterator does not have a throw method, this throw is going to terminate the yield* loop. But first we need to give iterator a chance to clean up.
+
+- Let closeCompletion be NormalCompletion ( empty ).
+
+- If genKind is async , perform ? AsyncIteratorClose ( iteratorRecord , closeCompletion ).
+
+- Else, perform ? IteratorClose ( iteratorRecord , closeCompletion ).
+
+- NOTE : The next step throws a TypeError to indicate that there was a yield* protocol violation: iterator does not have a throw method.
+
+- Throw a TypeError exception.
+
+- Else,
+- Assert : received is a return completion .
+
+- Let return be ? GetMethod ( iterator , "return" ).
+
+- If return is undefined , then
+- Let receivedValue be received . [[Value]] .
+
+- If genKind is async , then
+- Set receivedValue to ? Await ( receivedValue ).
+
+- Return ReturnCompletion ( receivedValue ).
+
+- Let innerReturnResult be ? Call ( return , iterator , « received . [[Value]] »).
+
+- If genKind is async , set innerReturnResult to ? Await ( innerReturnResult ).
+
+- If innerReturnResult is not an Object , throw a TypeError exception.
+
+- Let done be ? IteratorComplete ( innerReturnResult ).
+
+- If done is true , then
+- Let returnedValue be ? IteratorValue ( innerReturnResult ).
+
+- Return ReturnCompletion ( returnedValue ).
+
+- If genKind is async , set received to Completion ( AsyncGeneratorYield (? IteratorValue ( innerReturnResult ))).
+
+- Else, set received to Completion ( GeneratorYield ( innerReturnResult )).
+
+15.6 Async Generator Function Definitions
+
+Syntax
+
+AsyncGeneratorDeclaration [Yield, Await, Default] :
+async
+[no LineTerminator here]
+function
+*
+BindingIdentifier [?Yield, ?Await]
+(
+FormalParameters [+Yield, +Await]
+)
+{
+AsyncGeneratorBody
+}
+
+[+Default]
+async
+[no LineTerminator here]
+function
+*
+(
+FormalParameters [+Yield, +Await]
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+[no LineTerminator here]
+function
+*
+BindingIdentifier [+Yield, +Await] opt
+(
+FormalParameters [+Yield, +Await]
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorMethod [Yield, Await] :
+async
+[no LineTerminator here]
+*
+ClassElementName [?Yield, ?Await]
+(
+UniqueFormalParameters [+Yield, +Await]
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorBody :
+FunctionBody [+Yield, +Await]
+
+Note 1
+YieldExpression and AwaitExpression cannot be used within the FormalParameters of an async generator function because any expressions that are part of FormalParameters are evaluated before the resulting AsyncGenerator is in a resumable state.
+
+Note 2
+Abstract operations relating to AsyncGenerators are defined in 27.9.3 .
+
+15.6.1 Static Semantics: Early Errors
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- It is a Syntax Error if HasDirectSuper of AsyncGeneratorMethod is true .
+
+- It is a Syntax Error if UniqueFormalParameters Contains YieldExpression is true .
+
+- It is a Syntax Error if UniqueFormalParameters Contains AwaitExpression is true .
+
+- It is a Syntax Error if FunctionBodyContainsUseStrict of AsyncGeneratorBody is true and IsSimpleParameterList of UniqueFormalParameters is false .
+
+- It is a Syntax Error if any element of the BoundNames of UniqueFormalParameters also occurs in the LexicallyDeclaredNames of AsyncGeneratorBody .
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- If IsStrict ( FormalParameters ) is true , the Early Error rules for
+UniqueFormalParameters : FormalParameters
+
+are applied.
+
+- If BindingIdentifier is present and IsStrict ( BindingIdentifier ) is true , it is a Syntax Error if the StringValue of BindingIdentifier is either "eval" or "arguments" .
+
+- It is a Syntax Error if FunctionBodyContainsUseStrict of AsyncGeneratorBody is true and IsSimpleParameterList of FormalParameters is false .
+
+- It is a Syntax Error if any element of the BoundNames of FormalParameters also occurs in the LexicallyDeclaredNames of AsyncGeneratorBody .
+
+- It is a Syntax Error if FormalParameters Contains YieldExpression is true .
+
+- It is a Syntax Error if FormalParameters Contains AwaitExpression is true .
+
+- It is a Syntax Error if FormalParameters Contains SuperProperty is true .
+
+- It is a Syntax Error if AsyncGeneratorBody Contains SuperProperty is true .
+
+- It is a Syntax Error if FormalParameters Contains SuperCall is true .
+
+- It is a Syntax Error if AsyncGeneratorBody Contains SuperCall is true .
+
+15.6.2 Runtime Semantics: EvaluateAsyncGeneratorBody
+
+The syntax-directed operation EvaluateAsyncGeneratorBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a throw completion or a return completion . It is defined piecewise over the following productions:
+
+AsyncGeneratorBody : FunctionBody
+
+- Perform ? FunctionDeclarationInstantiation ( funcObj , argList ).
+
+- Let gen be ? OrdinaryCreateFromConstructor ( funcObj , "%AsyncGeneratorPrototype%" , « [[AsyncGeneratorState]] , [[AsyncGeneratorContext]] , [[AsyncGeneratorQueue]] , [[GeneratorBrand]] »).
+
+- Set gen . [[GeneratorBrand]] to empty .
+
+- Set gen . [[AsyncGeneratorState]] to suspended-start .
+
+- Perform AsyncGeneratorStart ( gen , FunctionBody ).
+
+- Return ReturnCompletion ( gen ).
+
+15.6.3 Runtime Semantics: InstantiateAsyncGeneratorFunctionObject
+
+The syntax-directed operation InstantiateAsyncGeneratorFunctionObject takes arguments envRecord (an Environment Record ) and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Let name be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by AsyncGeneratorDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncGeneratorFunction.prototype% , sourceText , FormalParameters , AsyncGeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Let sourceText be the source text matched by AsyncGeneratorDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncGeneratorFunction.prototype% , sourceText , FormalParameters , AsyncGeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , "default" ).
+
+- Let proto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+Note
+An anonymous AsyncGeneratorDeclaration can only occur as part of an export default declaration.
+
+15.6.4 Runtime Semantics: InstantiateAsyncGeneratorFunctionExpression
+
+The syntax-directed operation InstantiateAsyncGeneratorFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+AsyncGeneratorExpression :
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncGeneratorExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncGeneratorFunction.prototype% , sourceText , FormalParameters , AsyncGeneratorBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return closure .
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Assert : name is not present.
+
+- Set name to the StringValue of BindingIdentifier .
+
+- Let outerEnv be the running execution context 's LexicalEnvironment.
+
+- Let funcEnv be NewDeclarativeEnvironment ( outerEnv ).
+
+- Perform ! funcEnv . CreateImmutableBinding ( name , false ).
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncGeneratorExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncGeneratorFunction.prototype% , sourceText , FormalParameters , AsyncGeneratorBody , non-lexical-this , funcEnv , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Let proto be OrdinaryObjectCreate ( %AsyncGeneratorPrototype% ).
+
+- Perform ! DefinePropertyOrThrow ( closure , "prototype" , PropertyDescriptor { [[Value]] : proto , [[Writable]] : true , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Perform ! funcEnv . InitializeBinding ( name , closure ).
+
+- Return closure .
+
+Note
+The BindingIdentifier in an AsyncGeneratorExpression can be referenced from inside the AsyncGeneratorExpression 's AsyncGeneratorBody to allow the generator code to call itself recursively. However, unlike in an AsyncGeneratorDeclaration , the BindingIdentifier in an AsyncGeneratorExpression cannot be referenced from and does not affect the scope enclosing the AsyncGeneratorExpression .
+
+15.6.5 Runtime Semantics: Evaluation
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return InstantiateAsyncGeneratorFunctionExpression of AsyncGeneratorExpression .
+
+15.7 Class Definitions
+
+Syntax
+
+ClassDeclaration [Yield, Await, Default] :
+class
+BindingIdentifier [?Yield, ?Await]
+ClassTail [?Yield, ?Await]
+
+[+Default]
+class
+ClassTail [?Yield, ?Await]
+
+ClassExpression [Yield, Await] :
+class
+BindingIdentifier [?Yield, ?Await] opt
+ClassTail [?Yield, ?Await]
+
+ClassTail [Yield, Await] :
+ClassHeritage [?Yield, ?Await] opt
+{
+ClassBody [?Yield, ?Await] opt
+}
+
+ClassHeritage [Yield, Await] :
+extends
+LeftHandSideExpression [?Yield, ?Await]
+
+ClassBody [Yield, Await] :
+ClassElementList [?Yield, ?Await]
+
+ClassElementList [Yield, Await] :
+ClassElement [?Yield, ?Await]
+
+ClassElementList [?Yield, ?Await]
+ClassElement [?Yield, ?Await]
+
+ClassElement [Yield, Await] :
+MethodDefinition [?Yield, ?Await]
+
+static
+MethodDefinition [?Yield, ?Await]
+
+FieldDefinition [?Yield, ?Await]
+;
+
+static
+FieldDefinition [?Yield, ?Await]
+;
+
+ClassStaticBlock
+
+;
+
+FieldDefinition [Yield, Await] :
+ClassElementName [?Yield, ?Await]
+Initializer [+In, ?Yield, ?Await] opt
+
+ClassElementName [Yield, Await] :
+PropertyName [?Yield, ?Await]
+
+PrivateIdentifier
+
+ClassStaticBlock :
+static
+{
+ClassStaticBlockBody
+}
+
+ClassStaticBlockBody :
+ClassStaticBlockStatementList
+
+ClassStaticBlockStatementList :
+StatementList [~Yield, +Await, ~Return] opt
+
+Note
+A class definition is always strict mode code .
+
+15.7.1 Static Semantics: Early Errors
+
+ClassTail :
+ClassHeritage opt
+{
+ClassBody
+}
+
+-
+It is a Syntax Error if ClassHeritage is not present and the following algorithm returns true :
+
+- Let ctor be the ConstructorMethod of ClassBody .
+
+- If ctor is empty , return false .
+
+- Return HasDirectSuper of ctor .
+
+ClassBody : ClassElementList
+
+-
+It is a Syntax Error if the PrototypePropertyNameList of ClassElementList contains more than one occurrence of "constructor" .
+
+-
+It is a Syntax Error if the PrivateBoundIdentifiers of ClassElementList contains any duplicate entries, unless the name is used once for a getter and once for a setter and in no other entries, and the getter and setter are either both static or both non-static.
+
+ClassElement : MethodDefinition
+
+-
+It is a Syntax Error if the PropName of MethodDefinition is not "constructor" and HasDirectSuper of MethodDefinition is true .
+
+-
+It is a Syntax Error if the PropName of MethodDefinition is "constructor" and SpecialMethod of MethodDefinition is true .
+
+ClassElement :
+static
+MethodDefinition
+
+-
+It is a Syntax Error if HasDirectSuper of MethodDefinition is true .
+
+-
+It is a Syntax Error if the PropName of MethodDefinition is "prototype" .
+
+ClassElement :
+FieldDefinition
+;
+
+- It is a Syntax Error if the PropName of FieldDefinition is "constructor" .
+
+ClassElement :
+static
+FieldDefinition
+;
+
+-
+It is a Syntax Error if the PropName of FieldDefinition is either "prototype" or "constructor" .
+
+FieldDefinition :
+ClassElementName
+Initializer opt
+
+- It is a Syntax Error if Initializer is present and ContainsArguments of Initializer is true .
+
+- It is a Syntax Error if Initializer is present and Initializer Contains SuperCall is true .
+
+ClassElementName : PrivateIdentifier
+
+- It is a Syntax Error if the StringValue of PrivateIdentifier is "#constructor" .
+
+ClassStaticBlockBody : ClassStaticBlockStatementList
+
+-
+It is a Syntax Error if the LexicallyDeclaredNames of ClassStaticBlockStatementList contains any duplicate entries.
+
+-
+It is a Syntax Error if any element of the LexicallyDeclaredNames of ClassStaticBlockStatementList also occurs in the VarDeclaredNames of ClassStaticBlockStatementList .
+
+-
+It is a Syntax Error if ContainsDuplicateLabels of ClassStaticBlockStatementList with argument « » is true .
+
+-
+It is a Syntax Error if ContainsUndefinedBreakTarget of ClassStaticBlockStatementList with argument « » is true .
+
+-
+It is a Syntax Error if ContainsUndefinedContinueTarget of ClassStaticBlockStatementList with arguments « » and « » is true .
+
+-
+It is a Syntax Error if ContainsArguments of ClassStaticBlockStatementList is true .
+
+-
+It is a Syntax Error if ClassStaticBlockStatementList Contains SuperCall is true .
+
+-
+It is a Syntax Error if ClassStaticBlockStatementList Contains await is true .
+
+15.7.2 Static Semantics: ClassElementKind
+
+The syntax-directed operation ClassElementKind takes no arguments and returns constructor-method , non-constructor-method , or empty . It is defined piecewise over the following productions:
+
+ClassElement : MethodDefinition
+
+- If the PropName of MethodDefinition is "constructor" , return constructor-method .
+
+- Return non-constructor-method .
+
+ClassElement :
+static
+MethodDefinition
+
+FieldDefinition
+;
+
+static
+FieldDefinition
+;
+
+- Return non-constructor-method .
+
+ClassElement : ClassStaticBlock
+
+- Return non-constructor-method .
+
+ClassElement : ;
+
+- Return empty .
+
+15.7.3 Static Semantics: ConstructorMethod
+
+The syntax-directed operation ConstructorMethod takes no arguments and returns a ClassElement Parse Node or empty . It is defined piecewise over the following productions:
+
+ClassElementList : ClassElement
+
+- If the ClassElementKind of ClassElement is constructor-method , return ClassElement .
+
+- Return empty .
+
+ClassElementList :
+ClassElementList
+ClassElement
+
+- Let head be the ConstructorMethod of ClassElementList .
+
+- If head is not empty , return head .
+
+- If the ClassElementKind of ClassElement is constructor-method , return ClassElement .
+
+- Return empty .
+
+Note
+Early Error rules ensure that there is only one method definition named "constructor" and that it is not an accessor property or generator definition.
+
+15.7.4 Static Semantics: IsStatic
+
+The syntax-directed operation IsStatic takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+ClassElement : MethodDefinition
+
+- Return false .
+
+ClassElement :
+static
+MethodDefinition
+
+- Return true .
+
+ClassElement :
+FieldDefinition
+;
+
+- Return false .
+
+ClassElement :
+static
+FieldDefinition
+;
+
+- Return true .
+
+ClassElement : ClassStaticBlock
+
+- Return true .
+
+ClassElement : ;
+
+- Return false .
+
+15.7.5 Static Semantics: NonConstructorElements
+
+The syntax-directed operation NonConstructorElements takes no arguments and returns a List of ClassElement Parse Nodes . It is defined piecewise over the following productions:
+
+ClassElementList : ClassElement
+
+- If the ClassElementKind of ClassElement is non-constructor-method , then
+- Return « ClassElement ».
+
+- Return a new empty List .
+
+ClassElementList :
+ClassElementList
+ClassElement
+
+- Let list be the NonConstructorElements of ClassElementList .
+
+- If the ClassElementKind of ClassElement is non-constructor-method , then
+- Append ClassElement to list .
+
+- Return list .
+
+15.7.6 Static Semantics: PrototypePropertyNameList
+
+The syntax-directed operation PrototypePropertyNameList takes no arguments and returns a List of property keys . It is defined piecewise over the following productions:
+
+ClassElementList : ClassElement
+
+- Let propertyName be the PropName of ClassElement .
+
+- If propertyName is empty , return a new empty List .
+
+- If IsStatic of ClassElement is true , return a new empty List .
+
+- Return « propertyName ».
+
+ClassElementList :
+ClassElementList
+ClassElement
+
+- Let list be the PrototypePropertyNameList of ClassElementList .
+
+- Let propertyName be the PropName of ClassElement .
+
+- If propertyName is empty , return list .
+
+- If IsStatic of ClassElement is true , return list .
+
+- Return the list-concatenation of list and « propertyName ».
+
+15.7.7 Static Semantics: AllPrivateIdentifiersValid
+
+The syntax-directed operation AllPrivateIdentifiersValid takes argument names (a List of Strings) and returns a Boolean.
+
+Every grammar production alternative in this specification which is not listed below implicitly has the following default definition of AllPrivateIdentifiersValid:
+
+- For each child node child of this Parse Node , do
+- If child is an instance of a nonterminal, then
+- If AllPrivateIdentifiersValid of child with argument names is false , return false .
+
+- Return true .
+
+MemberExpression :
+MemberExpression
+.
+PrivateIdentifier
+
+- If names contains the StringValue of PrivateIdentifier , then
+- Return AllPrivateIdentifiersValid of MemberExpression with argument names .
+
+- Return false .
+
+CallExpression :
+CallExpression
+.
+PrivateIdentifier
+
+- If names contains the StringValue of PrivateIdentifier , then
+- Return AllPrivateIdentifiersValid of CallExpression with argument names .
+
+- Return false .
+
+OptionalChain :
+?.
+PrivateIdentifier
+
+- If names contains the StringValue of PrivateIdentifier , return true .
+
+- Return false .
+
+OptionalChain :
+OptionalChain
+.
+PrivateIdentifier
+
+- If names contains the StringValue of PrivateIdentifier , then
+- Return AllPrivateIdentifiersValid of OptionalChain with argument names .
+
+- Return false .
+
+ClassBody : ClassElementList
+
+- Let newNames be the list-concatenation of names and the PrivateBoundIdentifiers of ClassBody .
+
+- Return AllPrivateIdentifiersValid of ClassElementList with argument newNames .
+
+RelationalExpression :
+PrivateIdentifier
+in
+ShiftExpression
+
+- If names contains the StringValue of PrivateIdentifier , then
+- Return AllPrivateIdentifiersValid of ShiftExpression with argument names .
+
+- Return false .
+
+15.7.8 Static Semantics: PrivateBoundIdentifiers
+
+The syntax-directed operation PrivateBoundIdentifiers takes no arguments and returns a List of Strings. It is defined piecewise over the following productions:
+
+FieldDefinition :
+ClassElementName
+Initializer opt
+
+- Return the PrivateBoundIdentifiers of ClassElementName .
+
+ClassElementName : PrivateIdentifier
+
+- Return a List whose sole element is the StringValue of PrivateIdentifier .
+
+ClassElementName :
+PropertyName
+
+ClassElement :
+ClassStaticBlock
+
+;
+
+- Return a new empty List .
+
+ClassElementList :
+ClassElementList
+ClassElement
+
+- Let names1 be the PrivateBoundIdentifiers of ClassElementList .
+
+- Let names2 be the PrivateBoundIdentifiers of ClassElement .
+
+- Return the list-concatenation of names1 and names2 .
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+- Return the PrivateBoundIdentifiers of ClassElementName .
+
+15.7.9 Static Semantics: ContainsArguments
+
+The syntax-directed operation ContainsArguments takes no arguments and returns a Boolean.
+
+Every grammar production alternative in this specification which is not listed below implicitly has the following default definition of ContainsArguments:
+
+- For each child node child of this Parse Node , do
+- If child is an instance of a nonterminal, then
+- If ContainsArguments of child is true , return true .
+
+- Return false .
+
+IdentifierReference : Identifier
+
+- If the StringValue of Identifier is "arguments" , return true .
+
+- Return false .
+
+FunctionDeclaration :
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+function
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+FunctionExpression :
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+FunctionBody
+}
+
+GeneratorDeclaration :
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+function
+*
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+GeneratorExpression :
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorDeclaration :
+async
+function
+*
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+async
+function
+*
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncGeneratorExpression :
+async
+function
+*
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return false .
+
+MethodDefinition :
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+FunctionBody
+}
+
+get
+ClassElementName
+(
+)
+{
+FunctionBody
+}
+
+set
+ClassElementName
+(
+PropertySetParameterList
+)
+{
+FunctionBody
+}
+
+GeneratorMethod :
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+GeneratorBody
+}
+
+AsyncGeneratorMethod :
+async
+*
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncGeneratorBody
+}
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return ContainsArguments of ClassElementName .
+
+15.7.10 Runtime Semantics: ClassFieldDefinitionEvaluation
+
+The syntax-directed operation ClassFieldDefinitionEvaluation takes argument homeObj (an Object) and returns either a normal completion containing a ClassFieldDefinition Record or an abrupt completion . It is defined piecewise over the following productions:
+
+FieldDefinition :
+ClassElementName
+Initializer opt
+
+- Let name be ? Evaluation of ClassElementName .
+
+- If Initializer is present, then
+- Let formalParamList be an instance of the production
+FormalParameters : [empty]
+
+.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the empty sequence of Unicode code points.
+
+- Let initializer be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , formalParamList , Initializer , non-lexical-this , envRecord , privateEnv ).
+
+- Perform MakeMethod ( initializer , homeObj ).
+
+- Set initializer . [[ClassFieldInitializerName]] to name .
+
+- Else,
+- Let initializer be empty .
+
+- Return the ClassFieldDefinition Record { [[Name]] : name , [[Initializer]] : initializer }.
+
+Note
+The function created for initializer is never directly accessible to ECMAScript code.
+
+15.7.11 Runtime Semantics: ClassStaticBlockDefinitionEvaluation
+
+The syntax-directed operation ClassStaticBlockDefinitionEvaluation takes argument homeObj (an Object) and returns a ClassStaticBlockDefinition Record . It is defined piecewise over the following productions:
+
+ClassStaticBlock :
+static
+{
+ClassStaticBlockBody
+}
+
+- Let lexicalEnv be the running execution context 's LexicalEnvironment.
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the empty sequence of Unicode code points.
+
+- Let formalParams be an instance of the production
+FormalParameters : [empty]
+
+.
+
+- Let bodyFunc be OrdinaryFunctionCreate ( %Function.prototype% , sourceText , formalParams , ClassStaticBlockBody , non-lexical-this , lexicalEnv , privateEnv ).
+
+- Perform MakeMethod ( bodyFunc , homeObj ).
+
+- Return the ClassStaticBlockDefinition Record { [[BodyFunction]] : bodyFunc }.
+
+Note The function bodyFunc is never directly accessible to ECMAScript code.
+
+15.7.12 Runtime Semantics: EvaluateClassStaticBlockBody
+
+The syntax-directed operation EvaluateClassStaticBlockBody takes argument funcObj (an ECMAScript function object ) and returns a return completion or a throw completion . It is defined piecewise over the following productions:
+
+ClassStaticBlockBody : ClassStaticBlockStatementList
+
+- Assert : funcObj is a synthetic function created by ClassStaticBlockDefinitionEvaluation step 5 .
+
+- Perform ! FunctionDeclarationInstantiation ( funcObj , « »).
+
+- Let result be Completion ( Evaluation of ClassStaticBlockStatementList ).
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Assert : envRecord is a Declarative Environment Record .
+
+- Perform ? DisposeResources ( envRecord . [[DisposableResourceStack]] , result ).
+
+- Return ReturnCompletion ( undefined ).
+
+15.7.13 Runtime Semantics: ClassElementEvaluation
+
+The syntax-directed operation ClassElementEvaluation takes argument obj (an Object) and returns either a normal completion containing either a ClassFieldDefinition Record , a ClassStaticBlockDefinition Record , a PrivateElement , or empty , or an abrupt completion . It is defined piecewise over the following productions:
+
+ClassElement :
+FieldDefinition
+;
+
+static
+FieldDefinition
+;
+
+- Return ? ClassFieldDefinitionEvaluation of FieldDefinition with argument obj .
+
+ClassElement :
+MethodDefinition
+
+static
+MethodDefinition
+
+- Return ? MethodDefinitionEvaluation of MethodDefinition with arguments obj and false .
+
+ClassElement : ClassStaticBlock
+
+- Return the ClassStaticBlockDefinitionEvaluation of ClassStaticBlock with argument obj .
+
+ClassElement : ;
+
+- Return empty .
+
+15.7.14 Runtime Semantics: ClassDefinitionEvaluation
+
+The syntax-directed operation ClassDefinitionEvaluation takes arguments classBinding (a String or undefined ), className (a property key or a Private Name ), and sourceText ( ECMAScript source text ) and returns either a normal completion containing a function object or an abrupt completion .
+
+Note
+For ease of specification, private methods and accessors are included alongside private fields in the [[PrivateElements]] slot of class instances. However, any given object has either all or none of the private methods and accessors defined by a given class. This feature has been designed so that implementations may choose to implement private methods and accessors using a strategy which does not require tracking each method or accessor individually.
+
+For example, an implementation could directly associate instance private methods with their corresponding Private Name and track, for each object, which class constructors have run with that object as their this value. Looking up an instance private method on an object then consists of checking that the class constructor which defines the method has been used to initialize the object, then returning the method associated with the Private Name .
+
+This differs from private fields: because field initializers can throw during class instantiation, an individual object may have some proper subset of the private fields of a given class, and so private fields must in general be tracked individually.
+
+It is defined piecewise over the following productions:
+
+ClassTail :
+ClassHeritage opt
+{
+ClassBody opt
+}
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let classEnv be NewDeclarativeEnvironment ( envRecord ).
+
+- If classBinding is not undefined , then
+- Perform ! classEnv . CreateImmutableBinding ( classBinding , true ).
+
+- Let outerPrivateEnv be the running execution context 's PrivateEnvironment.
+
+- Let classPrivateEnv be NewPrivateEnvironment ( outerPrivateEnv ).
+
+- If ClassBody is present, then
+- For each String description of the PrivateBoundIdentifiers of ClassBody , do
+- If classPrivateEnv . [[Names]] contains a Private Name privateName such that privateName . [[Description]] is description , then
+- Assert : This is only possible for getter/setter pairs.
+
+- Else,
+- Let name be a new Private Name whose [[Description]] is description .
+
+- Append name to classPrivateEnv . [[Names]] .
+
+- If ClassHeritage is not present, then
+- Let protoParent be %Object.prototype% .
+
+- Let ctorParent be %Function.prototype% .
+
+- Else,
+- Set the running execution context 's LexicalEnvironment to classEnv .
+
+- NOTE : The running execution context 's PrivateEnvironment is outerPrivateEnv when evaluating ClassHeritage .
+
+- Let superclassRef be Completion ( Evaluation of ClassHeritage ).
+
+- Set the running execution context 's LexicalEnvironment to envRecord .
+
+- Let superclass be ? GetValue (? superclassRef ).
+
+- If superclass is null , then
+- Let protoParent be null .
+
+- Let ctorParent be %Function.prototype% .
+
+- Else if IsConstructor ( superclass ) is false , then
+- Throw a TypeError exception.
+
+- Else,
+- Let protoParent be ? Get ( superclass , "prototype" ).
+
+- If protoParent is not an Object and protoParent is not null , throw a TypeError exception.
+
+- Let ctorParent be superclass .
+
+- Let proto be OrdinaryObjectCreate ( protoParent ).
+
+- If ClassBody is not present, let ctor be empty .
+
+- Else, let ctor be the ConstructorMethod of ClassBody .
+
+- Set the running execution context 's LexicalEnvironment to classEnv .
+
+- Set the running execution context 's PrivateEnvironment to classPrivateEnv .
+
+- If ctor is empty , then
+- Let defaultCtor be a new Abstract Closure with no parameters that captures nothing and performs the following steps when called:
+- Let args be the List of arguments that was passed to this function by [[Call]] or [[Construct]] .
+
+- If NewTarget is undefined , throw a TypeError exception.
+
+- Let ctorFunc be the active function object .
+
+- If ctorFunc . [[ConstructorKind]] is derived , then
+- NOTE : This branch behaves similarly to constructor(...args) { super(...args); } . The most notable distinction is that while the aforementioned ECMAScript source text observably calls the %Symbol.iterator% method on %Array.prototype% , this function does not.
+
+- Let func be ! ctorFunc . [[GetPrototypeOf]] ().
+
+- If IsConstructor ( func ) is false , throw a TypeError exception.
+
+- Let result be ? Construct ( func , args , NewTarget).
+
+- Else,
+- NOTE : This branch behaves similarly to constructor() {} .
+
+- Let result be ? OrdinaryCreateFromConstructor (NewTarget, "%Object.prototype%" ).
+
+- Perform ? InitializeInstanceElements ( result , ctorFunc ).
+
+- Return NormalCompletion ( result ).
+
+- Let ctorFunc be CreateBuiltinFunction ( defaultCtor , 0, className , « [[ConstructorKind]] , [[SourceText]] , [[PrivateMethods]] , [[Fields]] », the current Realm Record , ctorParent ).
+
+- Else,
+- Let ctorInfo be ! DefineMethod of ctor with arguments proto and ctorParent .
+
+- Let ctorFunc be ctorInfo . [[Closure]] .
+
+- Perform MakeClassConstructor ( ctorFunc ).
+
+- Perform SetFunctionName ( ctorFunc , className ).
+
+- Set ctorFunc . [[SourceText]] to sourceText .
+
+- Perform MakeConstructor ( ctorFunc , false , proto ).
+
+- If ClassHeritage is present, set ctorFunc . [[ConstructorKind]] to derived .
+
+- Perform ! DefineMethodProperty ( proto , "constructor" , ctorFunc , false ).
+
+- If ClassBody is not present, let classElements be a new empty List .
+
+- Else, let classElements be the NonConstructorElements of ClassBody .
+
+- Let instancePrivateMethods be a new empty List .
+
+- Let staticPrivateMethods be a new empty List .
+
+- Let instanceFields be a new empty List .
+
+- Let staticElements be a new empty List .
+
+- For each ClassElement classElement of classElements , do
+- If IsStatic of classElement is false , then
+- Let element be Completion ( ClassElementEvaluation of classElement with argument proto ).
+
+- Else,
+- Let element be Completion ( ClassElementEvaluation of classElement with argument ctorFunc ).
+
+- If element is an abrupt completion , then
+- Set the running execution context 's LexicalEnvironment to envRecord .
+
+- Set the running execution context 's PrivateEnvironment to outerPrivateEnv .
+
+- Return ? element .
+
+- Set element to ! element .
+
+- If element is a PrivateElement , then
+- Assert : element . [[Kind]] is either method or accessor .
+
+- If IsStatic of classElement is false , let container be instancePrivateMethods .
+
+- Else, let container be staticPrivateMethods .
+
+- If container contains a PrivateElement existingElement such that existingElement . [[Key]] is element . [[Key]] , then
+- Assert : element . [[Kind]] and existingElement . [[Kind]] are both accessor .
+
+- If element . [[Getter]] is undefined , then
+- Let combined be PrivateElement { [[Key]] : element . [[Key]] , [[Kind]] : accessor , [[Getter]] : existingElement . [[Getter]] , [[Setter]] : element . [[Setter]] }.
+
+- Else,
+- Let combined be PrivateElement { [[Key]] : element . [[Key]] , [[Kind]] : accessor , [[Getter]] : element . [[Getter]] , [[Setter]] : existingElement . [[Setter]] }.
+
+- Replace existingElement in container with combined .
+
+- Else,
+- Append element to container .
+
+- Else if element is a ClassFieldDefinition Record , then
+- If IsStatic of classElement is false , append element to instanceFields .
+
+- Else, append element to staticElements .
+
+- Else if element is a ClassStaticBlockDefinition Record , then
+- Append element to staticElements .
+
+- Else,
+- Assert : element is empty .
+
+- Set the running execution context 's LexicalEnvironment to envRecord .
+
+- If classBinding is not undefined , then
+- Perform ! classEnv . InitializeBinding ( classBinding , ctorFunc ).
+
+- Set ctorFunc . [[PrivateMethods]] to instancePrivateMethods .
+
+- Set ctorFunc . [[Fields]] to instanceFields .
+
+- For each PrivateElement method of staticPrivateMethods , do
+- Perform ! PrivateMethodOrAccessorAdd ( ctorFunc , method ).
+
+- For each element elementRecord of staticElements , do
+- If elementRecord is a ClassFieldDefinition Record , then
+- Let result be Completion ( DefineField ( ctorFunc , elementRecord )).
+
+- Else,
+- Assert : elementRecord is a ClassStaticBlockDefinition Record .
+
+- Let result be Completion ( Call ( elementRecord . [[BodyFunction]] , ctorFunc )).
+
+- If result is an abrupt completion , then
+- Set the running execution context 's PrivateEnvironment to outerPrivateEnv .
+
+- Return ? result .
+
+- Set the running execution context 's PrivateEnvironment to outerPrivateEnv .
+
+- Return ctorFunc .
+
+15.7.15 Runtime Semantics: BindingClassDeclarationEvaluation
+
+The syntax-directed operation BindingClassDeclarationEvaluation takes no arguments and returns either a normal completion containing a function object or an abrupt completion . It is defined piecewise over the following productions:
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+- Let className be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by ClassDeclaration .
+
+- Let value be ? ClassDefinitionEvaluation of ClassTail with arguments className , className , and sourceText .
+
+- Let envRecord be the running execution context 's LexicalEnvironment.
+
+- Perform ? InitializeBoundName ( className , value , envRecord ).
+
+- Return value .
+
+ClassDeclaration :
+class
+ClassTail
+
+- Let sourceText be the source text matched by ClassDeclaration .
+
+- Return ? ClassDefinitionEvaluation of ClassTail with arguments undefined , "default" , and sourceText .
+
+Note
+
+ClassDeclaration :
+class
+ClassTail
+
+only occurs as part of an ExportDeclaration and establishing its binding is handled as part of the evaluation action for that production. See 16.2.3.7 .
+
+15.7.16 Runtime Semantics: Evaluation
+
+ClassDeclaration :
+class
+BindingIdentifier
+ClassTail
+
+- Perform ? BindingClassDeclarationEvaluation of this ClassDeclaration .
+
+- Return empty .
+
+Note
+
+ClassDeclaration :
+class
+ClassTail
+
+only occurs as part of an ExportDeclaration and is never directly evaluated.
+
+ClassExpression :
+class
+ClassTail
+
+- Let sourceText be the source text matched by ClassExpression .
+
+- Return ? ClassDefinitionEvaluation of ClassTail with arguments undefined , the empty String, and sourceText .
+
+ClassExpression :
+class
+BindingIdentifier
+ClassTail
+
+- Let className be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by ClassExpression .
+
+- Return ? ClassDefinitionEvaluation of ClassTail with arguments className , className , and sourceText .
+
+ClassElementName : PrivateIdentifier
+
+- Let privateIdentifier be the StringValue of PrivateIdentifier .
+
+- Let privateEnvRecord be the running execution context 's PrivateEnvironment.
+
+- Let names be privateEnvRecord . [[Names]] .
+
+- Assert : Exactly one element of names is a Private Name whose [[Description]] is privateIdentifier .
+
+- Let privateName be the Private Name in names whose [[Description]] is privateIdentifier .
+
+- Return privateName .
+
+ClassStaticBlockStatementList : [empty]
+
+- Return undefined .
+
+15.8 Async Function Definitions
+
+Syntax
+
+AsyncFunctionDeclaration [Yield, Await, Default] :
+async
+[no LineTerminator here]
+function
+BindingIdentifier [?Yield, ?Await]
+(
+FormalParameters [~Yield, +Await]
+)
+{
+AsyncFunctionBody
+}
+
+[+Default]
+async
+[no LineTerminator here]
+function
+(
+FormalParameters [~Yield, +Await]
+)
+{
+AsyncFunctionBody
+}
+
+AsyncFunctionExpression :
+async
+[no LineTerminator here]
+function
+BindingIdentifier [~Yield, +Await] opt
+(
+FormalParameters [~Yield, +Await]
+)
+{
+AsyncFunctionBody
+}
+
+AsyncMethod [Yield, Await] :
+async
+[no LineTerminator here]
+ClassElementName [?Yield, ?Await]
+(
+UniqueFormalParameters [~Yield, +Await]
+)
+{
+AsyncFunctionBody
+}
+
+AsyncFunctionBody :
+FunctionBody [~Yield, +Await]
+
+AwaitExpression [Yield] :
+await
+UnaryExpression [?Yield, +Await]
+
+Note 1
+await is parsed as a keyword of an AwaitExpression when the [Await] parameter is present. The [Await] parameter is present in the top level of the following contexts, although the parameter may be absent in some contexts depending on the nonterminals, such as FunctionBody :
+
+- In an AsyncFunctionBody .
+
+- In the FormalParameters of an AsyncFunctionDeclaration , AsyncFunctionExpression , AsyncGeneratorDeclaration , or AsyncGeneratorExpression . AwaitExpression in this position is a Syntax error via static semantics .
+
+- In a Module .
+
+When Script is the syntactic goal symbol , await may be parsed as an identifier when the [Await] parameter is absent. This includes the following contexts:
+
+- Anywhere outside of an AsyncFunctionBody or FormalParameters of an AsyncFunctionDeclaration , AsyncFunctionExpression , AsyncGeneratorDeclaration , or AsyncGeneratorExpression .
+
+- In the BindingIdentifier of a FunctionExpression , GeneratorExpression , or AsyncGeneratorExpression .
+
+Note 2
+Unlike YieldExpression , it is a Syntax Error to omit the operand of an AwaitExpression . You must await something.
+
+15.8.1 Static Semantics: Early Errors
+
+AsyncMethod :
+async
+ClassElementName
+(
+UniqueFormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- It is a Syntax Error if FunctionBodyContainsUseStrict of AsyncFunctionBody is true and IsSimpleParameterList of UniqueFormalParameters is false .
+
+- It is a Syntax Error if HasDirectSuper of AsyncMethod is true .
+
+- It is a Syntax Error if UniqueFormalParameters Contains AwaitExpression is true .
+
+- It is a Syntax Error if any element of the BoundNames of UniqueFormalParameters also occurs in the LexicallyDeclaredNames of AsyncFunctionBody .
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- It is a Syntax Error if FunctionBodyContainsUseStrict of AsyncFunctionBody is true and IsSimpleParameterList of FormalParameters is false .
+
+- It is a Syntax Error if FormalParameters Contains AwaitExpression is true .
+
+- If IsStrict ( FormalParameters ) is true , the Early Error rules for
+UniqueFormalParameters : FormalParameters
+
+are applied.
+
+- If BindingIdentifier is present and IsStrict ( BindingIdentifier ) is true , it is a Syntax Error if the StringValue of BindingIdentifier is either "eval" or "arguments" .
+
+- It is a Syntax Error if any element of the BoundNames of FormalParameters also occurs in the LexicallyDeclaredNames of AsyncFunctionBody .
+
+- It is a Syntax Error if FormalParameters Contains SuperProperty is true .
+
+- It is a Syntax Error if AsyncFunctionBody Contains SuperProperty is true .
+
+- It is a Syntax Error if FormalParameters Contains SuperCall is true .
+
+- It is a Syntax Error if AsyncFunctionBody Contains SuperCall is true .
+
+15.8.2 Runtime Semantics: InstantiateAsyncFunctionObject
+
+The syntax-directed operation InstantiateAsyncFunctionObject takes arguments envRecord (an Environment Record ) and privateEnv (a PrivateEnvironment Record or null ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+AsyncFunctionDeclaration :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Let name be the StringValue of BindingIdentifier .
+
+- Let sourceText be the source text matched by AsyncFunctionDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , FormalParameters , AsyncFunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Return closure .
+
+AsyncFunctionDeclaration :
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Let sourceText be the source text matched by AsyncFunctionDeclaration .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , FormalParameters , AsyncFunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , "default" ).
+
+- Return closure .
+
+15.8.3 Runtime Semantics: InstantiateAsyncFunctionExpression
+
+The syntax-directed operation InstantiateAsyncFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+AsyncFunctionExpression :
+async
+function
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncFunctionExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , FormalParameters , AsyncFunctionBody , non-lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Return closure .
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Assert : name is not present.
+
+- Set name to the StringValue of BindingIdentifier .
+
+- Let outerEnv be the LexicalEnvironment of the running execution context .
+
+- Let funcEnv be NewDeclarativeEnvironment ( outerEnv ).
+
+- Perform ! funcEnv . CreateImmutableBinding ( name , false ).
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncFunctionExpression .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , FormalParameters , AsyncFunctionBody , non-lexical-this , funcEnv , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Perform ! funcEnv . InitializeBinding ( name , closure ).
+
+- Return closure .
+
+Note
+The BindingIdentifier in an AsyncFunctionExpression can be referenced from inside the AsyncFunctionExpression 's AsyncFunctionBody to allow the function to call itself recursively. However, unlike in a FunctionDeclaration , the BindingIdentifier in a AsyncFunctionExpression cannot be referenced from and does not affect the scope enclosing the AsyncFunctionExpression .
+
+15.8.4 Runtime Semantics: EvaluateAsyncFunctionBody
+
+The syntax-directed operation EvaluateAsyncFunctionBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion . It is defined piecewise over the following productions:
+
+AsyncFunctionBody : FunctionBody
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let completion be Completion ( FunctionDeclarationInstantiation ( funcObj , argList )).
+
+- If completion is an abrupt completion , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « completion . [[Value]] »).
+
+- Else,
+- Perform AsyncFunctionStart ( promiseCapability , FunctionBody ).
+
+- Return ReturnCompletion ( promiseCapability . [[Promise]] ).
+
+15.8.5 Runtime Semantics: Evaluation
+
+AsyncFunctionExpression :
+async
+function
+BindingIdentifier opt
+(
+FormalParameters
+)
+{
+AsyncFunctionBody
+}
+
+- Return InstantiateAsyncFunctionExpression of AsyncFunctionExpression .
+
+UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead
+
+- Let expr be the AwaitExpression that is covered by CoverAwaitExpressionAndAwaitUsingDeclarationHead .
+
+- Return ? Evaluation of expr .
+
+AwaitExpression :
+await
+UnaryExpression
+
+- Let exprRef be ? Evaluation of UnaryExpression .
+
+- Let value be ? GetValue ( exprRef ).
+
+- Return ? Await ( value ).
+
+15.9 Async Arrow Function Definitions
+
+Syntax
+
+AsyncArrowFunction [In, Yield, Await] :
+async
+[no LineTerminator here]
+AsyncArrowBindingIdentifier [?Yield]
+[no LineTerminator here]
+=>
+AsyncConciseBody [?In]
+
+CoverCallExpressionAndAsyncArrowHead [?Yield, ?Await]
+[no LineTerminator here]
+=>
+AsyncConciseBody [?In]
+
+AsyncConciseBody [In] :
+[lookahead ≠ { ]
+ExpressionBody [?In, +Await]
+
+{
+AsyncFunctionBody
+}
+
+AsyncArrowBindingIdentifier [Yield] :
+BindingIdentifier [?Yield, +Await]
+
+CoverCallExpressionAndAsyncArrowHead [Yield, Await] :
+MemberExpression [?Yield, ?Await]
+Arguments [?Yield, ?Await]
+
+Supplemental Syntax
+
+When processing an instance of the production
+
+AsyncArrowFunction :
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+the interpretation of CoverCallExpressionAndAsyncArrowHead is refined using the following grammar:
+
+AsyncArrowHead :
+async
+[no LineTerminator here]
+ArrowFormalParameters [~Yield, +Await]
+
+15.9.1 Static Semantics: Early Errors
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+- It is a Syntax Error if any element of the BoundNames of AsyncArrowBindingIdentifier also occurs in the LexicallyDeclaredNames of AsyncConciseBody .
+
+AsyncArrowFunction :
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+- CoverCallExpressionAndAsyncArrowHead must cover an AsyncArrowHead .
+
+- It is a Syntax Error if CoverCallExpressionAndAsyncArrowHead Contains YieldExpression is true .
+
+- It is a Syntax Error if CoverCallExpressionAndAsyncArrowHead Contains AwaitExpression is true .
+
+- It is a Syntax Error if any element of the BoundNames of CoverCallExpressionAndAsyncArrowHead also occurs in the LexicallyDeclaredNames of AsyncConciseBody .
+
+- It is a Syntax Error if AsyncConciseBodyContainsUseStrict of AsyncConciseBody is true and IsSimpleParameterList of CoverCallExpressionAndAsyncArrowHead is false .
+
+15.9.2 Static Semantics: AsyncConciseBodyContainsUseStrict
+
+The syntax-directed operation AsyncConciseBodyContainsUseStrict takes no arguments and returns a Boolean. It is defined piecewise over the following productions:
+
+AsyncConciseBody : ExpressionBody
+
+- Return false .
+
+AsyncConciseBody :
+{
+AsyncFunctionBody
+}
+
+- Return FunctionBodyContainsUseStrict of AsyncFunctionBody .
+
+15.9.3 Runtime Semantics: EvaluateAsyncConciseBody
+
+The syntax-directed operation EvaluateAsyncConciseBody takes arguments funcObj (an ECMAScript function object ) and argList (a List of ECMAScript language values ) and returns a return completion . It is defined piecewise over the following productions:
+
+AsyncConciseBody : ExpressionBody
+
+- Let promiseCapability be ! NewPromiseCapability ( %Promise% ).
+
+- Let completion be Completion ( FunctionDeclarationInstantiation ( funcObj , argList )).
+
+- If completion is an abrupt completion , then
+- Perform ! Call ( promiseCapability . [[Reject]] , undefined , « completion . [[Value]] »).
+
+- Else,
+- Perform AsyncFunctionStart ( promiseCapability , ExpressionBody ).
+
+- Return ReturnCompletion ( promiseCapability . [[Promise]] ).
+
+15.9.4 Runtime Semantics: InstantiateAsyncArrowFunctionExpression
+
+The syntax-directed operation InstantiateAsyncArrowFunctionExpression takes optional argument name (a property key or a Private Name ) and returns an ECMAScript function object . It is defined piecewise over the following productions:
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncArrowFunction .
+
+- Let params be AsyncArrowBindingIdentifier .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , params , AsyncConciseBody , lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Return closure .
+
+AsyncArrowFunction :
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+- If name is not present, set name to the empty String.
+
+- Let envRecord be the LexicalEnvironment of the running execution context .
+
+- Let privateEnv be the running execution context 's PrivateEnvironment.
+
+- Let sourceText be the source text matched by AsyncArrowFunction .
+
+- Let head be the AsyncArrowHead that is covered by CoverCallExpressionAndAsyncArrowHead .
+
+- Let params be the ArrowFormalParameters of head .
+
+- Let closure be OrdinaryFunctionCreate ( %AsyncFunction.prototype% , sourceText , params , AsyncConciseBody , lexical-this , envRecord , privateEnv ).
+
+- Perform SetFunctionName ( closure , name ).
+
+- Return closure .
+
+15.9.5 Runtime Semantics: Evaluation
+
+AsyncArrowFunction :
+async
+AsyncArrowBindingIdentifier
+=>
+AsyncConciseBody
+
+CoverCallExpressionAndAsyncArrowHead
+=>
+AsyncConciseBody
+
+- Return InstantiateAsyncArrowFunctionExpression of AsyncArrowFunction .
+
+15.10 Tail Position Calls
+
+15.10.1 Static Semantics: IsInTailPosition ( call )
+
+The abstract operation IsInTailPosition takes argument call (a CallExpression Parse Node , a MemberExpression Parse Node , or an OptionalChain Parse Node ) and returns a Boolean. It performs the following steps when called:
+
+- If IsStrict ( call ) is false , return false .
+
+- If call is not contained within a FunctionBody , a ConciseBody , or an AsyncConciseBody , return false .
+
+- Let body be the FunctionBody , ConciseBody , or AsyncConciseBody that most closely contains call .
+
+- If body is the FunctionBody of a GeneratorBody , return false .
+
+- If body is the FunctionBody of an AsyncFunctionBody , return false .
+
+- If body is the FunctionBody of an AsyncGeneratorBody , return false .
+
+- If body is an AsyncConciseBody , return false .
+
+- Return the result of HasCallInTailPosition of body with argument call .
+
+Note
+Tail Position calls are only defined in strict mode code because of a common non-standard language extension (see 10.2.4 ) that enables observation of the chain of caller contexts.
+
+15.10.2 Static Semantics: HasCallInTailPosition
+
+The syntax-directed operation HasCallInTailPosition takes argument call (a CallExpression Parse Node , a MemberExpression Parse Node , or an OptionalChain Parse Node ) and returns a Boolean.
+
+Note 1
+call is a Parse Node that represents a specific range of source text. When the following algorithms compare call to another Parse Node , it is a test of whether they represent the same source text.
+
+Note 2
+A potential tail position call that is immediately followed by return GetValue of the call result is also a possible tail position call. A function call cannot return a Reference Record , so such a GetValue operation will always return the same value as the actual function call result.
+
+Note 3
+A using declaration or await using declaration that precedes a call in the same Block , ForStatement , ForInOfStatement , FunctionBody , GeneratorBody , AsyncGeneratorBody , AsyncFunctionBody , or ClassStaticBlockBody prevents that call from being a possible tail position call.
+
+It is defined piecewise over the following productions:
+
+StatementList :
+StatementList
+StatementListItem
+
+- Let has be HasCallInTailPosition of the derived StatementList with argument call .
+
+- If has is true , return true .
+
+- If ContainsUsing of the derived StatementList is true , return false .
+
+- Return HasCallInTailPosition of StatementListItem with argument call .
+
+FunctionStatementList :
+[empty]
+
+StatementListItem :
+Declaration
+
+Statement :
+VariableStatement
+
+EmptyStatement
+
+ExpressionStatement
+
+ContinueStatement
+
+BreakStatement
+
+ThrowStatement
+
+DebuggerStatement
+
+Block :
+{
+}
+
+ReturnStatement :
+return
+;
+
+LabelledItem :
+FunctionDeclaration
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+var
+ForBinding
+of
+AssignmentExpression
+)
+Statement
+
+for
+(
+ForDeclaration
+of
+AssignmentExpression
+)
+Statement
+
+CaseBlock :
+{
+}
+
+- Return false .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+else
+Statement
+
+- Let has be HasCallInTailPosition of the first Statement with argument call .
+
+- If has is true , return true .
+
+- Return HasCallInTailPosition of the second Statement with argument call .
+
+IfStatement :
+if
+(
+Expression
+)
+Statement
+
+DoWhileStatement :
+do
+Statement
+while
+(
+Expression
+)
+;
+
+WhileStatement :
+while
+(
+Expression
+)
+Statement
+
+ForStatement :
+for
+(
+Expression opt
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+var
+VariableDeclarationList
+;
+Expression opt
+;
+Expression opt
+)
+Statement
+
+for
+(
+LexicalDeclaration
+Expression opt
+;
+Expression opt
+)
+Statement
+
+ForInOfStatement :
+for
+(
+LeftHandSideExpression
+in
+Expression
+)
+Statement
+
+for
+(
+var
+ForBinding
+in
+Expression
+)
+Statement
+
+for
+(
+ForDeclaration
+in
+Expression
+)
+Statement
+
+WithStatement :
+with
+(
+Expression
+)
+Statement
+
+- Return HasCallInTailPosition of Statement with argument call .
+
+LabelledStatement :
+LabelIdentifier
+:
+LabelledItem
+
+- Return HasCallInTailPosition of LabelledItem with argument call .
+
+ReturnStatement :
+return
+Expression
+;
+
+- Return HasCallInTailPosition of Expression with argument call .
+
+SwitchStatement :
+switch
+(
+Expression
+)
+CaseBlock
+
+- Return HasCallInTailPosition of CaseBlock with argument call .
+
+CaseBlock :
+{
+CaseClauses opt
+DefaultClause
+CaseClauses opt
+}
+
+- Let has be false .
+
+- If the first CaseClauses is present, set has to HasCallInTailPosition of the first CaseClauses with argument call .
+
+- If has is true , return true .
+
+- Set has to HasCallInTailPosition of DefaultClause with argument call .
+
+- If has is true , return true .
+
+- If the second CaseClauses is present, set has to HasCallInTailPosition of the second CaseClauses with argument call .
+
+- Return has .
+
+CaseClauses :
+CaseClauses
+CaseClause
+
+- Let has be HasCallInTailPosition of CaseClauses with argument call .
+
+- If has is true , return true .
+
+- Return HasCallInTailPosition of CaseClause with argument call .
+
+CaseClause :
+case
+Expression
+:
+StatementList opt
+
+DefaultClause :
+default
+:
+StatementList opt
+
+- If StatementList is present, return HasCallInTailPosition of StatementList with argument call .
+
+- Return false .
+
+TryStatement :
+try
+Block
+Catch
+
+- Return HasCallInTailPosition of Catch with argument call .
+
+TryStatement :
+try
+Block
+Finally
+
+try
+Block
+Catch
+Finally
+
+- Return HasCallInTailPosition of Finally with argument call .
+
+Catch :
+catch
+(
+CatchParameter
+)
+Block
+
+- Return HasCallInTailPosition of Block with argument call .
+
+AssignmentExpression :
+YieldExpression
+
+ArrowFunction
+
+AsyncArrowFunction
+
+LeftHandSideExpression
+=
+AssignmentExpression
+
+LeftHandSideExpression
+AssignmentOperator
+AssignmentExpression
+
+LeftHandSideExpression
+&&=
+AssignmentExpression
+
+LeftHandSideExpression
+||=
+AssignmentExpression
+
+LeftHandSideExpression
+??=
+AssignmentExpression
+
+BitwiseANDExpression :
+BitwiseANDExpression
+&
+EqualityExpression
+
+BitwiseXORExpression :
+BitwiseXORExpression
+^
+BitwiseANDExpression
+
+BitwiseORExpression :
+BitwiseORExpression
+|
+BitwiseXORExpression
+
+EqualityExpression :
+EqualityExpression
+==
+RelationalExpression
+
+EqualityExpression
+!=
+RelationalExpression
+
+EqualityExpression
+===
+RelationalExpression
+
+EqualityExpression
+!==
+RelationalExpression
+
+RelationalExpression :
+RelationalExpression
+<
+ShiftExpression
+
+RelationalExpression
+>
+ShiftExpression
+
+RelationalExpression
+<=
+ShiftExpression
+
+RelationalExpression
+>=
+ShiftExpression
+
+RelationalExpression
+instanceof
+ShiftExpression
+
+RelationalExpression
+in
+ShiftExpression
+
+PrivateIdentifier
+in
+ShiftExpression
+
+ShiftExpression :
+ShiftExpression
+<<
+AdditiveExpression
+
+ShiftExpression
+>>
+AdditiveExpression
+
+ShiftExpression
+>>>
+AdditiveExpression
+
+AdditiveExpression :
+AdditiveExpression
++
+MultiplicativeExpression
+
+AdditiveExpression
+-
+MultiplicativeExpression
+
+MultiplicativeExpression :
+MultiplicativeExpression
+MultiplicativeOperator
+ExponentiationExpression
+
+ExponentiationExpression :
+UpdateExpression
+**
+ExponentiationExpression
+
+UpdateExpression :
+LeftHandSideExpression
+++
+
+LeftHandSideExpression
+--
+
+++
+UnaryExpression
+
+--
+UnaryExpression
+
+UnaryExpression :
+delete
+UnaryExpression
+
+void
+UnaryExpression
+
+typeof
+UnaryExpression
+
++
+UnaryExpression
+
+-
+UnaryExpression
+
+~
+UnaryExpression
+
+!
+UnaryExpression
+
+CoverAwaitExpressionAndAwaitUsingDeclarationHead
+
+CallExpression :
+SuperCall
+
+ImportCall
+
+CallExpression
+[
+Expression
+]
+
+CallExpression
+.
+IdentifierName
+
+CallExpression
+.
+PrivateIdentifier
+
+NewExpression :
+new
+NewExpression
+
+MemberExpression :
+MemberExpression
+[
+Expression
+]
+
+MemberExpression
+.
+IdentifierName
+
+SuperProperty
+
+MetaProperty
+
+new
+MemberExpression
+Arguments
+
+MemberExpression
+.
+PrivateIdentifier
+
+PrimaryExpression :
+this
+
+IdentifierReference
+
+Literal
+
+ArrayLiteral
+
+ObjectLiteral
+
+FunctionExpression
+
+ClassExpression
+
+GeneratorExpression
+
+AsyncFunctionExpression
+
+AsyncGeneratorExpression
+
+RegularExpressionLiteral
+
+TemplateLiteral
+
+- Return false .
+
+Expression :
+AssignmentExpression
+
+Expression
+,
+AssignmentExpression
+
+- Return HasCallInTailPosition of AssignmentExpression with argument call .
+
+ConditionalExpression :
+ShortCircuitExpression
+?
+AssignmentExpression
+:
+AssignmentExpression
+
+- Let has be HasCallInTailPosition of the first AssignmentExpression with argument call .
+
+- If has is true , return true .
+
+- Return HasCallInTailPosition of the second AssignmentExpression with argument call .
+
+LogicalANDExpression :
+LogicalANDExpression
+&&
+BitwiseORExpression
+
+- Return HasCallInTailPosition of BitwiseORExpression with argument call .
+
+LogicalORExpression :
+LogicalORExpression
+||
+LogicalANDExpression
+
+- Return HasCallInTailPosition of LogicalANDExpression with argument call .
+
+CoalesceExpression :
+CoalesceExpressionHead
+??
+BitwiseORExpression
+
+- Return HasCallInTailPosition of BitwiseORExpression with argument call .
+
+CallExpression :
+CoverCallExpressionAndAsyncArrowHead
+
+CallExpression
+Arguments
+
+CallExpression
+TemplateLiteral
+
+- If this CallExpression is call , return true .
+
+- Return false .
+
+OptionalExpression :
+MemberExpression
+OptionalChain
+
+CallExpression
+OptionalChain
+
+OptionalExpression
+OptionalChain
+
+- Return HasCallInTailPosition of OptionalChain with argument call .
+
+OptionalChain :
+?.
+[
+Expression
+]
+
+?.
+IdentifierName
+
+?.
+PrivateIdentifier
+
+OptionalChain
+[
+Expression
+]
+
+OptionalChain
+.
+IdentifierName
+
+OptionalChain
+.
+PrivateIdentifier
+
+- Return false .
+
+OptionalChain :
+?.
+Arguments
+
+OptionalChain
+Arguments
+
+- If this OptionalChain is call , return true .
+
+- Return false .
+
+MemberExpression :
+MemberExpression
+TemplateLiteral
+
+- If this MemberExpression is call , return true .
+
+- Return false .
+
+PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList
+
+- Let expr be the ParenthesizedExpression that is covered by CoverParenthesizedExpressionAndArrowParameterList .
+
+- Return HasCallInTailPosition of expr with argument call .
+
+ParenthesizedExpression :
+(
+Expression
+)
+
+- Return HasCallInTailPosition of Expression with argument call .
+
+15.10.3 PrepareForTailCall ( )
+
+The abstract operation PrepareForTailCall takes no arguments and returns unused . It performs the following steps when called:
+
+- Assert : The current execution context will not subsequently be used for the evaluation of any ECMAScript code or built-in functions. The invocation of Call subsequent to the invocation of this abstract operation will create and push a new execution context before performing any such evaluation.
+
+- Discard all resources associated with the current execution context .
+
+- Return unused .
+
+A tail position call must either release any transient internal resources associated with the currently executing function execution context before invoking the target function or reuse those resources in support of the target function.
+
+Note
+For example, a tail position call should only grow an implementation's activation record stack by the amount that the size of the target function's activation record exceeds the size of the calling function's activation record. If the target function's activation record is smaller, then the total size of the stack should decrease.

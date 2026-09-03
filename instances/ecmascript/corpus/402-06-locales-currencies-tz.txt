@@ -1,0 +1,518 @@
+# 6 Identification of Locales, Currencies, Time Zones, Measurement Units, Numbering Systems, Collations, and Calendars
+# джерело: https://tc39.es/ecma402/#locales-currencies-tz
+# отримано: 2026-09-01
+
+6 Identification of Locales, Currencies, Time Zones, Measurement Units, Numbering Systems, Collations, and Calendars
+
+This clause describes the String values used in this specification to identify locales, currencies, time zones, measurement units, numbering systems, collations, calendars, and pattern strings.
+
+6.1 Case Sensitivity and Case Mapping
+
+The String values used to identify locales, currencies, scripts, and time zones are interpreted in an ASCII-case-insensitive manner, treating the code units 0x0041 through 0x005A (corresponding to Unicode characters LATIN CAPITAL LETTER A through LATIN CAPITAL LETTER Z) as equivalent to the corresponding code units 0x0061 through 0x007A (corresponding to Unicode characters LATIN SMALL LETTER A through LATIN SMALL LETTER Z), both inclusive. No other case folding equivalences are applied.
+
+Note
+For example, "ß" (U+00DF) must not match or be mapped to "SS" (U+0053, U+0053). "ı" (U+0131) must not match or be mapped to "I" (U+0049).
+
+The ASCII-uppercase of a String value string is the String value derived from string by replacing each occurrence of an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive) with the corresponding ASCII uppercase letter code unit (0x0041 through 0x005A, inclusive) while preserving all other code units.
+
+The ASCII-lowercase of a String value string is the String value derived from string by replacing each occurrence of an ASCII uppercase letter code unit (0x0041 through 0x005A, inclusive) with the corresponding ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive) while preserving all other code units.
+
+A String value A is an ASCII-case-insensitive match for String value B if the ASCII-uppercase of A is exactly the same sequence of code units as the ASCII-uppercase of B . A sequence of Unicode code points A is an ASCII-case-insensitive match for B if B is an ASCII-case-insensitive match for CodePointsToString ( A ).
+
+6.2 Language Tags
+
+This specification identifies locales using Unicode BCP 47 locale identifiers as defined by Unicode Technical Standard #35 Part 1 Core, Section 3.3 BCP 47 Conformance , and its algorithms refer to Unicode locale nonterminals defined in the grammars of Section 3 Unicode Language and Locale Identifiers .
+Each such identifier can also be referred to as a language tag , and is in fact a valid language tag as that term is used in BCP 47 .
+A locale identifier in canonical form as specified in Unicode Technical Standard #35 Part 1 Core, Section 3.2.1 Canonical Unicode Locale Identifiers is referred to as a " Unicode canonicalized locale identifier ".
+
+Locale identifiers consist of case-insensitive Unicode Basic Latin alphanumeric subtags separated by "-" (U+002D HYPHEN-MINUS) characters, with single-character subtags referred to as " singleton subtags ".
+Unicode Technical Standard #35 Part 1 Core, Section 3.6 Unicode BCP 47 U Extension subtag sequences are used extensively, and the term " Unicode locale extension sequence " describes the longest substring of a language tag that can be matched by the unicode_locale_extensions Unicode locale nonterminal and is not part of a "-x-…" private use subtag sequence . It starts with "-u-" and includes all immediately following subtags that are not singleton subtags, along with their preceding "-" separators. For example, the Unicode locale extension sequence of "en-US-u-fw-mon-x-u-ex-foobar" is "-u-fw-mon" .
+
+All well-formed language tags are appropriate for use with the APIs defined by this specification, but implementations are not required to use Unicode Common Locale Data Repository ( CLDR ) data for validating them; the set of locales and thus language tags that an implementation supports with adequate localizations is implementation-defined . Intl constructors map requested language tags to locales supported by their respective implementations.
+
+6.2.1 IsWellFormedLanguageTag ( locale )
+
+The abstract operation IsWellFormedLanguageTag takes argument locale (a String) and returns a Boolean. It determines whether locale is a well-formed language tag conforming with the well-formedness constraints of a unicode_bcp47_locale_id . It does not consider whether locale conveys any meaningful semantics, nor does it differentiate between aliased subtags and their preferred replacement subtags or require canonical casing or subtag ordering. It performs the following steps when called:
+
+- Let lowerLocale be the ASCII-lowercase of locale .
+
+- If lowerLocale cannot be matched by the unicode_locale_id Unicode locale nonterminal , return false .
+
+- If lowerLocale uses any of the backwards compatibility syntax described in Unicode Technical Standard #35 Part 1 Core, Section 3.3 BCP 47 Conformance , return false .
+
+- Let baseName be GetLocaleBaseName ( lowerLocale ).
+
+- Let variants be GetLocaleVariants ( baseName ).
+
+- If variants is not undefined , then
+- If variants contains any duplicate subtags , return false .
+
+- Let extensions be the suffix of lowerLocale following baseName .
+
+- NOTE: A "-x-…" private use subtag sequence matched by the pu_extensions Unicode locale nonterminal must be ignored, but an isolated final "x" subtag with no following content does not affect any of the below checks.
+
+- Let puIndex be StringIndexOf ( extensions , "-x-" , 0).
+
+- If puIndex is not not-found , set extensions to the substring of extensions from 0 to puIndex .
+
+- If extensions is not the empty String, then
+- If extensions contains any duplicate singleton subtags , return false .
+
+- Let transformExtension be the longest substring of extensions matched by the transformed_extensions Unicode locale nonterminal . If there is no such substring , return true .
+
+- Assert : The substring of transformExtension from 0 to 3 is "-t-" .
+
+- Let tPrefix be the substring of transformExtension from 3.
+
+- Let tlang be the longest prefix of tPrefix matched by the tlang Unicode locale nonterminal . If there is no such prefix, return true .
+
+- Let tlangVariants be GetLocaleVariants ( tlang ).
+
+- If tlangVariants is not undefined , then
+- If tlangVariants contains any duplicate subtags , return false .
+
+- Return true .
+
+6.2.2 CanonicalizeUnicodeLocaleId ( locale )
+
+The abstract operation CanonicalizeUnicodeLocaleId takes argument locale (a language tag ) and returns a Unicode canonicalized locale identifier . It returns the canonical and case-regularized form of locale . It performs the following steps when called:
+
+- Let localeId be the String value resulting from performing the Processing LocaleIds algorithm to transform locale to canonical form per Unicode Technical Standard #35 Part 1 Core, Annex C LocaleId Canonicalization .
+
+- If localeId contains a substring that is a Unicode locale extension sequence , then
+- Let extension be the String value consisting of the substring of the Unicode locale extension sequence within localeId .
+
+- Let newExtension be "-u" .
+
+- Let components be UnicodeExtensionComponents ( extension ).
+
+- For each element attr of components . [[Attributes]] , do
+- Set newExtension to the string-concatenation of newExtension , "-" , and attr .
+
+- For each Record { [[Key]] , [[Value]] } keyword of components . [[Keywords]] , do
+- Set newExtension to the string-concatenation of newExtension , "-" , and keyword . [[Key]] .
+
+- If keyword . [[Value]] is not the empty String, then
+- Set newExtension to the string-concatenation of newExtension , "-" , and keyword . [[Value]] .
+
+- Assert : newExtension is not "-u" .
+
+- Set localeId to a copy of localeId in which the first appearance of substring extension has been replaced with newExtension .
+
+- Return localeId .
+
+Note
+Step 2 ensures that a Unicode locale extension sequence in the returned language tag contains:
+
+- only the first instance of any attribute duplicated in the input, and
+
+- only the first keyword for a given key in the input.
+
+6.2.3 DefaultLocale ( )
+
+The implementation-defined abstract operation DefaultLocale takes no arguments and returns a Unicode canonicalized locale identifier . The returned String value represents the well-formed ( 6.2.1 ) and canonicalized ( 6.2.2 ) language tag for the host environment 's current locale. It must not contain a Unicode locale extension sequence .
+
+Note
+The returned value is is a potential fingerprinting vector. In browser environments, it should match navigator.language to avoid providing any additional distinguishing information.
+
+6.3 Currency Codes
+
+This specification identifies currencies using 3-letter currency codes as defined by ISO 4217. Their canonical form is uppercase.
+
+All well-formed 3-letter ISO 4217 currency codes are allowed. However, the set of combinations of currency code and language tag for which localized currency symbols are available is implementation dependent. Where a localized currency symbol is not available, the ISO 4217 currency code is used for formatting.
+
+6.3.1 IsWellFormedCurrencyCode ( currency )
+
+The abstract operation IsWellFormedCurrencyCode takes argument currency (a String) and returns a Boolean. It verifies that the currency argument represents a well-formed 3-letter ISO 4217 currency code. It performs the following steps when called:
+
+- If the length of currency is not 3, return false .
+
+- Let normalized be the ASCII-uppercase of currency .
+
+- If normalized contains any code unit outside of 0x0041 through 0x005A (corresponding to Unicode characters LATIN CAPITAL LETTER A through LATIN CAPITAL LETTER Z), return false .
+
+- Return true .
+
+6.4 AvailableCanonicalCurrencies ( )
+
+The implementation-defined abstract operation AvailableCanonicalCurrencies takes no arguments and returns a List of Strings. The returned List is sorted according to lexicographic code unit order , and contains unique, well-formed, and upper case canonicalized 3-letter ISO 4217 currency codes, identifying the currencies for which the implementation provides the functionality of Intl.DisplayNames and Intl.NumberFormat objects.
+
+6.5 Use of the IANA Time Zone Database
+
+Implementations that adopt this specification must be time zone aware : they must use the IANA Time Zone Database https://www.iana.org/time-zones/ to supply available named time zone identifiers and data used in ECMAScript calculations and formatting.
+This section defines how the IANA Time Zone Database should be used by time zone aware implementations.
+No String may be an available named time zone identifier unless it is a Zone name or a Link name in the IANA Time Zone Database.
+Available named time zone identifiers returned by ECMAScript built-in objects must use the casing found in the IANA Time Zone Database.
+
+Each Zone in the IANA Time Zone Database must be a primary time zone identifier and each Link name in the IANA Time Zone Database must be a non-primary time zone identifier that resolves to its corresponding Zone name, with the following exceptions implemented in AvailableNamedTimeZoneIdentifiers :
+
+-
+For historical reasons, "UTC" must be a primary time zone identifier .
+"Etc/UTC" , "Etc/GMT" , and "GMT" , as well as all Link names that resolve to any of them, must be non-primary time identifiers that resolve to "UTC" .
+
+-
+Any Link name that is present in the “TZ” column of file zone.tab must be a primary time zone identifier .
+For example, both "Europe/Prague" and "Europe/Bratislava" must be primary time zone identifiers .
+This requirement guarantees at least one primary time zone identifier for each ISO 3166-1 Alpha-2 country code, and ensures that future changes to time zone rules of one country will not affect ECMAScript programs that use another country's time zone(s), unless those countries' territorial boundaries have also changed.
+
+-
+Any Link name that is not listed in the “TZ” column of file zone.tab and that represents a geographical area entirely contained within the territory of a single ISO 3166-1 Alpha-2 country code must resolve to a primary identifier that also represents a geographical area entirely contained within the territory of the same country code.
+For example, "Atlantic/Jan_Mayen" must resolve to "Arctic/Longyearbyen" .
+
+Note
+
+The IANA Time Zone Database offers build options that affect which available named time zone identifiers are primary.
+The default build options merge different countries' time zones, for example "Atlantic/Reykjavik" is built as a Link to the Zone "Africa/Abidjan" .
+Geographically and politically distinct locations are likely to introduce divergent time zone rules in a future version of the IANA Time Zone Database.
+The exceptions above serve to mitigate these future-compatibility issues.
+
+The Unicode Common Locale Data Repository ( CLDR ) implements most of the exceptions above when determining which available named time zone identifiers are primary or non-primary.
+Although use of CLDR data is recommended for consistency between implementations, it is not required.
+Non-CLDR-based implementations can still use CLDR's identifier data in timezone.xml .
+Implementations may also build the IANA Time Zone Database directly, for example by using build options such as PACKRATDATA=backzone PACKRATLIST=zone.tab and performing any post-processing needed to ensure compliance with the requirements above.
+
+The IANA Time Zone Database is typically updated between five and ten times per year.
+These updates may add new Zone or Link names, may change Zones to Links, and may change the UTC offsets and transitions associated with any Zone.
+Implementations are recommended to include updates to the IANA Time Zone Database as soon as possible.
+Such prompt action ensures that ECMAScript programs can accurately perform time-zone-sensitive calculations and can use newly-added available named time zone identifiers supplied by external input or the host environment .
+
+Although the IANA Time Zone Database maintainers strive for stability, in rare cases (averaging less than once per year) a Zone may be replaced by a new Zone.
+For example, in 2022 " Europe/Kiev " was deprecated to a Link resolving to a new " Europe/Kyiv " Zone.
+The deprecated Link is called a renamed time zone identifier and the newly-added Zone is called a replacement time zone identifier .
+
+To reduce disruption from these infrequent changes, implementations should initially add each replacement time zone identifier as a non-primary time zone identifier that resolves to the existing renamed time zone identifier.
+This allows ECMAScript programs to recognize both identifiers, but also reduces the chance that an ECMAScript program will send the replacement time zone identifier to another system that does not yet recognize it.
+After a rename waiting period , implementations should promote the new Zone to a primary time zone identifier while simultaneously demoting the renamed time zone identifier to non-primary.
+To provide ample time for other systems to be updated, the recommended rename waiting period is two years.
+However, it does not need to be either exact or dynamic.
+Instead, implementations should make the replacement time zone identifier primary after the waiting period as part of their normal release process for updating time zone data.
+
+A waiting period should only apply when a new Zone is added to replace an existing Zone.
+If an existing Zone and Link are swapped, then no renaming has happened and no waiting period is necessary.
+
+If implementations revise time zone information during the lifetime of an agent , then it is required that the list of available named time zone identifiers , the primary time zone identifier associated with any available named time zone identifier , and the UTC offsets and transitions associated with any available named time zone identifier , be consistent with results previously observed by that agent .
+Due to the complexity of supporting this requirement, it is recommended that implementations maintain a fully consistent copy of the IANA Time Zone Database for the lifetime of each agent .
+
+This section complements but does not supersede 21.4.1.19 .
+
+6.5.1 AvailableNamedTimeZoneIdentifiers ( )
+
+The implementation-defined abstract operation AvailableNamedTimeZoneIdentifiers takes no arguments and returns a List of Time Zone Identifier Records .
+Its result describes all available named time zone identifiers in this implementation, as well as the primary time zone identifier corresponding to each available named time zone identifier .
+The List is ordered according to the [[Identifier]] field of each Time Zone Identifier Record .
+
+This definition supersedes the definition provided in 21.4.1.23 .
+
+- Let identifiers be a List containing the String value of each Zone or Link name in the IANA Time Zone Database.
+
+- Assert : No element of identifiers is an ASCII-case-insensitive match for any other element.
+
+- Sort identifiers according to lexicographic code unit order .
+
+- Let result be a new empty List .
+
+- For each element identifier of identifiers , do
+- Let primary be identifier .
+
+- If identifier is a Link name in the IANA Time Zone Database and identifier is not present in the “TZ” column of zone.tab of the IANA Time Zone Database, then
+- Let zone be the Zone name that identifier resolves to, according to the rules for resolving Link names in the IANA Time Zone Database.
+
+- If zone starts with "Etc/" , then
+- Set primary to zone .
+
+- Else,
+- Let identifierCountryCode be the ISO 3166-1 Alpha-2 country code whose territory contains the geographical area corresponding to identifier .
+
+- Let zoneCountryCode be the ISO 3166-1 Alpha-2 country code whose territory contains the geographical area corresponding to zone .
+
+- If identifierCountryCode is zoneCountryCode , then
+- Set primary to zone .
+
+- Else,
+- Let countryCodeLineCount be the number of lines in file zone.tab of the IANA Time Zone Database where the “country-code” column is identifierCountryCode .
+
+- If countryCodeLineCount is 1, then
+- Let countryCodeLine be the line in file zone.tab of the IANA Time Zone Database where the “country-code” column is identifierCountryCode .
+
+- Set primary to the contents of the “TZ” column of countryCodeLine .
+
+- Else,
+- Let backzone be undefined .
+
+- Let backzoneLinkLines be the List of lines in the file backzone of the IANA Time Zone Database that start with either "Link " or "#PACKRATLIST zone.tab Link " .
+
+- For each element line of backzoneLinkLines , do
+- Let i be StringIndexOf ( line , "Link " , 0).
+
+- Set line to the substring of line from i + 5.
+
+- Let backzoneAndLink be StringSplitToList ( line , " " ).
+
+- Assert : backzoneAndLink has at least two elements, and both backzoneAndLink [0] and backzoneAndLink [1] are available named time zone identifiers .
+
+- If backzoneAndLink [1] is identifier , then
+- Assert : backzone is undefined .
+
+- Set backzone to backzoneAndLink [0].
+
+- Assert : backzone is not undefined .
+
+- Set primary to backzone .
+
+- If primary is one of "Etc/UTC" , "Etc/GMT" , or "GMT" , set primary to "UTC" .
+
+- If primary is a replacement time zone identifier and its rename waiting period has not concluded, then
+- Let renamedIdentifier be the renamed time zone identifier that primary replaced.
+
+- Set primary to renamedIdentifier .
+
+- Let record be the Time Zone Identifier Record { [[Identifier]] : identifier , [[PrimaryIdentifier]] : primary }.
+
+- Append record to result .
+
+- Assert : result contains a Time Zone Identifier Record utcRecord such that utcRecord . [[Identifier]] is "UTC" and utcRecord . [[PrimaryIdentifier]] is "UTC" .
+
+- Return result .
+
+Note 1
+The algorithm above for resolving Links to primary time zone identifiers is intended to correspond to the behaviour of icu::TimeZone::getIanaID() in the International Components for Unicode ( ICU ) and the processes for maintaining time zone identifier data in the Unicode Common Locale Data Repository ( CLDR ).
+
+This algorithm resolves Links to primary time zone identifiers without crossing the boundaries of ISO 3166-1 Alpha-2 country codes, using data from files zone.tab and backzone of the IANA Time Zone Database.
+If the country code of a Link has only one line in zone.tab , then that line will determine the primary time zone identifier .
+However, if that country code has multiple lines in zone.tab , then historical mappings in backzone must be used to identify the correct primary time zone identifier .
+
+For example, to resolve "Pacific/Truk" (in country code "FM") if the default build options of the IANA Time Zone Database identify it as a Link to "Pacific/Port_Moresby" (in country code "PG"), then the “country-code” column of zone.tab must be checked for lines corresponding with "FM".
+If there were only one such line, then the “TZ” column of that line would determine the primary time zone identifier associated with "Pacific/Truk".
+But if there are multiple "FM" lines in zone.tab , then backzone must be inspected and a line such as "Link Pacific/Chuuk Pacific/Truk" would result in using "Pacific/Chuuk" as the primary time zone identifier .
+
+Note that zone.tab is the preferred source of mapping data because backzone mappings may, in rare cases, cross the boundaries of ISO 3166-1 Alpha-2 country codes.
+For example, "Atlantic/Jan_Mayen" (in country code "SJ") is mapped in backzone to "Europe/Oslo" (in country code "NO").
+As of the 2024a release of the IANA Time Zone Database, "Atlantic/Jan_Mayen" is the only case where this happens.
+
+Note 2
+Time zone identifiers in the IANA Time Zone Database can change over time.
+At a minimum, it is recommended that implementations limit changes to the result of AvailableNamedTimeZoneIdentifiers to the changes allowed by GetAvailableNamedTimeZoneIdentifier , for the lifetime of the surrounding agent .
+Due to the complexity of supporting these recommendations, it is recommended that the result of AvailableNamedTimeZoneIdentifiers remains the same for the lifetime of the surrounding agent .
+
+6.5.2 GetAvailableNamedTimeZoneIdentifier ( timeZoneIdentifier )
+
+The abstract operation GetAvailableNamedTimeZoneIdentifier takes argument timeZoneIdentifier (a String) and returns either a Time Zone Identifier Record or empty .
+If timeZoneIdentifier is an available named time zone identifier , then it returns one of the Records in the List returned by AvailableNamedTimeZoneIdentifiers .
+Otherwise, empty will be returned.
+It performs the following steps when called:
+
+- For each element record of AvailableNamedTimeZoneIdentifiers (), do
+- If record . [[Identifier]] is an ASCII-case-insensitive match for timeZoneIdentifier , return record .
+
+- Return empty .
+
+Note
+For any timeZoneIdentifier , or any value that is an ASCII-case-insensitive match for it, it is required that the resulting Time Zone Identifier Record contain the same field values for the lifetime of the surrounding agent .
+Furthermore, it is required that time zone identifiers not dynamically change from primary to non-primary during the lifetime of the surrounding agent , meaning that if timeZoneIdentifier is an ASCII-case-insensitive match for the [[PrimaryIdentifier]] field of the result of a previous call to GetAvailableNamedTimeZoneIdentifier, then GetAvailableNamedTimeZoneIdentifier( timeZoneIdentifier ) must return a Time Zone Identifier Record where [[Identifier]] is [[PrimaryIdentifier]] .
+Due to the complexity of supporting these requirements, it is recommended that the result of AvailableNamedTimeZoneIdentifiers (and therefore GetAvailableNamedTimeZoneIdentifier too) remains the same for the lifetime of the surrounding agent .
+
+6.5.3 AvailablePrimaryTimeZoneIdentifiers ( )
+
+The abstract operation AvailablePrimaryTimeZoneIdentifiers takes no arguments and returns a List of Strings. The returned List is a sorted List of supported Zone and Link names in the IANA Time Zone Database. It performs the following steps when called:
+
+- Let records be AvailableNamedTimeZoneIdentifiers ().
+
+- Let result be a new empty List .
+
+- For each element timeZoneIdentifierRecord of records , do
+- If timeZoneIdentifierRecord . [[Identifier]] is timeZoneIdentifierRecord . [[PrimaryIdentifier]] , then
+- Append timeZoneIdentifierRecord . [[Identifier]] to result .
+
+- Return result .
+
+6.5.4 StringSplitToList ( string , separator )
+
+The abstract operation StringSplitToList takes arguments string (a String) and separator (a String) and returns a List of Strings.
+The returned List contains all disjoint substrings of string that do not contain separator but are immediately preceded and/or immediately followed by an occurrence of separator .
+Each such substring will be the empty String between adjacent occurrences of separator , before a separator at the very start of string , or after a separator at the very end of string , but otherwise will not be empty.
+It performs the following steps when called:
+
+- Assert : string is not the empty String.
+
+- Assert : separator is not the empty String.
+
+- Let separatorLength be the length of separator .
+
+- Let substrings be a new empty List .
+
+- Let i be 0.
+
+- Let j be StringIndexOf ( string , separator , 0).
+
+- Repeat, while j is not not-found ,
+- Let substring be the substring of string from i to j .
+
+- Append substring to substrings .
+
+- Set i to j + separatorLength .
+
+- Set j to StringIndexOf ( string , separator , i ).
+
+- Let substring be the substring of string from i .
+
+- Append substring to substrings .
+
+- Return substrings .
+
+6.6 Measurement Unit Identifiers
+
+This specification identifies measurement units using a core unit identifier (or equivalently core unit ID ) as defined by Unicode Technical Standard #35 Part 2 General, Section 6.2 Unit Identifiers . Their canonical form is a string containing only Unicode Basic Latin lowercase letters (U+0061 LATIN SMALL LETTER A through U+007A LATIN SMALL LETTER Z) with zero or more medial hyphens (U+002D HYPHEN-MINUS).
+
+Only a limited set of core unit identifiers are sanctioned.
+Attempting to use an unsanctioned core unit identifier results in a RangeError .
+
+6.6.1 IsWellFormedUnitIdentifier ( unitIdentifier )
+
+The abstract operation IsWellFormedUnitIdentifier takes argument unitIdentifier (a String) and returns a Boolean. It verifies that the unitIdentifier argument represents a well-formed core unit identifier that is either a sanctioned single unit or a complex unit formed by division of two sanctioned single units. It performs the following steps when called:
+
+- If IsSanctionedSingleUnitIdentifier ( unitIdentifier ) is true , then
+- Return true .
+
+- Let numeratorAndDenominator be StringSplitToList ( unitIdentifier , "-per-" ).
+
+- If numeratorAndDenominator does not have exactly 2 elements, return false .
+
+- If IsSanctionedSingleUnitIdentifier ( numeratorAndDenominator [0]) is false , return false .
+
+- If IsSanctionedSingleUnitIdentifier ( numeratorAndDenominator [1]) is false , return false .
+
+- Return true .
+
+6.6.2 IsSanctionedSingleUnitIdentifier ( unitIdentifier )
+
+The abstract operation IsSanctionedSingleUnitIdentifier takes argument unitIdentifier (a String) and returns a Boolean. It verifies that the unitIdentifier argument is among the single unit identifiers sanctioned in the current version of this specification, which are a subset of the Common Locale Data Repository release 38 unit validity data ; the list may grow over time. As discussed in Unicode Technical Standard #35 Part 2 General, Section 6.2 Unit Identifiers , a single unit identifier is a core unit identifier that is not composed of multiplication or division of other unit identifiers. It performs the following steps when called:
+
+- If unitIdentifier is listed in Table 2 below, return true .
+
+- Else, return false .
+
+Table 2: Single units sanctioned for use in ECMAScript
+
+Single Unit Identifier
+
+acre
+
+bit
+
+byte
+
+celsius
+
+centimeter
+
+day
+
+degree
+
+fahrenheit
+
+fluid-ounce
+
+foot
+
+gallon
+
+gigabit
+
+gigabyte
+
+gram
+
+hectare
+
+hour
+
+inch
+
+kilobit
+
+kilobyte
+
+kilogram
+
+kilometer
+
+liter
+
+megabit
+
+megabyte
+
+meter
+
+microsecond
+
+mile
+
+mile-scandinavian
+
+milliliter
+
+millimeter
+
+millisecond
+
+minute
+
+month
+
+nanosecond
+
+ounce
+
+percent
+
+petabyte
+
+pound
+
+second
+
+stone
+
+terabit
+
+terabyte
+
+week
+
+yard
+
+year
+
+6.6.3 AvailableCanonicalUnits ( )
+
+The abstract operation AvailableCanonicalUnits takes no arguments and returns a List of Strings. The returned List is sorted according to lexicographic code unit order , and consists of the unique values of simple unit identifiers listed in every row of Table 2 , except the header row.
+
+6.7 Numbering System Identifiers
+
+This specification identifies numbering systems using a numbering system identifier corresponding with the name referenced by Unicode Technical Standard #35 Part 3 Numbers, Section 1 Numbering Systems . Their canonical form is a string containing only Unicode Basic Latin lowercase letters (U+0061 LATIN SMALL LETTER A through U+007A LATIN SMALL LETTER Z).
+
+6.7.1 AvailableCanonicalNumberingSystems ( )
+
+The implementation-defined abstract operation AvailableCanonicalNumberingSystems takes no arguments and returns a List of Strings. The returned List is sorted according to lexicographic code unit order , and contains unique canonical numbering systems identifiers identifying the numbering systems for which the implementation provides the functionality of Intl.DateTimeFormat, Intl.NumberFormat, and Intl.RelativeTimeFormat objects. The List must include the Numbering System value of every row of Table 30 , except the header row.
+
+6.8 Collation Types
+
+This specification identifies collations using a collation type as defined by Unicode Technical Standard #35 Part 5 Collation, Section 3.1 Collation Types . Their canonical form is a string containing only Unicode Basic Latin lowercase letters (U+0061 LATIN SMALL LETTER A through U+007A LATIN SMALL LETTER Z) with zero or more medial hyphens (U+002D HYPHEN-MINUS).
+
+6.8.1 AvailableCanonicalCollations ( )
+
+The implementation-defined abstract operation AvailableCanonicalCollations takes no arguments and returns a List of Strings. The returned List is sorted according to lexicographic code unit order , and contains unique canonical collation types identifying the collations for which the implementation provides the functionality of Intl.Collator objects.
+
+6.9 Calendar Types
+
+This specification identifies calendars using a calendar type as defined by Unicode Technical Standard #35 Part 4 Dates, Section 2 Calendar Elements . Their canonical form is a string containing only Unicode Basic Latin lowercase letters (U+0061 LATIN SMALL LETTER A through U+007A LATIN SMALL LETTER Z) with zero or more medial hyphens (U+002D HYPHEN-MINUS).
+
+6.9.1 AvailableCalendars ( )
+
+The implementation-defined abstract operation AvailableCalendars takes no arguments and returns a List of Strings. The returned List is sorted according to lexicographic code unit order , and contains unique calendar types in canonical form ( 6.9 ) identifying the calendars for which the implementation provides the functionality of Intl.DateTimeFormat objects, including their aliases (e.g., either both or neither of "islamicc" and "islamic-civil" ). The List must include "iso8601" .
+
+6.10 Pattern String Types
+
+Pattern String is a String value which contains zero or more substrings of the form "{key}" , where key can be any non-empty sequence consisting only of elements from the ASCII word characters . The syntax of the abstract pattern strings is an implementation detail and is not exposed to users of ECMA-402.

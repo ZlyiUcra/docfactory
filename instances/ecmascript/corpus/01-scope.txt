@@ -1,0 +1,7 @@
+# 1 Scope
+# джерело: https://tc39.es/ecma262/multipage/scope.html#sec-scope
+# отримано: 2026-09-01
+
+1 Scope
+
+This Standard defines the ECMAScript 2027 general-purpose programming language.

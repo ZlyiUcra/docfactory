@@ -1,0 +1,6 @@
+{
+  "instance": "ecmascript",
+  "port": 8760,
+  "collection": "docs-ecmascript",
+  "embed_model": "bge-small"
+}

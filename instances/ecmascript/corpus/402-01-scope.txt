@@ -1,0 +1,7 @@
+# 1 Scope
+# джерело: https://tc39.es/ecma402/#scope
+# отримано: 2026-09-01
+
+1 Scope
+
+This Standard defines the application programming interface for ECMAScript objects that support programs that need to adapt to the linguistic and cultural conventions used by different human languages and countries.

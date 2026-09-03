@@ -1,0 +1,118 @@
+{
+  "instance": "ecmascript",
+  "sources": [
+    {
+      "id": "ecma262",
+      "url": "https://tc39.es/ecma262/multipage/",
+      "reader": "toc",
+      "expand": "chapters",
+      "title": "ECMA-262 ECMAScript Language Specification",
+      "added": "2026-08-29",
+      "note": "Уся мова. Багатосторінкове видання: зі змісту беруться адреси глав, кожна глава — окремий файл."
+    },
+    {
+      "id": "ecma402",
+      "url": "https://tc39.es/ecma402/",
+      "reader": "page",
+      "title": "ECMA-402 ECMAScript Internationalization API Specification",
+      "added": "2026-08-29",
+      "note": "Бібліотека Intl. Одна сторінка ecmarkup, ділиться на розділи по нумерації самої специфікації."
+    },
+    {
+      "id": "404-json",
+      "url": "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf",
+      "reader": "pdf",
+      "title": "ECMA-404 The JSON Data Interchange Syntax, 2nd edition",
+      "added": "2026-08-29",
+      "note": "Синтаксис JSON. На нього спираються JSON.parse і JSON.stringify з 262."
+    },
+    {
+      "id": "414-suite",
+      "url": "https://ecma-international.org/wp-content/uploads/ECMA-414_3rd_edition_december_2017.pdf",
+      "reader": "pdf",
+      "title": "ECMA-414 ECMAScript Specification Suite, 3rd edition",
+      "added": "2026-08-29",
+      "note": "Перелік стандартів, які разом складають ECMAScript; тримає набір цілим."
+    },
+    {
+      "id": "rfc4647-matching-of-language-tags",
+      "url": "https://www.rfc-editor.org/rfc/rfc4647.txt",
+      "reader": "rfc",
+      "title": "RFC 4647 Matching of Language Tags",
+      "added": "2026-08-29",
+      "note": "Зіставлення мовних тегів — основа localeMatcher у 402."
+    },
+    {
+      "id": "uax29-text-segmentation",
+      "url": "https://www.unicode.org/reports/tr29/",
+      "reader": "report",
+      "title": "Unicode Standard Annex #29: Unicode Text Segmentation",
+      "added": "2026-08-29",
+      "note": "Межі графем, слів і речень — на цьому стоїть Intl.Segmenter."
+    },
+    {
+      "id": "uts10-collation-algorithm",
+      "url": "https://www.unicode.org/reports/tr10/",
+      "reader": "report",
+      "title": "Unicode Technical Standard #10: Unicode Collation Algorithm",
+      "added": "2026-08-29",
+      "note": "Алгоритм упорядкування рядків — основа Intl.Collator."
+    },
+    {
+      "id": "uts35-1-core",
+      "url": "https://www.unicode.org/reports/tr35/",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 1: Core",
+      "added": "2026-08-29",
+      "note": "LDML, ядро: як влаштовані дані локалей, на яких працює 402."
+    },
+    {
+      "id": "uts35-2-general",
+      "url": "https://www.unicode.org/reports/tr35/tr35-general.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 2: General",
+      "added": "2026-08-29",
+      "note": "LDML, загальна частина: покажчики, псевдоніми, елементи спільні для решти частин."
+    },
+    {
+      "id": "uts35-3-numbers",
+      "url": "https://www.unicode.org/reports/tr35/tr35-numbers.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 3: Numbers",
+      "added": "2026-08-29",
+      "note": "Формати чисел і валют — дані для Intl.NumberFormat."
+    },
+    {
+      "id": "uts35-4-dates",
+      "url": "https://www.unicode.org/reports/tr35/tr35-dates.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 4: Dates",
+      "added": "2026-08-29",
+      "note": "Формати дат і часу — дані для Intl.DateTimeFormat."
+    },
+    {
+      "id": "uts35-5-collation",
+      "url": "https://www.unicode.org/reports/tr35/tr35-collation.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 5: Collation",
+      "added": "2026-08-29",
+      "note": "Налаштування впорядкування по локалях — параметри Intl.Collator."
+    },
+    {
+      "id": "uts35-6-supplemental",
+      "url": "https://www.unicode.org/reports/tr35/tr35-info.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 6: Supplemental",
+      "added": "2026-08-29",
+      "note": "Додаткові дані: відповідність мов, регіонів, валют — вжиток по всьому 402."
+    },
+    {
+      "id": "uts35-7-keyboards",
+      "url": "https://www.unicode.org/reports/tr35/tr35-keyboards.html",
+      "reader": "ldml",
+      "title": "Unicode Technical Standard #35: LDML Part 7: Keyboards",
+      "added": "2026-08-29",
+      "note": "Розкладки клавіатур у LDML; входить у набір як частина UTS #35."
+    }
+  ]
+}

@@ -1,0 +1,1674 @@
+# 11 DateTimeFormat Objects
+# джерело: https://tc39.es/ecma402/#datetimeformat-objects
+# отримано: 2026-09-01
+
+11 DateTimeFormat Objects
+
+11.1 The Intl.DateTimeFormat Constructor
+
+The Intl.DateTimeFormat constructor :
+
+- is %Intl.DateTimeFormat% .
+
+- is the initial value of the "DateTimeFormat" property of the Intl object .
+
+Behaviour common to all service constructor properties of the Intl object is specified in 9.1 .
+
+11.1.1 Intl.DateTimeFormat ( [ locales [ , options ] ] )
+
+When the Intl.DateTimeFormat function is called with optional arguments locales and options , the following steps are taken:
+
+- If NewTarget is undefined , let newTarget be the active function object , else let newTarget be NewTarget.
+
+- Let dateTimeFormat be ? CreateDateTimeFormat ( newTarget , locales , options , any , date ).
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Let this be the this value.
+
+- Return ? ChainDateTimeFormat ( dateTimeFormat , NewTarget, this ).
+
+- Return dateTimeFormat .
+
+Normative Optional
+
+11.1.1.1 ChainDateTimeFormat ( dateTimeFormat , newTarget , this )
+
+The abstract operation ChainDateTimeFormat takes arguments dateTimeFormat (an Intl.DateTimeFormat), newTarget (an ECMAScript language value ), and this (an ECMAScript language value ) and returns either a normal completion containing an Object or a throw completion . It performs the following steps when called:
+
+- If newTarget is undefined and ? OrdinaryHasInstance ( %Intl.DateTimeFormat% , this ) is true , then
+- Perform ? DefinePropertyOrThrow ( this , %Intl% . [[FallbackSymbol]] , PropertyDescriptor { [[Value]] : dateTimeFormat , [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }).
+
+- Return this .
+
+- Return dateTimeFormat .
+
+11.1.2 CreateDateTimeFormat ( newTarget , locales , options , required , defaults )
+
+The abstract operation CreateDateTimeFormat takes arguments newTarget (a constructor ), locales (an ECMAScript language value ), options (an ECMAScript language value ), required ( date , time , or any ), and defaults ( date , time , or all ) and returns either a normal completion containing a DateTimeFormat object or a throw completion . It performs the following steps when called:
+
+- Let dateTimeFormat be ? OrdinaryCreateFromConstructor ( newTarget , "%Intl.DateTimeFormat.prototype%" , « [[InitializedDateTimeFormat]] , [[Locale]] , [[Calendar]] , [[NumberingSystem]] , [[TimeZone]] , [[HourCycle]] , [[DateStyle]] , [[TimeStyle]] , [[DateTimeFormat]] , [[BoundFormat]] »).
+
+- Let specialOptions be the Record { [[Hour12]] : undefined }.
+
+- Let modifyResolutionOptions be a new Abstract Closure with parameters ( options ) that captures specialOptions and performs the following steps when called:
+- Set specialOptions . [[Hour12]] to options . [[hour12]] .
+
+- Remove field [[hour12]] from options .
+
+- If specialOptions . [[Hour12]] is not undefined , set options . [[hc]] to null .
+
+- Let optionsResolution be ? ResolveOptions ( %Intl.DateTimeFormat% , %Intl.DateTimeFormat% . [[LocaleData]] , locales , options , « coerce-options », modifyResolutionOptions ).
+
+- Let hour12 be specialOptions . [[Hour12]] .
+
+- Set options to optionsResolution . [[Options]] .
+
+- Let resolvedLocale be optionsResolution . [[ResolvedLocale]] .
+
+- Set dateTimeFormat . [[Locale]] to resolvedLocale . [[Locale]] .
+
+- Let resolvedCalendar be resolvedLocale . [[ca]] .
+
+- Set dateTimeFormat . [[Calendar]] to resolvedCalendar .
+
+- Set dateTimeFormat . [[NumberingSystem]] to resolvedLocale . [[nu]] .
+
+- Let resolvedLocaleData be resolvedLocale . [[LocaleData]] .
+
+- If hour12 is true , then
+- Let hc be resolvedLocaleData . [[hourCycle12]] .
+
+- Else if hour12 is false , then
+- Let hc be resolvedLocaleData . [[hourCycle24]] .
+
+- Else,
+- Assert : hour12 is undefined .
+
+- Let hc be resolvedLocale . [[hc]] .
+
+- If hc is null , set hc to resolvedLocaleData . [[hourCycle]] .
+
+- Let timeZone be ? Get ( options , "timeZone" ).
+
+- If timeZone is undefined , then
+- Set timeZone to SystemTimeZoneIdentifier ().
+
+- Else,
+- Set timeZone to ? ToString ( timeZone ).
+
+- If IsTimeZoneOffsetString ( timeZone ) is true , then
+- Let parseResult be ParseText ( StringToCodePoints ( timeZone ), UTCOffset ).
+
+- Assert : parseResult is a Parse Node .
+
+- If parseResult contains more than one MinuteSecond Parse Node , throw a RangeError exception.
+
+- Let offsetNanoseconds be ParseTimeZoneOffsetString ( timeZone ).
+
+- Let offsetMinutes be offsetNanoseconds / (6 × 10 10 ).
+
+- Assert : offsetMinutes is an integer .
+
+- Set timeZone to FormatOffsetTimeZoneIdentifier ( offsetMinutes ).
+
+- Else,
+- Let timeZoneIdentifierRecord be GetAvailableNamedTimeZoneIdentifier ( timeZone ).
+
+- If timeZoneIdentifierRecord is empty , throw a RangeError exception.
+
+- Set timeZone to timeZoneIdentifierRecord . [[PrimaryIdentifier]] .
+
+- Set dateTimeFormat . [[TimeZone]] to timeZone .
+
+- Let formatOptions be a new Record .
+
+- Set formatOptions . [[hourCycle]] to hc .
+
+- Let hasExplicitFormatComponents be false .
+
+- For each row of Table 16 , except the header row, in table order, do
+- Let propertyKey be the name given in the Property column of the current row.
+
+- If propertyKey is "fractionalSecondDigits" , then
+- Let value be ? GetNumberOption ( options , "fractionalSecondDigits" , 1, 3, undefined ).
+
+- Else,
+- Let values be a List whose elements are the strings given in the Values column of the current row.
+
+- Let value be ? GetOption ( options , propertyKey , string , values , undefined ).
+
+- Set formatOptions .[[< propertyKey >]] to value .
+
+- If value is not undefined , then
+- Set hasExplicitFormatComponents to true .
+
+- Let formatMatcher be ? GetOption ( options , "formatMatcher" , string , « "basic" , "best fit" », "best fit" ).
+
+- Let dateStyle be ? GetOption ( options , "dateStyle" , string , « "full" , "long" , "medium" , "short" », undefined ).
+
+- Set dateTimeFormat . [[DateStyle]] to dateStyle .
+
+- Let timeStyle be ? GetOption ( options , "timeStyle" , string , « "full" , "long" , "medium" , "short" », undefined ).
+
+- Set dateTimeFormat . [[TimeStyle]] to timeStyle .
+
+- If dateStyle is not undefined or timeStyle is not undefined , then
+- If hasExplicitFormatComponents is true , then
+- Throw a TypeError exception.
+
+- If required is date and timeStyle is not undefined , then
+- Throw a TypeError exception.
+
+- If required is time and dateStyle is not undefined , then
+- Throw a TypeError exception.
+
+- Let styles be resolvedLocaleData . [[styles]] .[[< resolvedCalendar >]].
+
+- Let bestFormat be DateTimeStyleFormat ( dateStyle , timeStyle , styles ).
+
+- Else,
+- Let needDefaults be true .
+
+- If required is date or any , then
+- For each property name propertyKey of « "weekday" , "year" , "month" , "day" », do
+- Let value be formatOptions .[[< propertyKey >]].
+
+- If value is not undefined , set needDefaults to false .
+
+- If required is time or any , then
+- For each property name propertyKey of « "dayPeriod" , "hour" , "minute" , "second" , "fractionalSecondDigits" », do
+- Let value be formatOptions .[[< propertyKey >]].
+
+- If value is not undefined , set needDefaults to false .
+
+- If needDefaults is true and defaults is either date or all , then
+- For each property name propertyKey of « "year" , "month" , "day" », do
+- Set formatOptions .[[< propertyKey >]] to "numeric" .
+
+- If needDefaults is true and defaults is either time or all , then
+- For each property name propertyKey of « "hour" , "minute" , "second" », do
+- Set formatOptions .[[< propertyKey >]] to "numeric" .
+
+- Let formats be resolvedLocaleData . [[formats]] .[[< resolvedCalendar >]].
+
+- If formatMatcher is "basic" , then
+- Let bestFormat be BasicFormatMatcher ( formatOptions , formats ).
+
+- Else,
+- Let bestFormat be BestFitFormatMatcher ( formatOptions , formats ).
+
+- Set dateTimeFormat . [[DateTimeFormat]] to bestFormat .
+
+- If bestFormat has a field [[hour]] , then
+- Set dateTimeFormat . [[HourCycle]] to hc .
+
+- Return dateTimeFormat .
+
+11.1.3 FormatOffsetTimeZoneIdentifier ( offsetMinutes )
+
+The abstract operation FormatOffsetTimeZoneIdentifier takes argument offsetMinutes (an integer ) and returns a String.
+It formats a UTC offset, in minutes, into a UTC offset string formatted like ±HH:MM.
+It performs the following steps when called:
+
+- If offsetMinutes ≥ 0, let sign be the code unit 0x002B (PLUS SIGN); otherwise, let sign be the code unit 0x002D (HYPHEN-MINUS).
+
+- Let absoluteMinutes be abs ( offsetMinutes ).
+
+- Let hours be floor ( absoluteMinutes / 60).
+
+- Let minutes be absoluteMinutes modulo 60.
+
+- Return the string-concatenation of sign , ToZeroPaddedDecimalString ( hours , 2), the code unit 0x003A (COLON), and ToZeroPaddedDecimalString ( minutes , 2).
+
+11.2 Properties of the Intl.DateTimeFormat Constructor
+
+The Intl.DateTimeFormat constructor :
+
+- has a [[Prototype]] internal slot whose value is %Function.prototype% .
+
+- has the following properties:
+
+11.2.1 Intl.DateTimeFormat.prototype
+
+The value of Intl.DateTimeFormat.prototype is %Intl.DateTimeFormat.prototype% .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : false }.
+
+11.2.2 Intl.DateTimeFormat.supportedLocalesOf ( locales [ , options ] )
+
+When the supportedLocalesOf method is called with arguments locales and options , the following steps are taken:
+
+- Let availableLocales be %Intl.DateTimeFormat% . [[AvailableLocales]] .
+
+- Let requestedLocales be ? CanonicalizeLocaleList ( locales ).
+
+- Return ? FilterLocales ( availableLocales , requestedLocales , options ).
+
+11.2.3 Internal slots
+
+The value of the [[AvailableLocales]] internal slot is implementation-defined within the constraints described in 9.1 .
+
+The value of the [[RelevantExtensionKeys]] internal slot is « "ca" , "hc" , "nu" ».
+
+Note 1
+Unicode Technical Standard #35 Part 1 Core, Section 3.6.1 Key and Type Definitions describes four locale extension keys that are relevant to date and time formatting: "ca" for calendar, "hc" for hour cycle, "nu" for numbering system (of formatted numbers), and "tz" for time zone. DateTimeFormat, however, requires that the time zone is specified through the "timeZone" property in the options objects.
+
+The value of the [[ResolutionOptionDescriptors]] internal slot is « { [[Key]] : "ca" , [[Property]] : "calendar" }, { [[Key]] : "nu" , [[Property]] : "numberingSystem" }, { [[Key]] : "hour12" , [[Property]] : "hour12" , [[Type]] : boolean }, { [[Key]] : "hc" , [[Property]] : "hourCycle" , [[Values]] : « "h11" , "h12" , "h23" , "h24" » } ».
+
+The value of the [[LocaleData]] internal slot is implementation-defined within the constraints described in 9.1 and the following additional constraints, for all locale values locale :
+
+-
+[[LocaleData]] .[[< locale >]]. [[nu]] must be a List that does not include the values "native" , "traditio" , or "finance" .
+
+-
+[[LocaleData]] .[[< locale >]]. [[hc]] must be « null , "h11" , "h12" , "h23" , "h24" ».
+
+-
+[[LocaleData]] .[[< locale >]]. [[hourCycle]] must be one of the Strings "h11" , "h12" , "h23" , or "h24" .
+
+-
+[[LocaleData]] .[[< locale >]]. [[hourCycle12]] must be one of the Strings "h11" or "h12" .
+
+-
+[[LocaleData]] .[[< locale >]]. [[hourCycle24]] must be one of the Strings "h23" or "h24" .
+
+-
+[[LocaleData]] .[[< locale >]] must have a [[formats]] field. The value of this [[formats]] field must be a Record with a [[< calendar >]] field for each calendar value calendar . The value of each [[< calendar >]] field must be a List of DateTime Format Records . Multiple Records in such a List may use the same subset of the fields as long as the corresponding values differ for at least one field. The following subsets must be available for each locale:
+
+- weekday, year, month, day, hour, minute, second, fractionalSecondDigits
+
+- weekday, year, month, day, hour, minute, second
+
+- weekday, year, month, day
+
+- year, month, day
+
+- year, month
+
+- month, day
+
+- month
+
+- hour, minute, second, fractionalSecondDigits
+
+- hour, minute, second
+
+- hour, minute
+
+- dayPeriod, hour, minute, second, fractionalSecondDigits
+
+- dayPeriod, hour, minute, second
+
+- dayPeriod, hour, minute
+
+- dayPeriod, hour
+
+-
+[[LocaleData]] .[[< locale >]] must have a [[styles]] field. The value of this [[styles]] field must be a Record with a [[< calendar >]] field for each calendar value calendar . The value of each [[< calendar >]] field must be a DateTime Styles Record .
+
+11.2.3.1 DateTime Format Records
+
+Each DateTime Format Record has the fields defined in Table 5 .
+
+Table 5: DateTime Format Record
+
+Field Name
+Value Type
+Description
+
+[[weekday]]
+[[Weekday]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{weekday}" .
+
+[[era]]
+[[Era]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{era}" .
+
+[[year]]
+[[Year]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains at least one of the substrings "{year}" , "{yearName}" , or "{relatedYear}" .
+
+[[month]]
+[[Month]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{month}" .
+
+[[day]]
+[[Day]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{day}" .
+
+[[dayPeriod]]
+[[DayPeriod]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{dayPeriod}" .
+
+[[hour]]
+[[Hour]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{hour}" .
+
+[[minute]]
+[[Minute]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{minute}" .
+
+[[second]]
+[[Second]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{second}" .
+
+[[fractionalSecondDigits]]
+[[FractionalSecondDigits]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{fractionalSecondDigits}" .
+
+[[timeZoneName]]
+[[TimeZoneName]] values in the Values column of Table 16
+Optional field. Present if [[pattern]] contains the substring "{timeZoneName}" .
+
+[[pattern]]
+a Pattern String
+Contains for each of the date and time format component fields of the record a substring starting with "{" , followed by the name of the field, followed by "}" . If the record has a [[year]] field, the string may contain the substrings "{yearName}" and "{relatedYear}" .
+
+[[pattern12]]
+a Pattern String
+Optional field. Present if the [[hour]] field is present. In addition to the substrings of the [[pattern]] field, contains at least one of the substrings "{ampm}" or "{dayPeriod}" .
+
+[[rangePatterns]]
+a DateTime Range Pattern Record
+Pattern strings in this field are similar to [[pattern]] .
+
+[[rangePatterns12]]
+a DateTime Range Pattern Record
+Optional field. Present if the [[hour]] field is present. Pattern strings in this field are similar to [[pattern12]] .
+
+11.2.3.2 DateTime Range Pattern Records
+
+Each DateTime Range Pattern Record has the fields defined in Table 6 .
+
+Table 6: DateTime Range Pattern Record
+
+Field Name
+Value Type
+Description
+
+[[Default]]
+a DateTime Range Pattern Format Record
+It contains the default range pattern used when a more specific range pattern is not available.
+
+[[Era]]
+a DateTime Range Pattern Format Record
+Optional field. Used when era is the largest calendar element that is different between the start and end dates.
+
+[[Year]]
+a DateTime Range Pattern Format Record
+Optional field. Used when year is the largest calendar element that is different between the start and end dates.
+
+[[Month]]
+a DateTime Range Pattern Format Record
+Optional field. Used when month is the largest calendar element that is different between the start and end dates.
+
+[[Day]]
+a DateTime Range Pattern Format Record
+Optional field. Used when day is the largest calendar element that is different between the start and end dates.
+
+[[AmPm]]
+a DateTime Range Pattern Format Record
+Optional field. Used when ante or post meridiem is the largest calendar element that is different between the start and end dates.
+
+[[DayPeriod]]
+a DateTime Range Pattern Format Record
+Optional field. Used when day period is the largest calendar element that is different between the start and end dates.
+
+[[Hour]]
+a DateTime Range Pattern Format Record
+Optional field. Used when hour is the largest calendar element that is different between the start and end dates.
+
+[[Minute]]
+a DateTime Range Pattern Format Record
+Optional field. Used when minute is the largest calendar element that is different between the start and end dates.
+
+[[Second]]
+a DateTime Range Pattern Format Record
+Optional field. Used when second is the largest calendar element that is different between the start and end dates.
+
+[[FractionalSecondDigits]]
+a DateTime Range Pattern Format Record
+Optional field. Used when fractional seconds are the largest calendar element that is different between the start and end dates.
+
+11.2.3.3 DateTime Range Pattern Format Records
+
+Each DateTime Range Pattern Format Record has the fields defined in Table 7 .
+
+Table 7: DateTime Range Pattern Format Record
+
+Field Name
+Value Type
+Description
+
+[[weekday]]
+[[Weekday]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{weekday}" .
+
+[[era]]
+[[Era]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{era}" .
+
+[[year]]
+[[Year]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains at least one of the substrings "{year}" , "{yearName}" , or "{relatedYear}" .
+
+[[month]]
+[[Month]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{month}" .
+
+[[day]]
+[[Day]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{day}" .
+
+[[dayPeriod]]
+[[DayPeriod]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{dayPeriod}" .
+
+[[hour]]
+[[Hour]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{hour}" .
+
+[[minute]]
+[[Minute]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{minute}" .
+
+[[second]]
+[[Second]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{second}" .
+
+[[fractionalSecondDigits]]
+[[FractionalSecondDigits]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{fractionalSecondDigits}" .
+
+[[timeZoneName]]
+[[TimeZoneName]] values in the Values column of Table 16
+Optional field. Present if a Pattern String in [[PatternParts]] contains the substring "{timeZoneName}" .
+
+[[PatternParts]]
+a List of DateTime Range Pattern Part Records
+Each record represents a part of the range pattern.
+
+11.2.3.4 DateTime Range Pattern Part Records
+
+Each DateTime Range Pattern Part Record has the fields defined in Table 8 .
+
+Table 8: DateTime Range Pattern Part Record
+
+Field Name
+Value Type
+Description
+
+[[Source]]
+"shared" , "startRange" , or "endRange"
+It indicates which of the range's dates should be formatted using the value of the [[Pattern]] field.
+
+[[Pattern]]
+a Pattern String
+A String of the same format as the regular date pattern String.
+
+11.2.3.5 DateTime Styles Records
+
+Each DateTime Styles Record has the fields defined in Table 9 .
+
+Table 9: DateTime Styles Record
+
+Field Name
+Value Type
+
+[[Date]]
+a DateTime Style Record
+
+[[Time]]
+a DateTime Style Record
+
+[[Connector]]
+a DateTime Connector Record
+
+[[DateTimeRangeFormat]]
+a DateTime Date Range Record
+
+11.2.3.6 DateTime Style Records
+
+Each DateTime Style Record has the fields defined in Table 10 .
+
+Table 10: DateTime Style Record
+
+Field Name
+Value Type
+Description
+
+[[full]]
+a DateTime Format Record
+Format record for the "full" style.
+
+[[long]]
+a DateTime Format Record
+Format record for the "long" style.
+
+[[medium]]
+a DateTime Format Record
+Format record for the "medium" style.
+
+[[short]]
+a DateTime Format Record
+Format record for the "short" style.
+
+11.2.3.7 DateTime Connector Records
+
+Each DateTime Connector Record has the fields defined in Table 11 . All connector pattern strings must contain the strings "{0}" and "{1}" .
+
+Table 11: DateTime Connector Record
+
+Field Name
+Value Type
+Description
+
+[[full]]
+a Pattern String
+Connector pattern when the date style is "full" .
+
+[[long]]
+a Pattern String
+Connector pattern when the date style is "long" .
+
+[[medium]]
+a Pattern String
+Connector pattern when the date style is "medium" .
+
+[[short]]
+a Pattern String
+Connector pattern when the date style is "short" .
+
+11.2.3.8 DateTime Date Range Records
+
+Each DateTime Date Range Record has the fields defined in Table 12 .
+
+Table 12: DateTime Date Range Record
+
+Field Name
+Value Type
+Description
+
+[[full]]
+a DateTime Time Range Record
+Used when date style is "full" .
+
+[[long]]
+a DateTime Time Range Record
+Used when date style is "long" .
+
+[[medium]]
+a DateTime Time Range Record
+Used when date style is "medium" .
+
+[[short]]
+a DateTime Time Range Record
+Used when date style is "short" .
+
+11.2.3.9 DateTime Time Range Records
+
+Each DateTime Time Range Record has the fields defined in Table 13 .
+
+Table 13: DateTime Time Range Record
+
+Field Name
+Value Type
+Description
+
+[[full]]
+a DateTime Style Range Record
+Used when time style is "full" .
+
+[[long]]
+a DateTime Style Range Record
+Used when time style is "long" .
+
+[[medium]]
+a DateTime Style Range Record
+Used when time style is "medium" .
+
+[[short]]
+a DateTime Style Range Record
+Used when time style is "short" .
+
+11.2.3.10 DateTime Style Range Records
+
+Each DateTime Style Range Record has the fields defined in Table 14 .
+
+Table 14: DateTime Style Range Record
+
+Field Name
+Value Type
+Description
+
+[[rangePatterns]]
+a DateTime Range Pattern Record
+Range patterns to combine date and time styles.
+
+[[rangePatterns12]]
+a DateTime Range Pattern Record
+Optional Field. Range patterns to combine date and time styles for 12-hour formats.
+
+Note 2
+For example, an implementation might include the following Record as part of its English locale data:
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[pattern]] : "{hour}:{minute}"
+
+- [[pattern12]] : "{hour}:{minute} {ampm}"
+
+- [[rangePatterns]] :
+
+- [[Hour]] :
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- [[Minute]] :
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- [[Default]] :
+
+- [[year]] : "2-digit"
+
+- [[month]] : "numeric"
+
+- [[day]] : "numeric"
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{day}/{month}/{year}, {hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{day}/{month}/{year}, {hour}:{minute}" }
+
+- [[rangePatterns12]] :
+
+- [[Hour]] :
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " {ampm}" }
+
+- [[Minute]] :
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{hour}:{minute}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " {ampm}" }
+
+- [[Default]] :
+
+- [[year]] : "2-digit"
+
+- [[month]] : "numeric"
+
+- [[day]] : "numeric"
+
+- [[hour]] : "numeric"
+
+- [[minute]] : "numeric"
+
+- [[PatternParts]] :
+
+- { [[Source]] : "startRange" , [[Pattern]] : "{day}/{month}/{year}, {hour}:{minute} {ampm}" }
+
+- { [[Source]] : "shared" , [[Pattern]] : " – " }
+
+- { [[Source]] : "endRange" , [[Pattern]] : "{day}/{month}/{year}, {hour}:{minute} {ampm}" }
+
+Note 3
+It is recommended that implementations use the locale data provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ).
+
+11.3 Properties of the Intl.DateTimeFormat Prototype Object
+
+The Intl.DateTimeFormat prototype object :
+
+- is %Intl.DateTimeFormat.prototype% .
+
+- is an ordinary object .
+
+- is not an Intl.DateTimeFormat instance and does not have an [[InitializedDateTimeFormat]] internal slot or any of the other internal slots of Intl.DateTimeFormat instance objects.
+
+- has a [[Prototype]] internal slot whose value is %Object.prototype% .
+
+11.3.1 Intl.DateTimeFormat.prototype.constructor
+
+The initial value of Intl.DateTimeFormat.prototype.constructor is %Intl.DateTimeFormat% .
+
+11.3.2 Intl.DateTimeFormat.prototype.resolvedOptions ( )
+
+This function provides access to the locale and options computed during initialization of the object.
+
+- Let dtf be the this value.
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Set dtf to ? UnwrapDateTimeFormat ( dtf ).
+
+- Perform ? RequireInternalSlot ( dtf , [[InitializedDateTimeFormat]] ).
+
+- Let options be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- For each row of Table 15 , except the header row, in table order, do
+- Let propertyKey be the Property value of the current row.
+
+- If there is an Internal Slot value in the current row, then
+- Let value be the value of dtf 's internal slot whose name is the Internal Slot value of the current row.
+
+- Else,
+- Let format be dtf . [[DateTimeFormat]] .
+
+- If format has a field [[< propertyKey >]] and dtf . [[DateStyle]] is undefined and dtf . [[TimeStyle]] is undefined , then
+- Let value be format .[[< propertyKey >]].
+
+- Else,
+- Let value be undefined .
+
+- If value is not undefined , then
+- If there is a Conversion value in the current row, then
+- Let conversion be the Conversion value of the current row.
+
+- If conversion is hour12 , then
+- If value is "h11" or "h12" , set value to true . Otherwise, set value to false .
+
+- Else,
+- Assert : conversion is number .
+
+- Set value to 𝔽 ( value ).
+
+- Perform ! CreateDataPropertyOrThrow ( options , propertyKey , value ).
+
+- Return options .
+
+Table 15: Resolved Options of DateTimeFormat Instances
+
+Internal Slot
+Property
+Conversion
+
+[[Locale]]
+"locale"
+
+[[Calendar]]
+"calendar"
+
+[[NumberingSystem]]
+"numberingSystem"
+
+[[TimeZone]]
+"timeZone"
+
+[[HourCycle]]
+"hourCycle"
+
+[[HourCycle]]
+"hour12"
+hour12
+
+"weekday"
+
+"era"
+
+"year"
+
+"month"
+
+"day"
+
+"dayPeriod"
+
+"hour"
+
+"minute"
+
+"second"
+
+"fractionalSecondDigits"
+number
+
+"timeZoneName"
+
+[[DateStyle]]
+"dateStyle"
+
+[[TimeStyle]]
+"timeStyle"
+
+For web compatibility reasons, if the property "hourCycle" is set, the "hour12" property should be set to true when "hourCycle" is "h11" or "h12" , or to false when "hourCycle" is "h23" or "h24" .
+
+Note 1
+In this version of the API, the "timeZone" property will be the identifier of the host environment 's time zone if no "timeZone" property was provided in the options object provided to the Intl.DateTimeFormat constructor . The first edition left the "timeZone" property undefined in this case.
+
+Note 2
+For compatibility with versions prior to the fifth edition, the "hour12" property is set in addition to the "hourCycle" property.
+
+11.3.3 get Intl.DateTimeFormat.prototype.format
+
+Intl.DateTimeFormat.prototype.format is an accessor property whose set accessor function is undefined . Its get accessor function performs the following steps:
+
+- Let dtf be the this value.
+
+- If the implementation supports the normative optional constructor mode of 4.3 Note 1 , then
+- Set dtf to ? UnwrapDateTimeFormat ( dtf ).
+
+- Perform ? RequireInternalSlot ( dtf , [[InitializedDateTimeFormat]] ).
+
+- If dtf . [[BoundFormat]] is undefined , then
+- Let func be a new built-in function object as defined in DateTime Format Functions ( 11.5.4 ).
+
+- Set func . [[DateTimeFormat]] to dtf .
+
+- Set dtf . [[BoundFormat]] to func .
+
+- Return dtf . [[BoundFormat]] .
+
+Note
+The returned function is bound to dtf so that it can be passed directly to Array.prototype.map or other functions.
+This is considered a historical artefact, as part of a convention which is no longer followed for new features, but is preserved to maintain compatibility with existing programs.
+
+11.3.4 Intl.DateTimeFormat.prototype.formatRange ( startDate , endDate )
+
+When the formatRange method is called with arguments startDate and endDate , the following steps are taken:
+
+- Let dtf be this value.
+
+- Perform ? RequireInternalSlot ( dtf , [[InitializedDateTimeFormat]] ).
+
+- If startDate is undefined or endDate is undefined , throw a TypeError exception.
+
+- Let x be ? ToNumber ( startDate ).
+
+- Let y be ? ToNumber ( endDate ).
+
+- Return ? FormatDateTimeRange ( dtf , x , y ).
+
+11.3.5 Intl.DateTimeFormat.prototype.formatRangeToParts ( startDate , endDate )
+
+When the formatRangeToParts method is called with arguments startDate and endDate , the following steps are taken:
+
+- Let dtf be this value.
+
+- Perform ? RequireInternalSlot ( dtf , [[InitializedDateTimeFormat]] ).
+
+- If startDate is undefined or endDate is undefined , throw a TypeError exception.
+
+- Let x be ? ToNumber ( startDate ).
+
+- Let y be ? ToNumber ( endDate ).
+
+- Return ? FormatDateTimeRangeToParts ( dtf , x , y ).
+
+11.3.6 Intl.DateTimeFormat.prototype.formatToParts ( date )
+
+When the formatToParts method is called with an argument date , the following steps are taken:
+
+- Let dtf be the this value.
+
+- Perform ? RequireInternalSlot ( dtf , [[InitializedDateTimeFormat]] ).
+
+- If date is undefined , then
+- Let x be ! Call (%Date.now%, undefined ).
+
+- Else,
+- Let x be ? ToNumber ( date ).
+
+- Return ? FormatDateTimeToParts ( dtf , x ).
+
+11.3.7 Intl.DateTimeFormat.prototype [ %Symbol.toStringTag% ]
+
+The initial value of the %Symbol.toStringTag% property is the String "Intl.DateTimeFormat" .
+
+This property has the attributes { [[Writable]] : false , [[Enumerable]] : false , [[Configurable]] : true }.
+
+11.4 Properties of Intl.DateTimeFormat Instances
+
+Intl.DateTimeFormat instances are ordinary objects that inherit properties from %Intl.DateTimeFormat.prototype% .
+
+Intl.DateTimeFormat instances have an [[InitializedDateTimeFormat]] internal slot.
+
+Intl.DateTimeFormat instances also have several internal slots that are computed by The Intl.DateTimeFormat Constructor :
+
+- [[Locale]] is a String representing the language tag of the locale whose localization is used for formatting.
+
+- [[Calendar]] is a String representing the Unicode Calendar Identifier used for formatting.
+
+- [[NumberingSystem]] is a String representing the Unicode Number System Identifier used for formatting.
+
+- [[TimeZone]] is a String used for formatting that is either an available named time zone identifier or an offset time zone identifier.
+
+- [[HourCycle]] is a String indicating whether the 12-hour format ( "h11" , "h12" ) or the 24-hour format ( "h23" , "h24" ) should be used. "h11" and "h23" start with hour 0 and go up to 11 and 23 respectively. "h12" and "h24" start with hour 1 and go up to 12 and 24. [[HourCycle]] is only used when [[DateTimeFormat]] has an [[hour]] field.
+
+- [[DateStyle]] , [[TimeStyle]] are each either undefined , "full" , "long" , "medium" , or "short" .
+
+- [[DateTimeFormat]] is a DateTime Format Record .
+
+Finally, Intl.DateTimeFormat instances have a [[BoundFormat]] internal slot that caches the function returned by the format accessor ( 11.3.3 ).
+
+11.5 Abstract Operations for DateTimeFormat Objects
+
+Several DateTimeFormat algorithms use values from the following table, which provides internal slots, property names and allowable values for the components of date and time formats:
+
+Table 16: Components of date and time formats
+
+Field Name
+Property
+Values
+
+[[Weekday]]
+"weekday"
+"narrow" , "short" , "long"
+
+[[Era]]
+"era"
+"narrow" , "short" , "long"
+
+[[Year]]
+"year"
+"2-digit" , "numeric"
+
+[[Month]]
+"month"
+"2-digit" , "numeric" , "narrow" , "short" , "long"
+
+[[Day]]
+"day"
+"2-digit" , "numeric"
+
+[[DayPeriod]]
+"dayPeriod"
+"narrow" , "short" , "long"
+
+[[Hour]]
+"hour"
+"2-digit" , "numeric"
+
+[[Minute]]
+"minute"
+"2-digit" , "numeric"
+
+[[Second]]
+"second"
+"2-digit" , "numeric"
+
+[[FractionalSecondDigits]]
+"fractionalSecondDigits"
+1, 2, 3
+
+[[TimeZoneName]]
+"timeZoneName"
+"short" , "long" , "shortOffset" , "longOffset" , "shortGeneric" , "longGeneric"
+
+11.5.1 DateTimeStyleFormat ( dateStyle , timeStyle , styles )
+
+The abstract operation DateTimeStyleFormat takes arguments dateStyle ( "full" , "long" , "medium" , "short" , or undefined ), timeStyle ( "full" , "long" , "medium" , "short" , or undefined ), and styles (a DateTime Styles Record ) and returns a DateTime Format Record . styles is a Record from %Intl.DateTimeFormat% . [[LocaleData]] .[[< locale >]]. [[styles]] .[[< calendar >]] for some locale locale and calendar calendar . It returns the appropriate format Record for date time formatting based on the parameters. It performs the following steps when called:
+
+- Assert : dateStyle is not undefined or timeStyle is not undefined .
+
+- If timeStyle is not undefined , then
+- Assert : timeStyle is one of "full" , "long" , "medium" , or "short" .
+
+- Let timeFormat be styles . [[Time]] .[[< timeStyle >]].
+
+- If dateStyle is not undefined , then
+- Assert : dateStyle is one of "full" , "long" , "medium" , or "short" .
+
+- Let dateFormat be styles . [[Date]] .[[< dateStyle >]].
+
+- If dateStyle is not undefined and timeStyle is not undefined , then
+- Let format be a new DateTime Format Record .
+
+- Add to format all fields from dateFormat except [[pattern]] and [[rangePatterns]] .
+
+- Add to format all fields from timeFormat except [[pattern]] , [[rangePatterns]] , [[pattern12]] , and [[rangePatterns12]] , if present.
+
+- Let connector be styles . [[Connector]] .[[< dateStyle >]].
+
+- Let pattern be the string connector with the substring "{0}" replaced with timeFormat . [[pattern]] and the substring "{1}" replaced with dateFormat . [[pattern]] .
+
+- Set format . [[pattern]] to pattern .
+
+- If timeFormat has a [[pattern12]] field, then
+- Let pattern12 be the string connector with the substring "{0}" replaced with timeFormat . [[pattern12]] and the substring "{1}" replaced with dateFormat . [[pattern]] .
+
+- Set format . [[pattern12]] to pattern12 .
+
+- Let dateTimeRangeFormat be styles . [[DateTimeRangeFormat]] .[[< dateStyle >]].[[< timeStyle >]].
+
+- Set format . [[rangePatterns]] to dateTimeRangeFormat . [[rangePatterns]] .
+
+- If dateTimeRangeFormat has a [[rangePatterns12]] field, then
+- Set format . [[rangePatterns12]] to dateTimeRangeFormat . [[rangePatterns12]] .
+
+- Return format .
+
+- If timeStyle is not undefined , then
+- Return timeFormat .
+
+- Assert : dateStyle is not undefined .
+
+- Return dateFormat .
+
+11.5.2 BasicFormatMatcher ( options , formats )
+
+The abstract operation BasicFormatMatcher takes arguments options (a Record ) and formats (a List of DateTime Format Records ) and returns a DateTime Format Record . It performs the following steps when called:
+
+- Let removalPenalty be 120.
+
+- Let additionPenalty be 20.
+
+- Let longLessPenalty be 8.
+
+- Let longMorePenalty be 6.
+
+- Let shortLessPenalty be 6.
+
+- Let shortMorePenalty be 3.
+
+- Let offsetPenalty be 1.
+
+- Let bestScore be -∞.
+
+- Let bestFormat be undefined .
+
+- For each element format of formats , do
+- Let score be 0.
+
+- For each row of Table 16 , except the header row, in table order, do
+- Let property be the name given in the Property column of the current row.
+
+- If options has a field [[< property >]], let optionsProp be options .[[< property >]]; else let optionsProp be undefined .
+
+- If format has a field [[< property >]], let formatProp be format .[[< property >]]; else let formatProp be undefined .
+
+- If optionsProp is undefined and formatProp is not undefined , then
+- Set score to score - additionPenalty .
+
+- Else if optionsProp is not undefined and formatProp is undefined , then
+- Set score to score - removalPenalty .
+
+- Else if property is "timeZoneName" , then
+- If optionsProp is "short" or "shortGeneric" , then
+- If formatProp is "shortOffset" , set score to score - offsetPenalty .
+
+- Else if formatProp is "longOffset" , set score to score - ( offsetPenalty + shortMorePenalty ).
+
+- Else if optionsProp is "short" and formatProp is "long" , set score to score - shortMorePenalty .
+
+- Else if optionsProp is "shortGeneric" and formatProp is "longGeneric" , set score to score - shortMorePenalty .
+
+- Else if optionsProp ≠ formatProp , set score to score - removalPenalty .
+
+- Else if optionsProp is "shortOffset" and formatProp is "longOffset" , then
+- Set score to score - shortMorePenalty .
+
+- Else if optionsProp is "long" or "longGeneric" , then
+- If formatProp is "longOffset" , set score to score - offsetPenalty .
+
+- Else if formatProp is "shortOffset" , set score to score - ( offsetPenalty + longLessPenalty ).
+
+- Else if optionsProp is "long" and formatProp is "short" , set score to score - longLessPenalty .
+
+- Else if optionsProp is "longGeneric" and formatProp is "shortGeneric" , set score to score - longLessPenalty .
+
+- Else if optionsProp ≠ formatProp , set score to score - removalPenalty .
+
+- Else if optionsProp is "longOffset" and formatProp is "shortOffset" , then
+- Set score to score - longLessPenalty .
+
+- Else if optionsProp ≠ formatProp , then
+- Set score to score - removalPenalty .
+
+- Else if optionsProp ≠ formatProp , then
+- If property is "fractionalSecondDigits" , then
+- Let values be « 1, 2, 3 ».
+
+- Else,
+- Let values be « "2-digit" , "numeric" , "narrow" , "short" , "long" ».
+
+- Let optionsPropIndex be the index of optionsProp within values .
+
+- Let formatPropIndex be the index of formatProp within values .
+
+- Let delta be max ( min ( formatPropIndex - optionsPropIndex , 2), -2).
+
+- If delta = 2, set score to score - longMorePenalty .
+
+- Else if delta = 1, set score to score - shortMorePenalty .
+
+- Else if delta = -1, set score to score - shortLessPenalty .
+
+- Else if delta = -2, set score to score - longLessPenalty .
+
+- If score > bestScore , then
+- Set bestScore to score .
+
+- Set bestFormat to format .
+
+- Return bestFormat .
+
+11.5.3 BestFitFormatMatcher ( options , formats )
+
+The implementation-defined abstract operation BestFitFormatMatcher takes arguments options (a Record ) and formats (a List of DateTime Format Records ) and returns a DateTime Format Record . It returns a set of component representations that a typical user of the selected locale would perceive as at least as good as the one returned by BasicFormatMatcher .
+
+11.5.4 DateTime Format Functions
+
+A DateTime format function is an anonymous built-in function that has a [[DateTimeFormat]] internal slot.
+
+When a DateTime format function func is called with optional argument date , the following steps are taken:
+
+- Let dtf be func . [[DateTimeFormat]] .
+
+- Assert : dtf is an Object and dtf has an [[InitializedDateTimeFormat]] internal slot.
+
+- If date is not provided or is undefined , then
+- Let x be ! Call (%Date.now%, undefined ).
+
+- Else,
+- Let x be ? ToNumber ( date ).
+
+- Return ? FormatDateTime ( dtf , x ).
+
+The "length" property of a DateTime format function is 1 𝔽 .
+
+11.5.5 FormatDateTimePattern ( dateTimeFormat , format , pattern , epochNanoseconds )
+
+The abstract operation FormatDateTimePattern takes arguments dateTimeFormat (an Intl.DateTimeFormat), format (a DateTime Format Record or a DateTime Range Pattern Format Record ), pattern (a Pattern String ), and epochNanoseconds (a BigInt) and returns a List of Records with fields [[Type]] (a String) and [[Value]] (a String). It creates the corresponding parts for the epoch time epochNanoseconds according to pattern and to the effective locale and the formatting options of dateTimeFormat and format . It performs the following steps when called:
+
+- Let locale be dateTimeFormat . [[Locale]] .
+
+- Let nfOptions be OrdinaryObjectCreate ( null ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "numberingSystem" , dateTimeFormat . [[NumberingSystem]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( nfOptions , "useGrouping" , false ).
+
+- Let nf be ! Construct ( %Intl.NumberFormat% , « locale , nfOptions »).
+
+- Let nf2Options be OrdinaryObjectCreate ( null ).
+
+- Perform ! CreateDataPropertyOrThrow ( nf2Options , "minimumIntegerDigits" , 2 𝔽 ).
+
+- Perform ! CreateDataPropertyOrThrow ( nf2Options , "numberingSystem" , dateTimeFormat . [[NumberingSystem]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( nf2Options , "useGrouping" , false ).
+
+- Let nf2 be ! Construct ( %Intl.NumberFormat% , « locale , nf2Options »).
+
+- If format has a field [[fractionalSecondDigits]] , then
+- Let fractionalSecondDigits be format . [[fractionalSecondDigits]] .
+
+- Let nf3Options be OrdinaryObjectCreate ( null ).
+
+- Perform ! CreateDataPropertyOrThrow ( nf3Options , "minimumIntegerDigits" , 𝔽 ( fractionalSecondDigits )).
+
+- Perform ! CreateDataPropertyOrThrow ( nf3Options , "numberingSystem" , dateTimeFormat . [[NumberingSystem]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( nf3Options , "useGrouping" , false ).
+
+- Let nf3 be ! Construct ( %Intl.NumberFormat% , « locale , nf3Options »).
+
+- Let localTime be ToLocalTime ( epochNanoseconds , dateTimeFormat . [[Calendar]] , dateTimeFormat . [[TimeZone]] ).
+
+- Let patternParts be PartitionPattern ( pattern ).
+
+- Let result be a new empty List .
+
+- For each Record { [[Type]] , [[Value]] } patternPart of patternParts , do
+- Let partType be patternPart . [[Type]] .
+
+- If partType is "literal" , then
+- Append the Record { [[Type]] : "literal" , [[Value]] : patternPart . [[Value]] } to result .
+
+- Else if partType is "fractionalSecondDigits" , then
+- Assert : format has a field [[fractionalSecondDigits]] .
+
+- Let value be localTime . [[Millisecond]] .
+
+- Set value to floor ( value × 10 ( fractionalSecondDigits - 3 ) ).
+
+- Let formattedValue be FormatNumeric ( nf3 , value ).
+
+- Append the Record { [[Type]] : "fractionalSecond" , [[Value]] : formattedValue } to result .
+
+- Else if partType is "dayPeriod" , then
+- Assert : format has a field [[dayPeriod]] .
+
+- Let fieldFormat be format . [[dayPeriod]] .
+
+- Let formattedValue be an ILD String representing the day period of localTime in the form given by fieldFormat .
+
+- Append the Record { [[Type]] : partType , [[Value]] : formattedValue } to result .
+
+- Else if partType is "timeZoneName" , then
+- Assert : format has a field [[timeZoneName]] .
+
+- Let fieldFormat be format . [[timeZoneName]] .
+
+- Let value be dateTimeFormat . [[TimeZone]] .
+
+- Let formattedValue be an ILD String representing value in the form given by fieldFormat . Its value may depend on the value of the [[InDST]] field of localTime if fieldFormat is "short" , "long" , "shortOffset" , or "longOffset" . If the implementation does not have such a localized representation of fieldFormat , then use value itself.
+
+- Append the Record { [[Type]] : partType , [[Value]] : formattedValue } to result .
+
+- Else if partType matches a Property column of the row in Table 16 , then
+- Assert : format has a field [[< partType >]].
+
+- Let fieldFormat be format .[[< partType >]].
+
+- Let value be the value of localTime 's field whose name is the Internal Slot column of the matching row.
+
+- If partType is "year" and value ≤ 0, set value to 1 - value .
+
+- If partType is "month" , set value to value + 1.
+
+- If partType is "hour" and dateTimeFormat . [[HourCycle]] is "h11" or "h12" , then
+- Set value to value modulo 12.
+
+- If value = 0 and dateTimeFormat . [[HourCycle]] is "h12" , set value to 12.
+
+- If partType is "hour" and dateTimeFormat . [[HourCycle]] is "h24" , then
+- If value = 0, set value to 24.
+
+- If fieldFormat is "numeric" , then
+- Let formattedValue be FormatNumeric ( nf , value ).
+
+- Else if fieldFormat is "2-digit" , then
+- Let formattedValue be FormatNumeric ( nf2 , value ).
+
+- Let codePoints be StringToCodePoints ( formattedValue ).
+
+- Let count be the number of elements in codePoints .
+
+- If count > 2, then
+- Let tens be codePoints [ count - 2].
+
+- Let ones be codePoints [ count - 1].
+
+- Set formattedValue to CodePointsToString (« tens , ones »).
+
+- Else if fieldFormat is "narrow" , "short" , or "long" , then
+- Let formattedValue be an ILD String representing value in the form given by fieldFormat . If partType is "month" , then its value may depend on whether format has a [[day]] field. If the implementation does not have a localized representation of fieldFormat , then use value itself.
+
+- Append the Record { [[Type]] : partType , [[Value]] : formattedValue } to result .
+
+- Else if partType is "ampm" , then
+- Let value be localTime . [[Hour]] .
+
+- If value > 11, let formattedValue be an ILD String representing "post meridiem" ; else let formattedValue be an ILD String representing "ante meridiem" .
+
+- Append the Record { [[Type]] : "dayPeriod" , [[Value]] : formattedValue } to result .
+
+- Else if partType is "relatedYear" , then
+- Let value be localTime . [[RelatedYear]] .
+
+- Let formattedValue be FormatNumeric ( nf , value ).
+
+- Append the Record { [[Type]] : "relatedYear" , [[Value]] : formattedValue } to result .
+
+- Else if partType is "yearName" , then
+- Let value be localTime . [[YearName]] .
+
+- Let formattedValue be an ILD String representing value .
+
+- Append the Record { [[Type]] : "yearName" , [[Value]] : formattedValue } to result .
+
+- Else,
+- Let unknown be an ILND String based on epochNanoseconds and partType .
+
+- Append the Record { [[Type]] : "unknown" , [[Value]] : unknown } to result .
+
+- Return result .
+
+Note
+It is recommended that implementations use the locale and calendar dependent strings provided by the Common Locale Data Repository (available at https://cldr.unicode.org/ ), and use CLDR "abbreviated" strings for DateTimeFormat "short" strings, and CLDR "wide" strings for DateTimeFormat "long" strings.
+
+11.5.6 PartitionDateTimePattern ( dateTimeFormat , x )
+
+The abstract operation PartitionDateTimePattern takes arguments dateTimeFormat (an Intl.DateTimeFormat) and x (a Number) and returns either a normal completion containing a List of Records with fields [[Type]] (a String) and [[Value]] (a String), or a throw completion . It interprets x as a time value as specified in ECMA-262 , 21.4.1.1 , and creates the corresponding parts according to the effective locale and the formatting options of dateTimeFormat . It performs the following steps when called:
+
+- Set x to TimeClip ( x ).
+
+- If x is NaN , throw a RangeError exception.
+
+- Let epochNanoseconds be ℤ ( ℝ ( x ) × 10 6 ).
+
+- Let format be dateTimeFormat . [[DateTimeFormat]] .
+
+- If dateTimeFormat . [[HourCycle]] is "h11" or "h12" , then
+- Let pattern be format . [[pattern12]] .
+
+- Else,
+- Let pattern be format . [[pattern]] .
+
+- Let result be FormatDateTimePattern ( dateTimeFormat , format , pattern , epochNanoseconds ).
+
+- Return result .
+
+11.5.7 FormatDateTime ( dateTimeFormat , x )
+
+The abstract operation FormatDateTime takes arguments dateTimeFormat (an Intl.DateTimeFormat) and x (a Number) and returns either a normal completion containing a String or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionDateTimePattern ( dateTimeFormat , x ).
+
+- Let result be the empty String.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+11.5.8 FormatDateTimeToParts ( dateTimeFormat , x )
+
+The abstract operation FormatDateTimeToParts takes arguments dateTimeFormat (an Intl.DateTimeFormat) and x (a Number) and returns either a normal completion containing an Array or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionDateTimePattern ( dateTimeFormat , x ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each Record { [[Type]] , [[Value]] } part of parts , do
+- Let partObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "value" , part . [[Value]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( 𝔽 ( n )), partObj ).
+
+- Set n to n + 1.
+
+- Return result .
+
+11.5.9 PartitionDateTimeRangePattern ( dateTimeFormat , x , y )
+
+The abstract operation PartitionDateTimeRangePattern takes arguments dateTimeFormat (an Intl.DateTimeFormat), x (a Number), and y (a Number) and returns either a normal completion containing a List of Records with fields [[Type]] (a String), [[Value]] (a String), and [[Source]] (a String), or a throw completion . It interprets x and y as time values as specified in ECMA-262 , 21.4.1.1 , and creates the corresponding parts according to the effective locale and the formatting options of dateTimeFormat . It performs the following steps when called:
+
+- Set x to TimeClip ( x ).
+
+- If x is NaN , throw a RangeError exception.
+
+- Set y to TimeClip ( y ).
+
+- If y is NaN , throw a RangeError exception.
+
+- Let xEpochNanoseconds be ℤ ( ℝ ( x ) × 10 6 ).
+
+- Let yEpochNanoseconds be ℤ ( ℝ ( y ) × 10 6 ).
+
+- Let localTime1 be ToLocalTime ( xEpochNanoseconds , dateTimeFormat . [[Calendar]] , dateTimeFormat . [[TimeZone]] ).
+
+- Let localTime2 be ToLocalTime ( yEpochNanoseconds , dateTimeFormat . [[Calendar]] , dateTimeFormat . [[TimeZone]] ).
+
+- Let format be dateTimeFormat . [[DateTimeFormat]] .
+
+- If dateTimeFormat . [[HourCycle]] is "h11" or "h12" , then
+- Let pattern be format . [[pattern12]] .
+
+- Let rangePatterns be format . [[rangePatterns12]] .
+
+- Else,
+- Let pattern be format . [[pattern]] .
+
+- Let rangePatterns be format . [[rangePatterns]] .
+
+- Let selectedRangePattern be undefined .
+
+- Let relevantFieldsEqual be true .
+
+- Let checkMoreFields be true .
+
+- For each row of Table 6 , except the header row, in table order, do
+- Let fieldName be the name given in the Field Name column of the row.
+
+- If rangePatterns has a field whose name is fieldName , let rangePattern be rangePatterns ' field whose name is fieldName ; else let rangePattern be undefined .
+
+- If selectedRangePattern is not undefined and rangePattern is undefined , then
+- NOTE: Because there is no range pattern for differences at or below this field, no further checks will be performed.
+
+- Set checkMoreFields to false .
+
+- If fieldName is not equal to [[Default]] and relevantFieldsEqual is true and checkMoreFields is true , then
+- Set selectedRangePattern to rangePattern .
+
+- If fieldName is [[AmPm]] , then
+- If localTime1 . [[Hour]] is less than 12, let v1 be "am" ; else let v1 be "pm" .
+
+- If localTime2 . [[Hour]] is less than 12, let v2 be "am" ; else let v2 be "pm" .
+
+- Else if fieldName is [[DayPeriod]] , then
+- Let v1 be an ILD String representing the day period of localTime1 .
+
+- Let v2 be an ILD String representing the day period of localTime2 .
+
+- Else if fieldName is [[FractionalSecondDigits]] , then
+- If format has a [[fractionalSecondDigits]] field, then
+- Let fractionalSecondDigits be format . [[fractionalSecondDigits]] .
+
+- Else,
+- Let fractionalSecondDigits be 3.
+
+- Let exp be fractionalSecondDigits - 3.
+
+- Let v1 be floor ( localTime1 . [[Millisecond]] × 10 exp ).
+
+- Let v2 be floor ( localTime2 . [[Millisecond]] × 10 exp ).
+
+- Else,
+- Let v1 be localTime1 's field whose name is fieldName .
+
+- Let v2 be localTime2 's field whose name is fieldName .
+
+- If v1 is not equal to v2 , then
+- Set relevantFieldsEqual to false .
+
+- If relevantFieldsEqual is true , then
+- Let collapsedResult be a new empty List .
+
+- Let resultParts be FormatDateTimePattern ( dateTimeFormat , format , pattern , xEpochNanoseconds ).
+
+- For each Record { [[Type]] , [[Value]] } part of resultParts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Source]] : "shared" } to collapsedResult .
+
+- Return collapsedResult .
+
+- Let rangeResult be a new empty List .
+
+- If selectedRangePattern is undefined , then
+- Set selectedRangePattern to rangePatterns . [[Default]] .
+
+- For each Record { [[Pattern]] , [[Source]] } rangePatternPart of selectedRangePattern . [[PatternParts]] , do
+- Let pattern be rangePatternPart . [[Pattern]] .
+
+- Let source be rangePatternPart . [[Source]] .
+
+- If source is "startRange" or "shared" , then
+- Let z be xEpochNanoseconds .
+
+- Else,
+- Let z be yEpochNanoseconds .
+
+- Let resultParts be FormatDateTimePattern ( dateTimeFormat , selectedRangePattern , pattern , z ).
+
+- For each Record { [[Type]] , [[Value]] } part of resultParts , do
+- Append the Record { [[Type]] : part . [[Type]] , [[Value]] : part . [[Value]] , [[Source]] : source } to rangeResult .
+
+- Return rangeResult .
+
+11.5.10 FormatDateTimeRange ( dateTimeFormat , x , y )
+
+The abstract operation FormatDateTimeRange takes arguments dateTimeFormat (an Intl.DateTimeFormat), x (a Number), and y (a Number) and returns either a normal completion containing a String or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionDateTimeRangePattern ( dateTimeFormat , x , y ).
+
+- Let result be the empty String.
+
+- For each Record { [[Type]] , [[Value]] , [[Source]] } part of parts , do
+- Set result to the string-concatenation of result and part . [[Value]] .
+
+- Return result .
+
+11.5.11 FormatDateTimeRangeToParts ( dateTimeFormat , x , y )
+
+The abstract operation FormatDateTimeRangeToParts takes arguments dateTimeFormat (an Intl.DateTimeFormat), x (a Number), and y (a Number) and returns either a normal completion containing an Array or a throw completion . It performs the following steps when called:
+
+- Let parts be ? PartitionDateTimeRangePattern ( dateTimeFormat , x , y ).
+
+- Let result be ! ArrayCreate (0).
+
+- Let n be 0.
+
+- For each Record { [[Type]] , [[Value]] , [[Source]] } part of parts , do
+- Let partObj be OrdinaryObjectCreate ( %Object.prototype% ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "type" , part . [[Type]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "value" , part . [[Value]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( partObj , "source" , part . [[Source]] ).
+
+- Perform ! CreateDataPropertyOrThrow ( result , ! ToString ( 𝔽 ( n )), partObj ).
+
+- Set n to n + 1.
+
+- Return result .
+
+11.5.12 ToLocalTime ( epochNs , calendar , timeZoneIdentifier )
+
+The implementation-defined abstract operation ToLocalTime takes arguments epochNs (a BigInt), calendar (a String), and timeZoneIdentifier (a String) and returns a ToLocalTime Record . It performs the following steps when called:
+
+- If IsTimeZoneOffsetString ( timeZoneIdentifier ) is true , then
+- Let offsetNs be ParseTimeZoneOffsetString ( timeZoneIdentifier ).
+
+- Else,
+- Assert : GetAvailableNamedTimeZoneIdentifier ( timeZoneIdentifier ) is not empty .
+
+- Let offsetNs be GetNamedTimeZoneOffsetNanoseconds ( timeZoneIdentifier , epochNs ).
+
+- Let tz be ℝ ( epochNs ) + offsetNs .
+
+- If calendar is "gregory" , then
+- Return a ToLocalTime Record with fields calculated from tz according to Table 17 .
+
+- Else,
+- Return a ToLocalTime Record with the fields calculated from tz for the given calendar . The calculations should use best available information about the specified calendar .
+
+11.5.13 ToLocalTime Records
+
+Each ToLocalTime Record has the fields defined in Table 17 .
+
+Table 17: Record returned by ToLocalTime
+
+Field Name
+Value Type
+Value Calculation for Gregorian Calendar
+
+[[Weekday]]
+an integer
+ℝ ( WeekDay ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Era]]
+a String
+Let year be YearFromTime ( 𝔽 ( floor ( tz / 10 6 ))). If year < 1 𝔽 , return "BC" , else return "AD" .
+
+[[Year]]
+an integer
+ℝ ( YearFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[RelatedYear]]
+an integer or undefined
+undefined
+
+[[YearName]]
+a String or undefined
+undefined
+
+[[Month]]
+an integer
+ℝ ( MonthFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Day]]
+an integer
+ℝ ( DateFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Hour]]
+an integer
+ℝ ( HourFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Minute]]
+an integer
+ℝ ( MinFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Second]]
+an integer
+ℝ ( SecFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[Millisecond]]
+an integer
+ℝ ( msFromTime ( 𝔽 ( floor ( tz / 10 6 ))))
+
+[[InDST]]
+a Boolean
+Calculate true or false using the best available information about the specified calendar and timeZoneIdentifier , including current and historical information from the IANA Time Zone Database about time zone offsets from UTC and daylight saving time rules.
+
+Normative Optional
+
+11.5.14 UnwrapDateTimeFormat ( dtf )
+
+The abstract operation UnwrapDateTimeFormat takes argument dtf (an ECMAScript language value ) and returns either a normal completion containing an ECMAScript language value or a throw completion .
+It returns the DateTimeFormat instance of its input object, which is either the value itself or a value associated with it by %Intl.DateTimeFormat% according to the normative optional constructor mode of 4.3 Note 1 .
+It performs the following steps when called:
+
+- If dtf is not an Object , throw a TypeError exception.
+
+- If dtf does not have an [[InitializedDateTimeFormat]] internal slot and ? OrdinaryHasInstance ( %Intl.DateTimeFormat% , dtf ) is true , then
+- Return ? Get ( dtf , %Intl% . [[FallbackSymbol]] ).
+
+- Return dtf .
