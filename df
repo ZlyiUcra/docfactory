@@ -5,6 +5,8 @@
 #   ./df <примірник> list                що завантажилося б, без запису ($ мережа)
 #   ./df <примірник> check [--deep]      чи змінилося щось нагорі за джерелом ($ мережа)
 #   ./df <примірник> refresh [id...]     завантажити корпус, лише задекларованим ($ мережа)
+#   ./df <примірник> manifest             оновити паспорт corpus/index.json ($0)
+#   ./df <примірник> setup               спитати раз: Qdrant чи пошук по словах ($0)
 #   ./df <примірник> vectors [--refill]  залити corpus у Qdrant (Docker, локально)
 #   ./df <примірник> serve               HTTP-сервер MCP на порту примірника ($0)
 #   ./df <примірник> status              стан бази й розклад оновлення ($0)
@@ -56,11 +58,19 @@ case "$STEP" in
   check)    exec "$PY" -m engine --instance "$INST" --status "$@" ;;
   manifest) exec "$PY" -m engine --instance "$INST" --manifest ;;
   refresh)  exec "$PY" -m engine --instance "$INST" --refresh "$@" ;;
+  setup)    exec "$PY" -m server.setup "$@" ;;
   vectors)  exec "$PY" -m server.setup --vectors "$@" ;;
-  serve)    exec "$PY" server/spec_mcp.py --serve ;;
+  serve)
+    # Перший запуск у живому терміналі, поки рішення ще не записане, — спитати:
+    # файл рішення пише лише server.setup, а без файла сервер мовчки шукає по
+    # словах. Відповідь q нічого не пише, і сервер чесно стартує по словах.
+    if [ ! -f "$DIR/out/mode.json" ] && [ -t 0 ]; then
+      "$PY" -m server.setup || true
+    fi
+    exec "$PY" server/spec_mcp.py --serve ;;
   status)   exec "$PY" -m server.setup --status "$@" ;;
   smoke)    exec "$PY" -m server.smoke "$@" ;;
   tools)    exec "$PY" -m server.agent --tools ;;
   ask)      exec "$PY" -m server.agent "$@" ;;
-  *) echo "Невідомий крок «$STEP». Є: sources list check refresh vectors serve status smoke tools ask"; exit 2 ;;
+  *) echo "Невідомий крок «$STEP». Є: sources list check refresh setup vectors serve status smoke tools ask"; exit 2 ;;
 esac
