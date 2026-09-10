@@ -50,11 +50,13 @@ def main(argv: list[str]) -> int:
     search, read = spec_mcp.search_spec, spec_mcp.read_section
 
     # 1. Розділи на місці, і поділені вони тим самим кодом, що в модулі 4. Число
-    # фрагментів зняте 1 вересня 2026 року на корпусі після оновлення
-    # (./df ecmascript refresh), на тих самих файлах, що лежать у corpus/.
+    # фрагментів зняте 10 вересня 2026 року, після двох виправлень у corpus.py:
+    # прибрано відбір за довжиною (повернув 482 короткі нумеровані розділи) і
+    # номер розділу додано в ключ дедуплікації (повернув 12 розділів із
+    # однаковим тілом). До виправлень було 4168.
     from common.corpus import DOC_SET
 
-    EXPECTED = 4168
+    EXPECTED = 4662
     total = len(spec_mcp._INDEX.passages)
     check(f"індекс зібрано при завантаженні модуля (набір {DOC_SET})",
           total == EXPECTED,
@@ -64,6 +66,24 @@ def main(argv: list[str]) -> int:
           spec_mcp._LOADED in spec_mcp.TOOL_DESCRIPTIONS["search_spec"]
           and spec_mcp._LOADED in spec_mcp.TOOL_DESCRIPTIONS["read_section"],
           spec_mcp._LOADED[:60] + "...")
+
+    # 1a. Жоден розділ із власним текстом не загубився дорогою від файлів до
+    # індексу. Втрата вже траплялася і була мовчазною: відбір за довжиною
+    # прибирав 368 коротких розділів, і пошук відповідав за них сусідніми
+    # номерами — для інструмента цитування це найгірша з відмов.
+    from common.corpus import section_map
+
+    with_text = {s for s, has in section_map().items() if has}
+    indexed = {p.section for p in spec_mcp._INDEX.passages if p.section}
+    lost = with_text - indexed
+    check("кожен розділ із власним текстом є в індексі", not lost,
+          f"розділів {len(with_text)}, втрачених {len(lost)}"
+          + (": " + ", ".join(sorted(lost)[:5]) if lost else ""))
+    short_hits = spec_mcp.search_spec("Error.prototype.name", 3)
+    check("короткий розділ знаходиться (20.5.3.3 Error.prototype.name)",
+          any("20.5.3.3" in p["id"]
+              for p in short_hits.get("passages", [])),
+          (short_hits.get("passages") or [{}])[0].get("id", "—"))
 
     # 2. Пошук знаходить те, що в розділах явно є, і кожен знайдений фрагмент
     # приходить із заповненими полями — саме за ними клієнт цитує джерело.

@@ -71,7 +71,7 @@ except ImportError:
 
 from common import instance
 from common import nform
-from common.corpus import DOC_SET, Passage
+from common.corpus import DOC_SET, Passage, section_map
 from common.idmap import assign_ids
 from common import mode
 from common.lexical import LexicalIndex, tokenize
@@ -100,6 +100,15 @@ _INDEX = LexicalIndex()
 # недосяжним. Те саме місце використовує заливання в Qdrant, тож ідентифікатор у
 # відповіді пошуку і ідентифікатор у базі — той самий рядок.
 _BY_ID, _UID = assign_ids(_INDEX.passages)
+
+# Порожній індекс — завжди помилка даних, і сказати про неї треба словами ще
+# тут: нижче код бере з індексу приклад ідентифікатора, і на порожньому словнику
+# це падало б голим StopIteration без жодного натяку на причину. Порожнім індекс
+# буває у свіжого домену, де corpus/ ще не наповнений.
+if not _BY_ID:
+    raise SystemExit(
+        "spec_mcp: індекс порожній — жоден документ у corpus/ не дав фрагмента з "
+        "текстом. Наповніть корпус (./df <домен> refresh) і підніміть сервер знову.")
 
 _COUNT = len(_INDEX.passages)
 _DOCS = len({p.doc_id for p in _INDEX.passages})
@@ -131,6 +140,25 @@ print(f"spec_mcp: набір «{DOC_SET}», проіндексовано {_COUNT
       f"{nform(_COUNT, 'фрагмент', 'фрагменти', 'фрагментів')} "
       f"з {_DOCS} {nform(_DOCS, 'розділу', 'розділів', 'розділів')}",
       file=sys.stderr)
+
+# Звірка з документами: кожен розділ, у якого є власний текст, мусить бути в
+# індексі. Мовчазна втрата вже траплялася — відбір за довжиною в corpus.py
+# прибирав 368 коротких розділів, і пошук відповідав за них сусідніми номерами.
+# Тепер втрата — не тихий мінус у числі фрагментів, а рядок з іменами при
+# кожному старті, поруч із рештою чисел.
+_SECTIONS = section_map()
+_WITH_TEXT = {s for s, has in _SECTIONS.items() if has}
+_LOST = _WITH_TEXT - {p.section for p in _INDEX.passages if p.section}
+if _LOST:
+    print(f"spec_mcp: УВАГА: {len(_LOST)} "
+          f"{nform(len(_LOST), 'розділ', 'розділи', 'розділів')} із власним "
+          f"текстом немає в індексі: {', '.join(sorted(_LOST)[:5])}"
+          f"{'…' if len(_LOST) > 5 else ''} — пошук відповідатиме сусідніми",
+          file=sys.stderr)
+else:
+    print(f"spec_mcp: усі {len(_WITH_TEXT)} розділів із власним текстом в "
+          f"індексі; рубрик без тексту {len(_SECTIONS) - len(_WITH_TEXT)}",
+          file=sys.stderr)
 
 # Пошук за змістом: чи його просили, і чи він уже готовий.
 #
@@ -395,6 +423,23 @@ def read_section(id: str) -> dict:
     """
     passage = _BY_ID.get(id)
     if passage is None:
+        # Голий номер розділу — найчастіша вгадка моделі. Якщо документи такий
+        # розділ справді називають, відповідь мусить сказати, що з ним:
+        # рубрика без власного тексту — це межа корпусу, а не помилка виклику,
+        # і мовчати про неї означає вчити модель гадати номери далі.
+        sec = id.strip()
+        if sec in _SECTIONS and not _SECTIONS[sec]:
+            _log("read_section", f"id={id!r}", "рубрика без власного тексту")
+            return {"error": f"розділ {sec} існує, але власного тексту не має — "
+                             f"його вміст лежить у підрозділах",
+                    "hint": "знайдіть підрозділи через search_spec і читайте їх "
+                            "за id з видачі"}
+        if sec in _SECTIONS:
+            _log("read_section", f"id={id!r}", "номер розділу замість id")
+            return {"error": f"розділ {sec} в індексі є, але читається він за "
+                             f"повним id, а не голим номером",
+                    "hint": f"id береться з поля id у відповіді search_spec, "
+                            f'напр. "{_EXAMPLE_ID}"'}
         _log("read_section", f"id={id!r}", "помилка: такого id немає")
         return {"error": "фрагмента з таким id немає",
                 "hint": "id береться з поля id у відповіді search_spec"}
