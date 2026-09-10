@@ -92,6 +92,20 @@ def main(argv: list[str]) -> int:
     finally:
         shutil.rmtree(fixture, ignore_errors=True)
 
+    # 0b-2. Ім'я колекції Qdrant Python читає сам — поле collection з config.json
+    # примірника, а не змінну, яку колись експортував df. Інакше сервер, піднятий
+    # повз df (напряму чи Inspector'ом), шукав би в колекції spec-suite-bge-small,
+    # якої ніхто не заливав, — і вся робота кроку vectors зникала б залежно від
+    # способу запуску. Змінна оточення лишається явним перекриттям, тож очікування
+    # рахується з тим самим пріоритетом.
+    from common import instance, vectorstore
+
+    conf_name = instance.config().get("collection")
+    check("ім'я колекції Qdrant береться з config.json примірника",
+          bool(conf_name)
+          and vectorstore.COLLECTION == (os.getenv("QDRANT_COLLECTION") or conf_name),
+          f"config: {conf_name!r}, у коді: {vectorstore.COLLECTION!r}")
+
     # 0c. Кожен читач відмовляється від сторінки, якої не впізнає, винятком — а
     # не повертає куций документ. Раніше два збирачі глав (_document_262 і
     # _document_402) не перевіряли нічого: заглушка «This page has moved.»
