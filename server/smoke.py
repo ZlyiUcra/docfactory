@@ -441,6 +441,13 @@ def main(argv: list[str]) -> int:
     url = str(full.get("url", ""))
     expected = "https://" if DOC_SET == "suite" else "https://tc39.es/ecma262/"
     check("read_section дає посилання на джерело", url.startswith(expected), url)
+    # Дата завантаження — третя частина походження поруч із розділом і адресою:
+    # без неї цитату не звірити з джерелом через рік, коли текст нагорі зміниться.
+    import re
+
+    fetched = str(full.get("fetched", ""))
+    check("read_section каже дату завантаження документа",
+          bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", fetched)), fetched or "порожньо")
     check("повний текст не коротший за обрізаний",
           len(full.get("text", "")) >= len(first.get("text", "")))
 

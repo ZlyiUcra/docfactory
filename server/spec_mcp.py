@@ -440,7 +440,9 @@ def search_spec(query: str, k: int = 3) -> dict:
 
 def read_section(id: str) -> dict:
     """Return the full text of one specification excerpt by its identifier,
-    together with the section number and the URL it was taken from.
+    together with the section number, the URL it was taken from and the date the
+    text was fetched from that URL -- so a quotation can be checked against the
+    source even a year later.
 
     Call this after `search_spec` when the excerpt you need came back cut at 600
     characters, or when the exact wording of a step in an abstract operation
@@ -487,6 +489,7 @@ def read_section(id: str) -> dict:
             "section": passage.label,
             "document": passage.doc_title,
             "url": passage.url,
+            "fetched": passage.fetched,
             "text": clean}
 
 

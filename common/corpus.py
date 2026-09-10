@@ -111,6 +111,7 @@ class Passage:
         self.doc_id = doc.doc_id
         self.doc_title = doc.title
         self.url = doc.url
+        self.fetched = doc.fetched
         self.section = section
         self.heading = heading
         self.text = text
