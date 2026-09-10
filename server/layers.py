@@ -27,6 +27,7 @@ deny_before, allowed_schemas і scan_output працюють без ключа �
 """
 
 import re
+from urllib.parse import urlsplit
 
 # Імена шарів у порядку додавання — ними підписані стовпці таблиці в attacks.py.
 LAYER_NAMES = ["вхідний фільтр", "правила перед дією", "список дозволених",
@@ -35,18 +36,34 @@ LAYER_NAMES = ["вхідний фільтр", "правила перед діє�
 
 # ── Шар 1: вхідний фільтр ─────────────────────────────────────
 
+# Шар 1 — розтяжка на повеління, звернене до асистента, а не класифікатор
+# намірів: регулярний вираз змісту питання не читає. Тому кожне правило вимагає
+# об'єкт-інструкцію поруч із дієсловом («disregard the previous INSTRUCTIONS»),
+# а не саме дієслово: «does a lookbehind let a regex disregard the previous
+# character?» — звичайне питання про стандарт, і блокувати його — найгірша з
+# відмов: вона неправдива, непояснена і вчить обходити невидимий фільтр. Те,
+# чого розтяжка не ловить за побудовою, — робота guardrail на боці моделі.
 _INPUT_RULES = [
     ("injection_marker",
-     re.compile(r"ігноруй\s+(усі\s+)?попередні|ignore\s+(all\s+)?previous|"
-                r"disregard\s+(the\s+)?(above|previous|earlier)|"
-                r"системн\w+\s+(промпт|повідомлення)|system\s+prompt|"
-                r"(розкрий|покажи|reveal|show)\s+(свій\s+|your\s+)?(промпт|prompt|"
-                r"instructions|інструкц)", re.I)),
+     re.compile(
+         r"(ігноруй|ignore)\s+(усі\s+|all\s+)?(попередні\s+(інструкції|вказівки|"
+         r"повідомлення)|previous\s+(instructions?|messages?|context))|"
+         r"disregard\s+(the\s+)?(above|previous|earlier)\s+"
+         r"(instructions?|messages?|context|вказівк\w+|інструкц\w+)|"
+         r"(forget|забудь)\s+(everything|all|усе|все)\s+(above|before|вище)",
+         re.I)),
+    ("prompt_extraction",
+     re.compile(
+         r"system\s+(prompt|message)|системн\w+\s+(промпт|повідомлення)|"
+         r"(show|print|reveal|repeat|output|tell\s+me|покажи|розкрий|повтори|"
+         r"процитуй).{0,60}\b(your\s+(instructions?|configuration|prompt)|"
+         r"(свої|твої)\s+(інструкції|налаштування|промпт))", re.I)),
     ("corpus_fishing",
-     re.compile(r"(шлях|путь|path|назв\w+\s+файл|file\s+name).{0,30}"
-                r"(корпус|docs|фрагмент|документ)|docs-attack|"
-                r"(перелічи|list|дай).{0,20}(усі\s+)?(файл|документ|розділ)\w*\s+"
-                r"(корпус|бази|індекс)", re.I)),
+     re.compile(
+         r"(шлях|путь|path|назв\w+\s+файл|file\s+name).{0,30}"
+         r"(корпус|corpus|індекс|index\.json|sources\.json)|docs-attack|"
+         r"(перелічи|list|дай).{0,20}(усі\s+)?(файл|документ|розділ)\w*\s+"
+         r"(корпус|бази|індекс)", re.I)),
 ]
 
 
@@ -134,13 +151,33 @@ _URL_RE = re.compile(r"https?://[^\s)»\"']+")
 _CARD_RE = re.compile(r"\b(?:\d[ -]?){15}\d\b")
 
 
+def _luhn_ok(digits: str) -> bool:
+    """Контрольна сума Луна — те, чим номер картки відрізняється від просто
+    шістнадцяти цифр. Специфікація сама складається з великих чисел:
+    9007199254740991 (Number.MAX_SAFE_INTEGER) і 8640000000000000 (межа часу
+    ECMAScript) суму Луна не проходять — і в маску більше не потрапляють."""
+    total, double = 0, False
+    for ch in reversed(digits):
+        d = int(ch)
+        if double:
+            d = d * 2 - 9 if d > 4 else d * 2
+        total += d
+        double = not double
+    return total % 10 == 0
+
+
 def scan_output(text: str) -> tuple[str, list[str]]:
     """Чистить відповідь перед показом клієнту. Повертає (текст, спрацювання)."""
     flags = []
 
     def _url(m: re.Match) -> str:
         raw = m.group(0)
-        host = raw.split("/")[2] if "//" in raw else ""
+        # Хост — через urlsplit, а не розріз рядка: він сам скидає регістр і
+        # порт, а хвостову крапку (кінець речення одразу за хостом) знімаємо
+        # самі. Рядкове порівняння різало дозволений домен, записаний як
+        # TC39.es, tc39.es:443 чи «…tc39.es.» — і посилання на єдине дозволене
+        # джерело зникало з відповіді.
+        host = (urlsplit(raw).hostname or "").rstrip(".")
         if any(host == d or host.endswith("." + d) for d in URL_ALLOWLIST):
             return raw
         flags.append(f"url_stripped: {host}")
@@ -148,9 +185,13 @@ def scan_output(text: str) -> tuple[str, list[str]]:
 
     text = _URL_RE.sub(_url, text)
 
-    if _CARD_RE.search(text):
-        flags.append("card_number_masked")
-        text = _CARD_RE.sub("**** **** **** ****", text)
+    def _card(m: re.Match) -> str:
+        if _luhn_ok(re.sub(r"[ -]", "", m.group(0))):
+            flags.append("card_number_masked")
+            return "**** **** **** ****"
+        return m.group(0)
+
+    text = _CARD_RE.sub(_card, text)
 
     return text, flags
 
