@@ -345,6 +345,17 @@ def main(argv: list[str]) -> int:
           and len(passport_ids) == len(passport_docs) == len(txt_files),
           f"файлів {len(txt_files)}, записів {len(passport_docs)}, "
           f"різних id {len(passport_ids)}")
+
+    # 1c. Замір якості (server/quality.py) рахує влучання по межі сегмента
+    # номера, а не як префікс рядка: «9.2.1» — префікс для «9.2.10»…«9.2.15»,
+    # але то сусіди, а не підрозділи. Голий startswith зараховував їх за
+    # влучання — шість чужих розділів на одну з десяти цілей, і стовпці
+    # заміру могли розійтися на відповіді, якої спосіб не давав.
+    from server.quality import within
+
+    check("замір якості: підрозділ зараховується, сусід зі спільним префіксом — ні",
+          within("9.2.1", "9.2.1") and within("9.2.1.2", "9.2.1")
+          and not within("9.2.10", "9.2.1") and not within("9.2.15", "9.2.1"))
     short_hits = spec_mcp.search_spec("Error.prototype.name", 3)
     check("короткий розділ знаходиться (20.5.3.3 Error.prototype.name)",
           any("20.5.3.3" in p["id"]

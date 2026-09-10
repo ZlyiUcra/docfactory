@@ -54,6 +54,19 @@ K = 5
 WARMUP_SEC = 90
 
 
+def within(section: str, want: str) -> bool:
+    """Чи є розділ шуканим або його підрозділом.
+
+    Номери з крапками порівнюються по межі сегмента, а не як рядки: «9.2.1» —
+    префікс для «9.2.10»…«9.2.15», але то сусіди, а не підрозділи. Голий
+    startswith зараховував їх за влучання — шість чужих розділів на одну з
+    десяти цілей, і стовпці заміру могли розійтися на відповіді, якої спосіб
+    не давав. Той самий вираз доречний усюди, де номер розділу порівнюють
+    як префікс.
+    """
+    return section == want or section.startswith(want + ".")
+
+
 def wait_for_vectors(spec_mcp) -> bool:
     """Чекає, поки фонова нитка сервера прогріє пошук за змістом.
 
@@ -113,7 +126,7 @@ def main(argv: list[str]) -> int:
 
         marks = []
         for way in ways:
-            hit = any(p.section.startswith(want) for p in found[way])
+            hit = any(within(p.section, want) for p in found[way])
             score[way] += hit
             marks.append(f"{way} {'+' if hit else '-'}")
         print(f"· {query}\n    треба {want:<11} {'   '.join(marks)}")
