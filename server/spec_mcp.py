@@ -235,17 +235,41 @@ if _VECTORS_ASKED:
 # порівняти виклики з різних клієнтів, запис має пережити їх усі.
 #
 # Файл тільки дописується. Ніщо в цьому коді його не читає, не чистить і не
-# перезаписує; коли він набридне, власник прибирає його сам.
+# перезаписує; коли він набридне, власник прибирає його сам. Дві межі бережуть
+# його від переповнення без жодного видалення:
+# - поле запиту ріжеться тут, в одному місці, а не по місцях виклику — інакше
+#   довжину рядка обирає той, хто кличе інструмент: запит на 50 000 символів
+#   із хибним k колись лягав у файл цілим саме на тому шляху, що його відхиляв,
+#   і модель, зациклена на незрозумілій їй помилці, заповнювала диск;
+# - сягнувши стелі, файл більше не дописується — про це кажеться раз у stderr,
+#   а сам stderr пишеться далі, тож Inspector і --debug нічого не втрачають.
+#   Ротації навмисно немає: вона видаляла б журнал сама, без відома власника.
 LOG_PATH = _INSTANCE / "out" / "calls.log"
+LOG_FIELD_CHARS = 120
+LOG_MAX_BYTES = 16 * 1024 * 1024
 _PID = os.getpid()
+_LOG_FULL = False
 
 
 def _log(tool: str, request: str, outcome: str) -> None:
+    global _LOG_FULL
+    if len(request) > LOG_FIELD_CHARS:
+        request = (f"{request[:LOG_FIELD_CHARS]}… "
+                   f"(+{len(request) - LOG_FIELD_CHARS} симв.)")
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"{stamp} pid={_PID} {tool} {request} -> {outcome}"
     print(line, file=sys.stderr)
+    if _LOG_FULL:
+        return
     try:
         LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if LOG_PATH.exists() and LOG_PATH.stat().st_size >= LOG_MAX_BYTES:
+            _LOG_FULL = True
+            print(f"spec_mcp: журнал {LOG_PATH} сягнув "
+                  f"{LOG_MAX_BYTES // (1024 * 1024)} МБ — у файл більше не пишу, "
+                  f"stderr пишеться далі; приберіть або перейменуйте файл самі",
+                  file=sys.stderr)
+            return
         with LOG_PATH.open("a", encoding="utf-8") as fh:
             fh.write(line + "\n")
     except OSError as exc:
@@ -400,7 +424,7 @@ def search_spec(query: str, k: int = 3) -> dict:
     # три впевнені номери розділів навмання — саме та помилка, проти якої написано
     # абзац «коли не кликати». Тому тут відповідь чесна: шукати не було чого.
     if not tokenize(query):
-        _log("search_spec", f"query={query[:120]!r} k={k}",
+        _log("search_spec", f"query={query!r} k={k}",
              "нуль латинських слів у запиті")
         return {"found": 0, "search": "words",
                 "note": "The query has no latin words, and everything held here "
@@ -409,7 +433,7 @@ def search_spec(query: str, k: int = 3) -> dict:
                         "uses, then search again."}
 
     hits, how = _find(query, k)
-    _log("search_spec", f"query={query[:120]!r} k={k}",
+    _log("search_spec", f"query={query!r} k={k}",
          f"знайдено {len(hits)} ({how})")
     return _format_hits(hits, how)
 

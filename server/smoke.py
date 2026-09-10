@@ -453,6 +453,49 @@ def main(argv: list[str]) -> int:
     check("санітар пропускає чистий текст незмінним",
           not tripped and passed == plain.text)
 
+    # 6c. Журнал викликів: довжину рядка обирає сервер, а не той, хто кличе.
+    # Колись запит на 50 000 символів із хибним k лягав у out/calls.log цілим —
+    # саме на шляху, що його відхиляв, — бо два сусідні шляхи різали запит самі,
+    # а третій ні. Тепер ріже _log, тож межа одна на всі шляхи, і read_section
+    # з велетенським id теж під нею. А файл має стелю: сягнувши її, сервер
+    # перестає писати у файл (не ротує — нічого не видаляє) і каже про це раз.
+    import tempfile as _tf
+
+    probe_log = pathlib.Path(_tf.mkdtemp(prefix="zz-smoke-log-",
+                                         dir=root / "instances")) / "calls.log"
+    huge = "x" * 50_000
+    saved = (spec_mcp.LOG_PATH, spec_mcp.LOG_MAX_BYTES, spec_mcp._LOG_FULL)
+    err = io.StringIO()
+    try:
+        spec_mcp.LOG_PATH, spec_mcp._LOG_FULL = probe_log, False
+        with contextlib.redirect_stderr(err):
+            search(huge, k=999)               # шлях відмови: k поза межами
+            search("я" * 50_000, k=3)          # шлях «нуль латинських слів»
+            read(huge)                        # шлях «такого id немає»
+        lines = probe_log.read_text(encoding="utf-8").splitlines()
+        # Запас понад поле запиту: дата, pid, назва інструмента, позначка
+        # обрізки і текст наслідку — разом близько дев'яноста символів.
+        bound = spec_mcp.LOG_FIELD_CHARS + 120
+        longest = max((len(ln) for ln in lines), default=0)
+        check("жоден рядок журналу не довший за межу, на будь-якому шляху",
+              len(lines) == 3 and longest <= bound
+              and huge not in err.getvalue(),
+              f"рядків {len(lines)}, найдовший {longest}, межа {bound}")
+
+        spec_mcp.LOG_MAX_BYTES = probe_log.stat().st_size   # стеля — ось тут
+        with contextlib.redirect_stderr(err):
+            search("Object type", k=1)
+            search("Object type", k=1)
+        after = probe_log.stat().st_size
+        notices = err.getvalue().count("більше не пишу")
+        check("на стелі файл не росте, повідомлення про це — одне",
+              after == spec_mcp.LOG_MAX_BYTES and notices == 1,
+              f"було {spec_mcp.LOG_MAX_BYTES}, стало {after}, "
+              f"повідомлень {notices}")
+    finally:
+        spec_mcp.LOG_PATH, spec_mcp.LOG_MAX_BYTES, spec_mcp._LOG_FULL = saved
+        shutil.rmtree(probe_log.parent, ignore_errors=True)
+
     # 7. Вигаданий ідентифікатор. Підказка в помилці важить не менше за саму
     # помилку: без неї модель починає гадати id далі.
     bad = read("22.1.3.19")
