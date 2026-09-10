@@ -2,9 +2,12 @@
 
 Ніщо в ядрі не звертається до мережі повз цей модуль, і кожен виклик спершу
 питає дозвіл (`allow(url)`): адреса поза оголошенням примірника не завантажується,
-хоч би хто її підсунув. Обмеження ті самі, що були в завантажувачах: лише https
-(це вже в `allow`), відповідь не більша за `MAX_BYTES`, між зверненнями пауза, і
-є умовний запит «чи змінилося після нашої дати».
+хоч би хто її підсунув. Той самий дозвіл питається і на кожному переході
+редиректу — інакше оголошений хост відповідав би 302 і приводив тіло будь-якої
+відхиленої адреси, зокрема й через зміну https на http. Обмеження ті самі, що
+були в завантажувачах: лише https (це вже в `allow`), відповідь не більша за
+`MAX_BYTES`, між зверненнями пауза, і є умовний запит «чи змінилося після нашої
+дати».
 """
 
 import datetime
@@ -20,6 +23,24 @@ _UA = "agent0826-docfactory/1.0"
 
 class Refused(Exception):
     """Адреса не проходить білий список примірника."""
+
+
+class _GuardedRedirects(urllib.request.HTTPRedirectHandler):
+    """Редиректи крізь той самий білий список, що й перша адреса.
+
+    Типовий обробник urllib мовчки йде по 301/302/303/307, тож дозвіл, спитаний
+    до запиту, покривав лише перший перехід. Тут кожна нова адреса питає той
+    самий `allow`; відмова — Refused, і тіло відхиленої адреси не читається.
+    Схему переходу окремо перевіряти не треба: `allow` приймає лише https."""
+
+    def __init__(self, allow):
+        self._allow = allow
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not self._allow(newurl):
+            raise Refused(
+                f"редирект на адресу поза оголошенням примірника: {newurl}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def since_header(day: str) -> str:
@@ -45,8 +66,9 @@ def fetch(url: str, allow, *, since: str = "") -> tuple[str, bytes]:
         except ValueError:
             pass
     req = urllib.request.Request(url, headers=headers)
+    opener = urllib.request.build_opener(_GuardedRedirects(allow))
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as resp:
+        with opener.open(req, timeout=TIMEOUT_SEC) as resp:
             data = resp.read(MAX_BYTES + 1)
         if len(data) > MAX_BYTES:
             return (f"збій: більше за {MAX_BYTES} байтів", b"")

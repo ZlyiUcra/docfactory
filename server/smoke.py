@@ -130,6 +130,47 @@ def main(argv: list[str]) -> int:
         check(f"читач {rname} відмовляється від невпізнаної сторінки",
               _refuses(run_reader))
 
+    # 0d. Редирект не обходить білий список: кожен перехід питає той самий
+    # allow, що й перша адреса. Раніше дозвіл питався один раз, до запиту, а
+    # далі urllib мовчки йшов по 301/302/303/307 — оголошений хост міг
+    # перенаправити на будь-яку відхилену адресу (хоч https на http), і її
+    # тіло поверталося з кодом 200 та лягало в корпус. Проба — живий редирект
+    # на локальному сервері: fetch мусить підняти Refused, а не принести тіло.
+    import http.server
+    import threading
+
+    from engine import net as enet
+
+    class _Redirector(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/declared":
+                self.send_response(302)
+                self.send_header("Location", "/undeclared")
+                self.end_headers()
+            else:
+                body = b"TEXT FROM A REFUSED ADDRESS"
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass                      # тиша: журнал сервера не місце у виводі
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), _Redirector)
+    declared = f"http://127.0.0.1:{srv.server_address[1]}/declared"
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        try:
+            code, _ = enet.fetch(declared, lambda u: u == declared)
+            refused, detail = False, f"редирект пройшов, код {code}"
+        except enet.Refused as e:
+            refused, detail = True, str(e)[:60]
+        check("редирект на невідому адресу дістає Refused", refused, detail)
+    finally:
+        srv.shutdown()
+        srv.server_close()
+
     from server import spec_mcp
     from common import nform
 
