@@ -509,6 +509,53 @@ def main(argv: list[str]) -> int:
     cut, cflags = layers.scan_output("Дані: https://evil.example/x?q=1")
     check("шар 4 ріже чужий домен", "evil.example" not in cut and bool(cflags))
 
+    # 10b. Guardrail — затвор, а не ярлик на вже виданій відповіді; і чотири
+    # числа агента чесні. Раніше вердикт «block» лягав у звіт після того, як
+    # відповідь уже показано; виняток guardrail вилітав з agent.run разом із
+    # готовою відповіддю; лічильник викликів ріс до перевірки (відмову діставав
+    # шостий, обслуговувалося п'ять); а MAX_TURNS з .env ніколи не читався.
+    import importlib
+
+    from server import agent as sagent
+
+    check("вердикт block заміняє показане відмовою",
+          sagent.shown_after_guardrail("готова відповідь", {"verdict": "block"})
+          == layers.REFUSAL)
+    check("вердикт pass лишає показане як є",
+          sagent.shown_after_guardrail("готова відповідь", {"verdict": "pass"})
+          == "готова відповідь")
+
+    from common import llm as _llm
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("HTTP 401")
+
+    real_ask_json, _llm.ask_json = _llm.ask_json, _boom
+    try:
+        g = sagent._guard("питання", "відповідь")
+    finally:
+        _llm.ask_json = real_ask_json
+    check("збій guardrail — fail-open зі слідом у звіті",
+          g.get("verdict") == "pass" and "_error" in g, g.get("_error", ""))
+
+    sess7 = layers.Session()
+    served = 0
+    for _ in range(layers.MAX_TOOL_CALLS + 1):
+        if layers.deny_before("search_spec", {}, sess7) is None:
+            served += 1
+            sess7.calls += 1        # порядок із _dispatch: лічаться обслужені
+    check("ліміт викликів: рівно MAX_TOOL_CALLS обслужено, наступний — ні",
+          served == layers.MAX_TOOL_CALLS, f"обслужено {served}")
+
+    os.environ["MAX_TURNS"] = "3"
+    try:
+        sagent = importlib.reload(sagent)
+        check("MAX_TURNS читається з оточення", sagent.MAX_TURNS == 3,
+              f"MAX_TURNS={sagent.MAX_TURNS}")
+    finally:
+        del os.environ["MAX_TURNS"]
+        importlib.reload(sagent)
+
     print()
     if FAILED:
         print(f"ПРОВАЛЕНО: {len(FAILED)} — " + "; ".join(FAILED))

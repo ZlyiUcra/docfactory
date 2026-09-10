@@ -38,7 +38,10 @@ from server import layers
 _HERE = pathlib.Path(__file__).resolve().parent
 _SERVER = _HERE / "spec_mcp.py"
 
-MAX_TURNS = 6
+# Стеля ходів циклу. Читається з оточення: .env.example пропонує MAX_TURNS
+# поруч із MAX_TOKENS, який читається давно, — літерал тут робив ту пропозицію
+# німою: MAX_TURNS=1 в оточенні не міняв нічого.
+MAX_TURNS = int(os.getenv("MAX_TURNS", "6"))
 
 SYSTEM = (
     "Ти — асистент, що відповідає на питання про специфікацію ECMAScript. "
@@ -50,7 +53,6 @@ SYSTEM = (
 
 async def _dispatch(session, name, args, sess, report) -> dict:
     """Один виклик інструмента крізь шари 2 і 3."""
-    sess.calls += 1
     if not layers.call_allowed(name, enforce=True):             # шар 3, другий рубіж
         report["blocked"].append({"tool": name, "by": "шар 3 (не в списку дозволених)"})
         return {"error": "інструмент не дозволений політикою"}
@@ -58,6 +60,10 @@ async def _dispatch(session, name, args, sess, report) -> dict:
     if denied:
         report["blocked"].append({"tool": name, "by": f"шар 2 ({denied})"})
         return {"error": f"hook_denied: {denied}"}
+    # Лічильник росте лише після дозволу: коли він ріс до перевірки, відмову
+    # діставав шостий виклик, а обслуговувалося п'ять — а коментар біля
+    # MAX_TOOL_CALLS обіцяє «стільки викликів на одне звернення».
+    sess.calls += 1
     res = await session.call_tool(name, args)
     try:
         out = json.loads(res.content[0].text)
@@ -123,9 +129,31 @@ async def _run(query: str, history: list | None = None) -> dict:
     report["answer"] = answer
     shown, flags = layers.scan_output(answer)                   # шар 4
     report["output_flags"] = flags
-    report["guardrail"] = layers.guardrail(query, answer)
-    report["shown"] = shown
+    report["guardrail"] = _guard(query, answer)
+    report["shown"] = shown_after_guardrail(shown, report["guardrail"])
     return report
+
+
+def shown_after_guardrail(shown: str, guard: dict | None) -> str:
+    """Вердикт guardrail — затвор, а не ярлик на вже виданій відповіді: «block»
+    означає, що клієнт бачить відмову, а не відповідь із припискою під нею.
+    Fail-open лишається поведінкою для відповіді, якої не вдалося розібрати
+    (ask_json тоді повертає fallback із verdict=pass), — а це не те саме, що
+    ігнорувати вердикт, який повернули."""
+    if guard and guard.get("verdict") == "block":
+        return layers.REFUSAL
+    return shown
+
+
+def _guard(query: str, answer: str) -> dict:
+    """Виклик guardrail, який не вміє впустити готову відповідь: виняток
+    виклику (400 чи 401 минає цикл повторів у common/llm цілком) — теж
+    fail-open, як коментар шару й обіцяє. Причина збою лишається у звіті."""
+    try:
+        return layers.guardrail(query, answer)
+    except Exception as exc:                # noqa: BLE001 — причина йде у звіт
+        return {"leak": False, "foreign_link": False, "verdict": "pass",
+                "_error": f"{type(exc).__name__}: {exc}"}
 
 
 def run(query: str, history: list | None = None) -> dict:
