@@ -39,6 +39,7 @@ import time
 import urllib.error
 import urllib.request
 
+from . import instance
 from .corpus import DOC_SET
 from .embed import MODEL_KEY
 
@@ -50,7 +51,11 @@ CONTAINER = os.getenv("QDRANT_CONTAINER", "agent0826-qdrant")
 VOLUME = os.getenv("QDRANT_VOLUME", "agent0826-qdrant")
 IMAGE = os.getenv("QDRANT_IMAGE", "qdrant/qdrant")
 
-COLLECTION = os.getenv("QDRANT_COLLECTION", f"spec-{DOC_SET}-{MODEL_KEY}")
+# Колекцію називає config.json примірника; змінна оточення — явне перекриття.
+# Раніше ім'я їхало сюди через export у df, тепер його читає сам Python.
+COLLECTION = (os.getenv("QDRANT_COLLECTION")
+              or instance.config().get("collection")
+              or f"spec-{DOC_SET}-{MODEL_KEY}")
 
 TIMEOUT_SEC = 30
 BATCH = 128

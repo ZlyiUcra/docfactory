@@ -485,24 +485,15 @@ for _fn in (search_spec, read_section):
 
 
 def _serve_port() -> int:
-    """Порт HTTP-сервера. Спершу змінна DF_PORT — її виставляє df із config.json
-    примірника; коли сервер піднімають файлом напряму, читаємо config.json самі;
-    як останній засіб — 8000. Так один і той самий примірник завжди на своєму
+    """Порт HTTP-сервера: змінна DF_PORT як явне перекриття, інакше поле port
+    із config.json примірника (його читає й перевіряє common/instance.py), як
+    останній засіб — 8000. Так один і той самий примірник завжди на своєму
     порту, а різні примірники фабрики не б'ються за один."""
     env = os.environ.get("DF_PORT")
     if env and env.isdigit():
         return int(env)
-    cfg = _INSTANCE / "config.json"
-    if cfg.exists():
-        import json
-        try:
-            port = json.loads(cfg.read_text(encoding="utf-8")).get("port")
-            if isinstance(port, int):
-                return port
-        except (OSError, ValueError) as exc:
-            print(f"spec_mcp: config.json не прочитався ({exc}); порт 8000",
-                  file=sys.stderr)
-    return 8000
+    port = instance.config().get("port")
+    return port if isinstance(port, int) else 8000
 
 
 if __name__ == "__main__":

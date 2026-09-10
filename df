@@ -24,6 +24,11 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 INST="${1:-}"; [ -n "$INST" ] || { echo "Вкажіть примірник, напр.: ./df ecmascript sources"; exit 2; }
 shift
+# Ім'я примірника — одне ім'я теки в instances/, а не шлях. Інакше «../щось»
+# виводить запуск за межі фабрики й виконує чужий .venv/bin/python.
+case "$INST" in
+  */*|*\\*|.|..) echo "Ім'я примірника мусить бути одним ім'ям теки в instances/, без шляхів: «$INST»"; exit 2 ;;
+esac
 STEP="${1:-}"; [ -n "$STEP" ] || { echo "Вкажіть крок для «$INST», напр.: ./df $INST sources"; exit 2; }
 shift
 
@@ -36,18 +41,10 @@ PY="$DIR/.venv/bin/python"
 # домену (common/instance.py читає саме цю змінну).
 export DF_INSTANCE_DIR="$DIR"
 
-# Конфіг примірника у оточення: колекція, модель, порт. Код примірника читає ці
-# змінні, тож кожен крок працює саме з цим примірником, а не зі спільним типовим.
-if [ -f "$DIR/config.json" ]; then
-  eval "$("$PY" - "$DIR/config.json" <<'PYCFG'
-import json, sys
-c = json.load(open(sys.argv[1], encoding="utf-8"))
-if c.get("collection"):  print(f'export QDRANT_COLLECTION={c["collection"]}')
-if c.get("embed_model"): print(f'export PRACTICE_EMBED_MODEL={c["embed_model"]}')
-if c.get("port"):        print(f'export DF_PORT={c["port"]}')
-PYCFG
-)"
-fi
+# Конфіг примірника (config.json) сюди не читається: його відкриває сам
+# Python-код там, де значення потрібне (common/instance.py). Це дані, і в
+# оболонку вони не потрапляють. Раніше тут стояв eval над згенерованими
+# рядками export — і поле config.json могло виконатися як команда.
 
 # Усі кроки — з теки docfactory/: пакети engine/server/common видимі, дані домену
 # код бере з DF_INSTANCE_DIR. Крок check — це engine --status.

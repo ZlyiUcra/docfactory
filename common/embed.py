@@ -31,13 +31,20 @@
 
 import os
 
+from . import instance
+
 # Ім'я моделі й короткий ключ для імені колекції. Крапки й косі риски в іменах
 # колекцій Qdrant краще не вживати, тому ключ окремий.
 MODELS = {
     "bge-small": ("BAAI/bge-small-en-v1.5", 384),
     "bge-base": ("BAAI/bge-base-en-v1.5", 768),
 }
-MODEL_KEY = os.getenv("PRACTICE_EMBED_MODEL", "bge-small")
+# Модель обирає config.json примірника (поле embed_model); змінна оточення —
+# явне перекриття для дослідів. Раніше значення з config.json потрапляло сюди
+# через export у df — тепер його читає сам Python, як дані.
+MODEL_KEY = (os.getenv("PRACTICE_EMBED_MODEL")
+             or instance.config().get("embed_model")
+             or "bge-small")
 if MODEL_KEY not in MODELS:
     raise SystemExit(f"Невідома модель '{MODEL_KEY}'. Доступні: {', '.join(MODELS)}")
 MODEL_NAME, DIM = MODELS[MODEL_KEY]

@@ -40,9 +40,57 @@ def main(argv: list[str]) -> int:
     # будь-якому файлі. Червоніє вона там, де дефект справді б'є — на свіжому
     # лінукс-клоні, де df без біта відповідає «Permission denied» на першу ж
     # команду з README. Повернути біт: git update-index --chmod=+x df
-    check("df у корені має біт виконання",
-          os.access(pathlib.Path(__file__).resolve().parent.parent / "df",
-                    os.X_OK))
+    root = pathlib.Path(__file__).resolve().parent.parent
+    check("df у корені має біт виконання", os.access(root / "df", os.X_OK))
+
+    # 0a. Ім'я примірника — одне ім'я теки в instances/, а не шлях: df мусить
+    # відмовити, а не вийти за межі фабрики й виконати чужий .venv/bin/python.
+    import subprocess
+
+    escape = subprocess.run(["bash", str(root / "df"), "../elsewhere", "tools"],
+                            capture_output=True, text=True, cwd=root)
+    check("df відхиляє ім'я примірника зі шляхом", escape.returncode == 2,
+          (escape.stdout + escape.stderr).strip()[:60])
+
+    # 0b. config.json — дані, а не код. Ворожа конфігурація проходить крізь
+    # запускач: крок працює, а команда, вкладена в поле, не виконується. Колись
+    # df робив eval над згенерованими export-рядками з цього файла, і поле
+    # collection створювало файл ще до першого кроку — перевірка тримає обидві
+    # починки (відсутність eval і читання конфігурації самим Python).
+    import json as _json
+    import shutil
+    import tempfile
+
+    fixture = pathlib.Path(tempfile.mkdtemp(prefix="zz-smoke-probe-",
+                                            dir=root / "instances"))
+    try:
+        marker = fixture / "EXECUTED"
+        (fixture / "config.json").write_text(_json.dumps({
+            "instance": fixture.name,
+            "collection": f"docs-probe; : > {marker}",
+            "embed_model": f"`touch {marker}`",
+            "port": 8999}, ensure_ascii=False), encoding="utf-8")
+        (fixture / "sources.json").write_text(_json.dumps({
+            "instance": fixture.name,
+            "sources": [{"id": "probe", "url": "https://example.invalid/p.pdf",
+                         "reader": "pdf", "title": "проба"}]},
+            ensure_ascii=False), encoding="utf-8")
+        bindir = fixture / ".venv" / "bin"
+        bindir.mkdir(parents=True)
+        stub = bindir / "python"
+        stub.write_text(f'#!/usr/bin/env bash\nexec "{sys.executable}" "$@"\n',
+                        encoding="utf-8")
+        stub.chmod(0o755)
+        probe = subprocess.run(["bash", str(root / "df"), fixture.name,
+                                "sources"],
+                               capture_output=True, text=True, cwd=root)
+        check("ворожий config.json не виконується запускачем",
+              probe.returncode == 0 and not marker.exists()
+              and "джерела примірника" in probe.stdout.lower(),
+              f"код {probe.returncode}, маркер"
+              f" {'створено!' if marker.exists() else 'не створено'}")
+    finally:
+        shutil.rmtree(fixture, ignore_errors=True)
 
     from server import spec_mcp
     from common import nform

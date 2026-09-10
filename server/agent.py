@@ -86,7 +86,7 @@ async def _run(query: str, history: list | None = None) -> dict:
 
     # env=… обовʼязково: стандартний запуск stdio-сервера успадковує лише
     # безпечний підмножинний набір оточення, тож без цього підпроцес не побачив
-    # би ні DF_INSTANCE_DIR (чий домен), ні QDRANT_COLLECTION (яка колекція).
+    # би DF_INSTANCE_DIR — чий домен, а з ним corpus/, config.json і колекцію.
     params = StdioServerParameters(command=sys.executable, args=[str(_SERVER)],
                                    env=dict(os.environ))
     async with stdio_client(params) as (read, write):
@@ -136,7 +136,7 @@ def run(query: str, history: list | None = None) -> dict:
 async def _list_tools() -> list[str]:
     # env=… обовʼязково: стандартний запуск stdio-сервера успадковує лише
     # безпечний підмножинний набір оточення, тож без цього підпроцес не побачив
-    # би ні DF_INSTANCE_DIR (чий домен), ні QDRANT_COLLECTION (яка колекція).
+    # би DF_INSTANCE_DIR — чий домен, а з ним corpus/, config.json і колекцію.
     params = StdioServerParameters(command=sys.executable, args=[str(_SERVER)],
                                    env=dict(os.environ))
     async with stdio_client(params) as (read, write):
