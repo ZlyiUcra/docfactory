@@ -356,6 +356,17 @@ def main(argv: list[str]) -> int:
     check("замір якості: підрозділ зараховується, сусід зі спільним префіксом — ні",
           within("9.2.1", "9.2.1") and within("9.2.1.2", "9.2.1")
           and not within("9.2.10", "9.2.1") and not within("9.2.15", "9.2.1"))
+    # Цілі заміру — номери розділів, а номери в ECMA-262 між редакціями
+    # зсуваються. Ціль, якої в корпусі немає, не влучає жодним способом, і
+    # замір мовчки міряє дев'ять запитів, а каже про десять: так «7.2.15»
+    # стояв мертвим від першого дня (у цій редакції IsLooselyEqual — 7.2.13).
+    # Розділ мусить мати власний текст: рубрику без тексту пошук не поверне.
+    from server.quality import CASES
+
+    missing = [want for _, want in CASES if want not in with_text]
+    check("замір якості: кожна ціль існує в корпусі як розділ із текстом",
+          not missing, f"цілей {len(CASES)}"
+          + (f", немає: {', '.join(missing)}" if missing else ""))
     short_hits = spec_mcp.search_spec("Error.prototype.name", 3)
     check("короткий розділ знаходиться (20.5.3.3 Error.prototype.name)",
           any("20.5.3.3" in p["id"]

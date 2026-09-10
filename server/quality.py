@@ -45,7 +45,7 @@ CASES = [
     # Питання словами специфікації, але не її ідентифікаторами.
     ("what does the spread operator do to an array", "13.2.4"),
     ("how are template literals evaluated", "13.3.11"),
-    ("rules for comparing a string with a number", "7.2.15"),
+    ("rules for comparing a string with a number", "7.2.13"),
     ("what a getter returns when the property is missing", "10.1.8"),
     ("how a locale identifier is canonicalized", "9.2.1"),
 ]
