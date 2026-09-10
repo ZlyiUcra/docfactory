@@ -20,6 +20,11 @@
 іменами поїдуть ідентифікатори фрагментів і номери точок у Qdrant. Ідентифікатор
 такого зсуву не має: за ним документ упізнається після зсуву, а за іменем видно,
 що зсув стався. Тому маніфест тримає і ім'я, і ідентифікатор.
+
+Сам ідентифікатор глави — з префіксом джерела: «ecma262/scope», не «scope».
+Обидва видання відкриваються главами Scope, Conformance, Normative references і
+Overview, тож голий хвіст імені ключем не є — чотири таких id ділилися б на два
+документи кожен, і refresh за id перезаписував би обидва.
 """
 
 import hashlib
@@ -122,8 +127,12 @@ def classify(name: str, sources: list) -> tuple[str, str]:
     Одиничні документи (`pdf`/`rfc`/`report`/`ldml`) названі рівно за своїм id,
     тож упізнаються точно з оголошення. Глави багатосторінкового видання несуть
     позицію («22-text-processing»), розділи однієї сторінки — префікс стандарту
-    («402-08-intl-object»); в обох ідентифікатор — це хвіст без позиції, а
-    джерело — те, чий читач розгортає такі імена.
+    («402-08-intl-object»); в обох ідентифікатор — джерело плюс хвіст без
+    позиції («ecma262/text-processing»), а джерело — те, чий читач розгортає
+    такі імена. Префікс джерела обов'язковий: обидва видання починаються
+    главами Scope і Conformance, і голий хвіст ключем не був би — чотири id
+    ділилися б на два документи кожен. Та сама форма id — у читачів
+    (engine/readers/ecmarkup.py), інакше refresh за id не знайде документа.
     """
     stem = name[:-4] if name.endswith(".txt") else name
     singles = {f"{s['id']}.txt": s["id"] for s in sources
@@ -134,10 +143,11 @@ def classify(name: str, sources: list) -> tuple[str, str]:
     toc_src = next((s["id"] for s in sources if s["reader"] == "toc"), "")
     if stem.startswith("402-"):
         _, _, slug = stem[4:].partition("-")
-        return (slug or stem, page_src)
+        tail = slug or stem
+        return (f"{page_src}/{tail}" if page_src else tail, page_src)
     m = re.match(r"^\d+-(.+)$", stem)
     if m and toc_src:
-        return (m.group(1), toc_src)
+        return (f"{toc_src}/{m.group(1)}", toc_src)
     return (stem, "")
 
 

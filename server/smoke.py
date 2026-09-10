@@ -328,6 +328,23 @@ def main(argv: list[str]) -> int:
     check("кожен розділ із власним текстом є в індексі", not lost,
           f"розділів {len(with_text)}, втрачених {len(lost)}"
           + (": " + ", ".join(sorted(lost)[:5]) if lost else ""))
+
+    # 1b. Паспорт корпусу: ідентифікатор — справді ключ. Обидва видання
+    # відкриваються главами Scope і Conformance, тож без префікса джерела
+    # чотири id ділили б по два документи кожен — і refresh за таким id
+    # перезаписував би обидва. Різних id мусить бути рівно стільки, скільки
+    # файлів у corpus/ і записів у самому паспорті.
+    from engine import manifest as M
+
+    corpus_dir = instance.root() / "corpus"
+    passport_docs = (M.load(corpus_dir) or {}).get("documents", [])
+    passport_ids = {d["id"] for d in passport_docs}
+    txt_files = list(corpus_dir.glob("*.txt"))
+    check("паспорт: ідентифікатор документа — ключ без колізій",
+          bool(passport_docs)
+          and len(passport_ids) == len(passport_docs) == len(txt_files),
+          f"файлів {len(txt_files)}, записів {len(passport_docs)}, "
+          f"різних id {len(passport_ids)}")
     short_hits = spec_mcp.search_spec("Error.prototype.name", 3)
     check("короткий розділ знаходиться (20.5.3.3 Error.prototype.name)",
           any("20.5.3.3" in p["id"]

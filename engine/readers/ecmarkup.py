@@ -127,7 +127,11 @@ def toc(source: dict, ctx) -> list[Item]:
         def make(url=url):
             return _document_262(ctx.text(url), url, ctx.stamp)
 
-        items.append(Item(id=_page_id(name), file=_file_name(pos, name), make=make))
+        # Ідентифікатор — з префіксом джерела: обидва видання починаються
+        # главами Scope і Conformance, і голий слаг «scope» означав би два
+        # документи одразу — refresh за таким id перезаписував би обидва.
+        items.append(Item(id=f"{source['id']}/{_page_id(name)}",
+                          file=_file_name(pos, name), make=make))
     return items
 
 
@@ -182,5 +186,8 @@ def page(source: dict, ctx) -> list[Item]:
         def make(chunk=chunk, cid=cid):
             return _document_402(chunk, cid, url, ctx.stamp)
 
-        items.append(Item(id=_slug(cid), file=_name_402(num, cid), make=make))
+        # Той самий префікс джерела, що в toc: слаги розділів двох видань
+        # збігаються, ключем їх робить лише ім'я джерела попереду.
+        items.append(Item(id=f"{source['id']}/{_slug(cid)}",
+                          file=_name_402(num, cid), make=make))
     return items
