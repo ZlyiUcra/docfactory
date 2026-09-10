@@ -8,7 +8,8 @@
 модель для допоміжних викликів.
 
 Ключ береться з `.env` того примірника, з яким працює запуск (див. instance.py):
-у код нічого не зашивається.
+у код нічого не зашивається. І потрібен він рівно одному крокові — `ask`: без
+ключа модуль імпортується, а падає перший виклик моделі, з підказкою.
 """
 
 import inspect
@@ -25,25 +26,39 @@ from . import instance
 load_dotenv(instance.root() / ".env")
 
 API_KEY = os.getenv("ANTHROPIC_API_KEY")
-if not API_KEY:
-    raise SystemExit(
-        "Не знайдено ANTHROPIC_API_KEY.\n"
-        "  cp .env.example .env   і впишіть ключ у .env")
 
 MODEL      = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")             # цикл агента
 MODEL_FAST = os.getenv("ANTHROPIC_MODEL_FAST", "claude-haiku-4-5-20251001")  # guardrail
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", 1200))
 
-client = Anthropic(api_key=API_KEY)
+# Клієнт і перевірка ключа — при першому виклику, а не при імпорті. Гроші
+# витрачає рівно один крок, ask, і відмова без ключа мусить бути локальною для
+# нього: сервер, шари і smoke імпортують цей модуль і працюють без .env.
+# Раніше перевірка стояла на рівні модуля, і будь-який імпорт без ключа валив
+# увесь процес — smoke у тому числі.
+_CLIENT: Anthropic | None = None
+_ACCEPTS_TEMPERATURE = True
 
-# У anthropic 1.x параметр temperature прибрали з messages.create(); зʼясовуємо це
-# один раз і мовчки прибираємо там, де його не беруть, щоб код працював і на 0.x.
-_ACCEPTS_TEMPERATURE = "temperature" in inspect.signature(
-    client.messages.create).parameters
+
+def _connect() -> Anthropic:
+    global _CLIENT, _ACCEPTS_TEMPERATURE
+    if _CLIENT is None:
+        if not API_KEY:
+            raise SystemExit(
+                "Не знайдено ANTHROPIC_API_KEY — він потрібен лише крокові ask.\n"
+                "  cp .env.example .env   і впишіть ключ у .env")
+        _CLIENT = Anthropic(api_key=API_KEY)
+        # У anthropic 1.x параметр temperature прибрали з messages.create();
+        # зʼясовуємо це один раз і мовчки прибираємо там, де його не беруть, щоб
+        # код працював і на 0.x.
+        _ACCEPTS_TEMPERATURE = "temperature" in inspect.signature(
+            _CLIENT.messages.create).parameters
+    return _CLIENT
 
 
 def _call(**kwargs):
     """Виклик API з ретраями на перевантаження і rate limit."""
+    client = _connect()
     if not _ACCEPTS_TEMPERATURE:
         kwargs.pop("temperature", None)
     for attempt in range(3):

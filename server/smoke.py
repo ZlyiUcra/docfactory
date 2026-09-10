@@ -688,6 +688,41 @@ def main(argv: list[str]) -> int:
         del os.environ["MAX_TURNS"]
         importlib.reload(sagent)
 
+    # 10c. Ключ Anthropic потрібен рівно одному крокові — ask. Без .env модуль
+    # common.llm мусить імпортуватися (сервер, шари і цей smoke на нього
+    # спираються), а падати — лише перший виклик моделі, з підказкою. Раніше
+    # перевірка ключа стояла на рівні модуля, і smoke без ключа не доходив до
+    # кінця. Проба — повторне виконання тіла модуля (importlib.reload) без
+    # ключа в оточенні і з примірником без .env: свіжий інтерпретатор тут не
+    # потрібен, бо суть саме в тілі модуля, а імпорт anthropic уже в кеші.
+    # Значення ключа тримається в змінній і ніде не друкується.
+    keyless = pathlib.Path(tempfile.mkdtemp(prefix="zz-smoke-keyless-",
+                                            dir=root / "instances"))
+    saved_key = os.environ.pop("ANTHROPIC_API_KEY", None)
+    saved_dir = os.environ.get(instance.ENV)
+    os.environ[instance.ENV] = str(keyless)
+    try:
+        try:
+            importlib.reload(_llm)
+            imported = True
+        except SystemExit:
+            imported = False
+        try:
+            _llm._call(model="m", max_tokens=1, messages=[])
+            local_refusal = ""
+        except SystemExit as exc:
+            local_refusal = str(exc)
+        check("без ключа common.llm імпортується, а падає лише виклик моделі",
+              imported and "ANTHROPIC_API_KEY" in local_refusal,
+              "імпорт " + ("пройшов" if imported else "впав")
+              + f", виклик: {local_refusal.splitlines()[0][:60] if local_refusal else 'не відмовив'}")
+    finally:
+        if saved_key is not None:
+            os.environ["ANTHROPIC_API_KEY"] = saved_key
+        os.environ[instance.ENV] = saved_dir
+        importlib.reload(_llm)
+        shutil.rmtree(keyless, ignore_errors=True)
+
     print()
     if FAILED:
         print(f"ПРОВАЛЕНО: {len(FAILED)} — " + "; ".join(FAILED))
