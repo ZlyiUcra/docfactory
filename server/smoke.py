@@ -171,6 +171,33 @@ def main(argv: list[str]) -> int:
         srv.shutdown()
         srv.server_close()
 
+    # 0e. Білий список порівнює шляхи, а не рядки. Колишній startswith по сирих
+    # рядках відповідав «так» шляху «…/multipage/../../secret/admin.html» (він
+    # же починається з оголошеної теки), його відсотковій формі %2e%2e і сусідові
+    # /spec-internal у джерела, оголошеного як /spec без косої риски. Дефект був
+    # латентним — його тримали випадкові властивості нинішнього оголошення і
+    # читача, — тож рішення фіксується перевіркою.
+    from engine import sources as esources
+
+    decl = [{"id": "d", "url": "https://spec.example/ecma262/multipage/",
+             "reader": "toc", "expand": "chapters"},
+            {"id": "n", "url": "https://spec.example/spec",
+             "reader": "toc", "expand": "chapters"}]
+    check("білий список: дочірня глава дозволена",
+          esources.allowed(
+              "https://spec.example/ecma262/multipage/ch-01.html", decl))
+    check("білий список: «..» не виводить з оголошеної теки",
+          not esources.allowed(
+              "https://spec.example/ecma262/multipage/../../secret/admin.html",
+              decl))
+    check("білий список: відсоткова форма «..» — теж ні",
+          not esources.allowed(
+              "https://spec.example/ecma262/multipage/%2e%2e/%2e%2e/x.html",
+              decl))
+    check("білий список: сусід без межі сегмента — ні",
+          not esources.allowed("https://spec.example/spec-internal/a.html",
+                               decl))
+
     from server import spec_mcp
     from common import nform
 

@@ -13,7 +13,8 @@
 """
 
 import json
-from urllib.parse import urlsplit
+import posixpath
+from urllib.parse import unquote, urlsplit
 
 NAME = "sources.json"
 
@@ -52,12 +53,28 @@ def hosts(sources) -> list:
     return sorted({urlsplit(s["url"]).hostname for s in sources})
 
 
+def _within(candidate: str, base: str) -> bool:
+    """Чи лежить шлях candidate всередині теки base. Порівнюються шляхи, а не
+    рядки: кандидат розкодовується і нормалізується, тож «..» і його відсоткові
+    форми не виводять за оголошену теку, а межа сегмента обов'язкова — /spec
+    не дозволяє сусіда /spec-internal. Колишній startswith по сирих рядках
+    пропускав і те, і те; тримався дефект лише випадкових властивостей
+    нинішнього оголошення (завершальна коса риска) і нинішнього читача.
+    """
+    cand = posixpath.normpath(unquote(candidate))
+    if ".." in cand.split("/"):
+        return False
+    base_norm = posixpath.normpath(base if base.endswith("/") else base + "/")
+    return cand == base_norm or cand.startswith(base_norm + "/")
+
+
 def allowed(url: str, sources) -> bool:
     """Чи дозволено оновлювачеві звертатися за цією адресою.
 
     Дозвіл рахується з оголошення: тільки https і або точний збіг задекларованої
-    адреси, або дочірня адреса того самого хоста і теки для джерела з
-    `expand: chapters`. Усе поза цим — ні, незалежно від того, хто попросив
+    адреси, або — для джерела з `expand: chapters` — адреса того самого хоста,
+    що лежить усередині оголошеної теки (шляхи порівнюються нормалізованими,
+    див. _within). Усе поза цим — ні, незалежно від того, хто попросив
     завантажити.
     """
     p = urlsplit(url)
@@ -68,6 +85,6 @@ def allowed(url: str, sources) -> bool:
     for s in sources:
         if s.get("expand") == "chapters":
             b = urlsplit(s["url"])
-            if p.hostname == b.hostname and b.path and p.path.startswith(b.path):
+            if p.hostname == b.hostname and b.path and _within(p.path, b.path):
                 return True
     return False
