@@ -265,22 +265,31 @@ def _preview(text: str) -> str:
 
 
 # Санітар видачі — серверна оборона для клієнта, якого ми не контролюємо (Claude
-# Code, Inspector). Якщо в тіло фрагмента колись потрапить інструкція, адресована
-# самій моделі (отруєний документ), вирізаємо її ще на сервері, до того як
-# фрагмент піде клієнтові. Корпус тут чистий, тож у нормі не спрацьовує; це
-# запобіжник, а не заміна клієнтським шарам — де межа, сказано в README.
+# Code, Inspector). Це розтяжка на очевидні формулювання вшитих указівок, а не
+# класифікатор: регулярний вираз не впізнає вказівку природною мовою, тож ключі
+# нижче чіпляють лише типові звороти, і вказівка, сказана іншими словами,
+# пройде повз. Зате спрацювання гучне: зачеплений фрагмент вилучається з
+# відповіді цілком (див. _sanitize). Корпус тут чистий, тож у нормі розтяжка
+# мовчить; чесні межі захисту названі в README.
 _INJECTION = re.compile(
     r"ignore\s+(all\s+)?previous|disregard\s+(the\s+)?(above|previous)|"
     r"system\s+prompt|reveal\s+your|call\s+the\s+tool|fetch_url|"
     r"append\s+.{0,40}https?://|EDITORIAL\s+NOTE", re.I)
 
 
-def _sanitize(text: str) -> tuple[str, bool]:
-    """Вирізає з тексту фрагмента вказівки, адресовані моделі. Повертає
-    (очищений текст, чи спрацювало)."""
-    if _INJECTION.search(text):
-        return _INJECTION.sub("[вирізано політикою сервера]", text), True
-    return text, False
+def _sanitize(passage: Passage) -> tuple[str, bool]:
+    """Текст фрагмента для відповіді, або відмова замість нього. Повертає
+    (текст, чи спрацювала розтяжка).
+
+    Раніше вирізалися лише збіглі слова — а це гірше, ніж нічого: вказівка
+    лишалася читною, маркер же створював враження, що її знешкоджено. Фрагмент,
+    який зачепив розтяжку, не можна читати по шматках: замість тексту клієнт
+    дістає відмову з номером розділу, а спрацювання лягає в out/calls.log."""
+    if _INJECTION.search(passage.text):
+        return (f"[{passage.label}: текст вилучено політикою сервера — у "
+                f"фрагменті знайдено вбудовану вказівку для моделі, тож його "
+                f"не видано ані цілим, ані частинами.]"), True
+    return passage.text, False
 
 
 def _format_hits(passages: list[Passage], how: str) -> dict:
@@ -296,9 +305,10 @@ def _format_hits(passages: list[Passage], how: str) -> dict:
                 "note": "Nothing in the available excerpts matches this query."}
     items = []
     for p in passages:
-        clean, flagged = _sanitize(p.text)
+        clean, flagged = _sanitize(p)
         if flagged:
-            _log("sanitize", f"id={_UID[p]}", "вирізано інструкцію у видачі search_spec")
+            _log("sanitize", f"id={_UID[p]}",
+                 "фрагмент вилучено з видачі search_spec: розтяжка санітара")
         items.append({"id": _UID[p], "section": p.label,
                       "document": p.doc_title, "text": _preview(clean)})
     return {"found": len(passages), "search": how, "passages": items}
@@ -443,9 +453,10 @@ def read_section(id: str) -> dict:
         _log("read_section", f"id={id!r}", "помилка: такого id немає")
         return {"error": "фрагмента з таким id немає",
                 "hint": "id береться з поля id у відповіді search_spec"}
-    clean, flagged = _sanitize(passage.text)
+    clean, flagged = _sanitize(passage)
     if flagged:
-        _log("read_section", f"id={id!r}", "вирізано інструкцію у повному тексті")
+        _log("read_section", f"id={id!r}",
+             "фрагмент вилучено з відповіді: розтяжка санітара")
     else:
         _log("read_section", f"id={id!r}", f"{len(passage.text)} символів")
     return {"id": _UID[passage],
