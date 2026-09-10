@@ -57,12 +57,38 @@ def _title(page: str) -> str:
     return _strip(m.group(1)).replace("\n", " ").strip()
 
 
+# Рядок-заголовок розділу в уже зчищеному тілі: «20.1.3 …», «B.1.1 …»,
+# «Annex B …». Ним або довжиною тіла глава доводить, що вона — глава.
+_SECTION_LINE = re.compile(r"^(?:Annex [A-Z]|[A-Z]|\d+)(?:\.\d+)*\s+\S", re.M)
+
+# Найкоротше тіло справжньої глави без нумерованих підзаголовків — службові
+# сторінки видання: колофон 920 символів, бібліографія 2049. Сторінка-заглушка
+# («This page has moved.», тіло помилки) до цієї межі не дотягує.
+_MIN_BODY = 400
+
+
+def _looks_like_chapter(title: str, body: str) -> bool:
+    return bool(title) and (bool(_SECTION_LINE.search(body))
+                            or len(body) >= _MIN_BODY)
+
+
 def _document_262(page: str, url: str, stamp: str) -> str:
-    """Готовий текст документа глави 262: трирядкова шапка, порожній рядок, тіло."""
+    """Готовий текст документа глави 262: трирядкова шапка, порожній рядок, тіло.
+
+    Сторінку, якої не впізнає, відкидає винятком — тим самим, яким відмовляють
+    решта читачів. Раніше перевірки не було, і заглушка «This page has moved.»
+    ставала документом на двадцять один символ: refresh писав його поверх
+    доброї глави, manifest фіксував суму пошкодження, а check далі казав
+    «без змін»."""
     title = _title(page)
+    body = _strip(_body(page))
+    if not _looks_like_chapter(title, body):
+        raise SystemExit(
+            f"Сторінка не схожа на главу видання ({url}): "
+            f"{'немає заголовка h1' if not title else 'тіло куце і без жодного підзаголовка'}"
+            f" — документ не записую, наявний лишається як був.")
     anchor = _FIRST_CLAUSE_ID.search(_body(page))
     source = f"{url}#{anchor.group(1)}" if anchor else url
-    body = _strip(_body(page))
     return f"# {title}\n# джерело: {source}\n# отримано: {stamp}\n\n{body}\n"
 
 
@@ -133,9 +159,17 @@ def _chapters_402(page: str) -> list[tuple[str, str, str]]:
 
 
 def _document_402(chunk: str, cid: str, url: str, stamp: str) -> str:
+    """Та сама відмова, що в _document_262: розділ без заголовка h1 чи з куцим
+    тілом без підзаголовків — виняток, а не куций документ поверх доброго.
+    Колишній тихий fallback «немає h1 — хай назвою буде cid» саме й ховав
+    такий випадок."""
     m = _H1.search(chunk)
-    title = _strip(m.group(1)).replace("\n", " ").strip() if m else cid
+    title = _strip(m.group(1)).replace("\n", " ").strip() if m else ""
     body = _strip(chunk)
+    if not _looks_like_chapter(title, body):
+        raise SystemExit(
+            f"Розділ {cid} не схожий на розділ ECMA-402: немає заголовка або "
+            f"тіло куце і без підзаголовків — документ не записую.")
     return f"# {title}\n# джерело: {url}#{cid}\n# отримано: {stamp}\n\n{body}\n"
 
 

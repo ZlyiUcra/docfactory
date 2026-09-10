@@ -76,7 +76,19 @@ def refresh(instance_dir, targets: set, do_refresh: bool, listing: bool) -> int:
                 print(f"  {it.file}  збій: {e}")
                 failed += 1
                 continue
-            path.write_text(text, encoding="utf-8")
+            # Запис через тимчасовий файл із перейменуванням: невдалий запис
+            # (повний диск, права, обрив) лишає попередній документ цілим —
+            # корпус тут єдина копія, попередньої версії ніде немає. А OSError
+            # валить один документ і рахується збоєм, не обриває весь прогін.
+            tmp = path.with_name(path.name + ".tmp")
+            try:
+                tmp.write_text(text, encoding="utf-8")
+                tmp.replace(path)
+            except OSError as e:
+                print(f"  {it.file}  запис не вдався: {e}")
+                failed += 1
+                tmp.unlink(missing_ok=True)
+                continue
             print(f"  {it.file}  {len(text)} символів")
             written += 1
             time.sleep(net.PAUSE_SEC)

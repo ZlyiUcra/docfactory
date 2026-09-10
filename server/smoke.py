@@ -92,6 +92,44 @@ def main(argv: list[str]) -> int:
     finally:
         shutil.rmtree(fixture, ignore_errors=True)
 
+    # 0c. Кожен читач відмовляється від сторінки, якої не впізнає, винятком — а
+    # не повертає куций документ. Раніше два збирачі глав (_document_262 і
+    # _document_402) не перевіряли нічого: заглушка «This page has moved.»
+    # ставала документом на двадцять один символ, refresh писав його поверх
+    # доброї глави зі «збоїв 0», manifest фіксував суму пошкодження, а
+    # наступний check казав «без змін».
+    from engine.readers import REGISTRY, ecmarkup
+
+    STUB = "This page has moved."
+
+    class _StubCtx:
+        stamp = "2026-09-10"
+
+        def text(self, url):
+            return STUB
+
+        def bytes(self, url):
+            return STUB.encode()
+
+    def _refuses(fn) -> bool:
+        try:
+            fn()
+        except BaseException:
+            return True
+        return False
+
+    check("_document_262 відмовляється від сторінки-заглушки",
+          _refuses(lambda: ecmarkup._document_262(STUB, "url", "дата")))
+    check("_document_402 відмовляється від сторінки-заглушки",
+          _refuses(lambda: ecmarkup._document_402(STUB, "cid", "url", "дата")))
+    for rname in sorted(REGISTRY):
+        def run_reader(rd=REGISTRY[rname]):
+            for item in rd({"id": "probe", "url": "https://example.invalid/x",
+                            "reader": rname}, _StubCtx()):
+                item.make()
+        check(f"читач {rname} відмовляється від невпізнаної сторінки",
+              _refuses(run_reader))
+
     from server import spec_mcp
     from common import nform
 
