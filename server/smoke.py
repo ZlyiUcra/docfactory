@@ -198,6 +198,51 @@ def main(argv: list[str]) -> int:
           not esources.allowed("https://spec.example/spec-internal/a.html",
                                decl))
 
+    # 0f. Джерело, якого не вдалося спитати, не має думки про свої файли.
+    # Раніше один тайм-аут переліку робив кожен файл джерела «сиротою», і
+    # список стояв поруч із порадою, що з сиротами робити руками, — а за
+    # поганим списком читач видалив би здорові документи (toc і page разом
+    # володіють 60 із 72). Тепер такі файли — «невідомо», без запрошення
+    # діяти, і сиріт у зведенні нуль.
+    import contextlib
+    import io
+    import urllib.error
+
+    from engine import status as estatus
+
+    fx = pathlib.Path(tempfile.mkdtemp(prefix="zz-smoke-status-",
+                                       dir=root / "instances"))
+    try:
+        (fx / "corpus").mkdir()
+        for fname in ("01-alpha.txt", "02-beta.txt"):
+            (fx / "corpus" / fname).write_text(
+                "# 1 Alpha\n# джерело: https://spec.example/x/a.html\n"
+                "# отримано: 2026-09-01\n\nтіло розділу\n", encoding="utf-8")
+        (fx / "sources.json").write_text(_json.dumps({
+            "instance": fx.name,
+            "sources": [{"id": "ecma262", "url": "https://spec.example/x/",
+                         "reader": "toc", "title": "проба",
+                         "expand": "chapters"}]}, ensure_ascii=False),
+            encoding="utf-8")
+
+        def _dead_fetch(url, allow, *, since=""):
+            raise urllib.error.URLError("timed out")
+
+        real_fetch, enet.fetch = enet.fetch, _dead_fetch
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                estatus.status(fx, False)
+        finally:
+            enet.fetch = real_fetch
+        out = buf.getvalue()
+        check("збій переліку не робить файли сиротами",
+              "сиріт 0" in out and "невідомих 2" in out
+              and "01-alpha.txt" in out and "Невідомо" in out,
+              out.strip().splitlines()[-1][:70])
+    finally:
+        shutil.rmtree(fx, ignore_errors=True)
+
     from server import spec_mcp
     from common import nform
 

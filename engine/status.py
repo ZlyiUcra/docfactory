@@ -63,6 +63,7 @@ def status(instance_dir, deep: bool) -> int:
 
     on_disk = sorted(p.name for p in corpus.glob("*.txt"))
     expected: set = set()
+    failed_sources: set = set()
     new_files: list = []
     new = changed = same = unch_262 = failed = 0
 
@@ -74,6 +75,7 @@ def status(instance_dir, deep: bool) -> int:
         except (net.Refused, SystemExit, urllib.error.URLError) as e:
             print(f"  не вдалось спитати джерело: {e}")
             failed += 1
+            failed_sources.add(source["id"])
             continue
         for it in items:
             expected.add(it.file)
@@ -123,7 +125,27 @@ def status(instance_dir, deep: bool) -> int:
                 print(f"  збій розбору: {it.file}: {e}")
                 failed += 1
 
-    orphans = [n for n in on_disk if n not in expected]
+    # Джерело, якого не вдалося спитати, не має думки про свої файли: без його
+    # переліку «немає нагорі» не відрізнити від «не дізналися». Тому файли
+    # відмовленого джерела — не сироти, а «невідомо», без запрошення діяти:
+    # за поганим списком читач видалив би здорові документи, а другої копії
+    # корпус не тримає. Кому належить файл, каже manifest.classify.
+    orphans, unknown = [], []
+    for n in on_disk:
+        if n in expected:
+            continue
+        _, owner = M.classify(n, src)
+        if owner in failed_sources or (not owner and failed_sources):
+            unknown.append(n)
+        else:
+            orphans.append(n)
+
+    if unknown:
+        print("── Невідомо: джерело не відповіло і про ці файли думки не має ──")
+        for n in unknown:
+            print(f"  {n}")
+        print("  це не сироти — нічого з ними не робіть; повторіть звірку, "
+              "коли джерело відповість")
     if orphans:
         print("── Сироти: є в corpus/, немає нагорі за джерелом ──")
         for n in orphans:
@@ -134,6 +156,9 @@ def status(instance_dir, deep: bool) -> int:
         print("  нічого не видалено — що з ними робити, вирішувати вам")
 
     tail = f", 262 без глибокої звірки {unch_262}" if unch_262 else ""
-    print(f"── Без змін {same}, змінилося {changed}, нових {new}, "
-          f"сиріт {len(orphans)}, збоїв {failed}{tail}. Не записано нічого ──")
+    summary = (f"── Без змін {same}, змінилося {changed}, нових {new}, "
+               f"сиріт {len(orphans)}")
+    if unknown:
+        summary += f", невідомих {len(unknown)}"
+    print(summary + f", збоїв {failed}{tail}. Не записано нічого ──")
     return 1 if failed else 0
