@@ -376,23 +376,33 @@ def _report(spent: float | None = None) -> None:
     if spent is not None and spent >= 1:
         print(f"  витрачено    : {spent:.0f} с на цю підготовку")
 
+    # Поради нижче мусять запускатися так, як надруковані. Колишні
+    # «.venv/bin/python -m server.…» з теки примірника падали з
+    # ModuleNotFoundError: спільний код живе в корені фабрики, і кроки
+    # запускає df, який виставляє DF_INSTANCE_DIR. А фраза «піднімати руками
+    # не треба» була правдою лише для stdio — рекомендований транспорт тепер
+    # HTTP, і сервер тримають запущеним окремим процесом.
+    from common import instance as _instance
+
+    inst = _instance.root().name
     print()
-    print("MCP-сервер можна піднімати — точніше, піднімати його руками й не треба:")
-    print("його запускає сам клієнт (Claude Code, Inspector), коли до нього звертається.")
-    print(f"Від запуску до першої відповіді — близько {START_SEC} с: стільки збирається")
-    print("індекс по словах.")
+    print("Сервер під Claude Code — окремий процес: підніміть його в окремому")
+    print(f"терміналі командою `./df {inst} serve` і лишіть жити — Claude Code")
+    print("під'єднується до нього за адресою (README, «Як підняти локальний")
+    print(f"MCP-сервер»). Від запуску до першої відповіді — близько {START_SEC} с:")
+    print("стільки збирається індекс по словах.")
     if vectors:
         print(f"Ще близько {WARMUP_SEC_AFTER_START} с у фоні йде прогрів пошуку за "
               f"змістом — контейнер і модель.")
         print("Ці секунди нікого не тримають: сервер уже відповідає, поки що по словах,")
         print("а поле `search` у кожній відповіді каже, який спосіб відпрацював.")
     print()
-    print("Далі:")
-    print("  .venv/bin/python -m server.smoke     перевірки, ~15 с")
-    print("  .venv/bin/python -m server.check     діалог по протоколу, ~10 с")
+    print("Далі (усе з кореня docfactory/):")
+    print(f"  ./df {inst} smoke      перевірки, ~15 с")
+    print(f"  ./df {inst} protocol   діалог по протоколу, чужим клієнтом, ~10 с")
     if vectors:
-        print("  .venv/bin/python -m server.quality   що дає пошук за змістом, ~30 с")
-    print("  .venv/bin/python -m server.setup --status   стан у будь-який момент")
+        print(f"  ./df {inst} quality    замір: що дає пошук за змістом, ~30 с")
+    print(f"  ./df {inst} status     стан у будь-який момент")
     print()
     print("Передумати: та сама команда з "
           + ("--no-vectors." if vectors else "--vectors."))

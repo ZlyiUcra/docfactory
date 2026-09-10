@@ -243,6 +243,42 @@ def main(argv: list[str]) -> int:
     finally:
         shutil.rmtree(fx, ignore_errors=True)
 
+    # 0g. Поради, які друкує setup, мусять запускатися так, як надруковані, а
+    # посилання в README — вести на наявні файли. Раніше «Далі:» радив
+    # .venv/bin/python -m server.check — з теки примірника це
+    # ModuleNotFoundError; два кроки не мали запису в df зовсім; README
+    # посилався на module6/practice/*, яких у репозиторії немає.
+    import re
+
+    from server import setup as ssetup
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        ssetup._report()
+    rep = buf.getvalue()
+    df_text = (root / "df").read_text(encoding="utf-8")
+    steps = {ln.split()[2] for ln in rep.splitlines()
+             if ln.strip().startswith("./df ") and len(ln.split()) > 2}
+    unknown_steps = {s for s in steps if f"\n  {s})" not in df_text}
+    check("кожна порада setup — крок, який df знає",
+          bool(steps) and not unknown_steps
+          and ".venv/bin/python -m" not in rep,
+          "кроки: " + ", ".join(sorted(steps))
+          + (f"; df не знає: {unknown_steps}" if unknown_steps else ""))
+
+    bad_links = []
+    for md in (root / "README.md", root / "UPDATE.md",
+               root / "engine" / "README.md",
+               root / "instances" / "ecmascript" / "README.md"):
+        for target in re.findall(r"\]\(([^)#]+)\)",
+                                 md.read_text(encoding="utf-8")):
+            if target.startswith("http"):
+                continue
+            if not (md.parent / target).exists():
+                bad_links.append(f"{md.name} → {target}")
+    check("кожне посилання в README веде на наявний файл", not bad_links,
+          "; ".join(bad_links[:3]))
+
     from server import spec_mcp
     from common import nform
 

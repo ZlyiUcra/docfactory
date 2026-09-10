@@ -11,6 +11,9 @@
 #   ./df <примірник> serve               HTTP-сервер MCP на порту примірника ($0)
 #   ./df <примірник> status              стан бази й розклад оновлення ($0)
 #   ./df <примірник> smoke               перевірки сервера ($0)
+#   ./df <примірник> protocol            діалог по протоколу, чужим клієнтом ($0)
+#   ./df <примірник> quality             замір: що дає пошук за змістом ($0)
+#   ./df <примірник> raw                 сирі кадри JSON-RPC, без бібліотеки ($0)
 #   ./df <примірник> tools               MCP-рукостискання, перелік інструментів ($0)
 #   ./df <примірник> ask "питання"       повний прогін агента (платно)
 #
@@ -67,7 +70,10 @@ case "$STEP" in
     exec "$PY" server/spec_mcp.py --serve ;;
   status)   exec "$PY" -m server.setup --status "$@" ;;
   smoke)    exec "$PY" -m server.smoke "$@" ;;
+  protocol) exec "$PY" -m server.check "$@" ;;
+  quality)  exec "$PY" -m server.quality "$@" ;;
+  raw)      exec "$PY" -m server.raw "$@" ;;
   tools)    exec "$PY" -m server.agent --tools ;;
   ask)      exec "$PY" -m server.agent "$@" ;;
-  *) echo "Невідомий крок «$STEP». Є: sources list check refresh setup vectors serve status smoke tools ask"; exit 2 ;;
+  *) echo "Невідомий крок «$STEP». Є: sources list check manifest refresh setup vectors serve status smoke protocol quality raw tools ask"; exit 2 ;;
 esac
