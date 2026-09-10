@@ -12,6 +12,8 @@ check.py, і розділяти ці дві перевірки варто — к
     python -m server.smoke           # $0, секунди
 """
 
+import os
+import pathlib
 import sys
 import time
 
@@ -32,6 +34,16 @@ def skip(name: str, why: str) -> None:
 
 
 def main(argv: list[str]) -> int:
+    # 0. Запускач df у корені має біт виконання. Перевірка потрібна, бо на цій
+    # машині втрату біта не видно: git на /mnt/c працює з core.fileMode=false,
+    # тож chmod на диску до індексу не доїжджає, а drvfs показує rwx на
+    # будь-якому файлі. Червоніє вона там, де дефект справді б'є — на свіжому
+    # лінукс-клоні, де df без біта відповідає «Permission denied» на першу ж
+    # команду з README. Повернути біт: git update-index --chmod=+x df
+    check("df у корені має біт виконання",
+          os.access(pathlib.Path(__file__).resolve().parent.parent / "df",
+                    os.X_OK))
+
     from server import spec_mcp
     from common import nform
 
