@@ -1,6 +1,6 @@
 # 10 Ordinary and Exotic Objects Behaviours
 # джерело: https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-ordinary-and-exotic-objects-behaviours
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 10 Ordinary and Exotic Objects Behaviours
 
@@ -2773,20 +2773,20 @@ The [[DefineOwnProperty]] internal method of a Proxy exotic object obj takes arg
 - Let extensibleTarget be ? IsExtensible ( target ).
 
 - If propertyDesc has a [[Configurable]] field and propertyDesc . [[Configurable]] is false , then
-- Let settingConfigFalse be true .
+- Let settingConfigurableFalse be true .
 
 - Else,
-- Let settingConfigFalse be false .
+- Let settingConfigurableFalse be false .
 
 - If targetDesc is undefined , then
 - If extensibleTarget is false , throw a TypeError exception.
 
-- If settingConfigFalse is true , throw a TypeError exception.
+- If settingConfigurableFalse is true , throw a TypeError exception.
 
 - Else,
 - If IsCompatiblePropertyDescriptor ( extensibleTarget , propertyDesc , targetDesc ) is false , throw a TypeError exception.
 
-- If settingConfigFalse is true and targetDesc . [[Configurable]] is true , throw a TypeError exception.
+- If settingConfigurableFalse is true and targetDesc . [[Configurable]] is true , throw a TypeError exception.
 
 - If IsDataDescriptor ( targetDesc ) is true , targetDesc . [[Configurable]] is false , and targetDesc . [[Writable]] is true , then
 - If propertyDesc has a [[Writable]] field and propertyDesc . [[Writable]] is false , throw a TypeError exception.

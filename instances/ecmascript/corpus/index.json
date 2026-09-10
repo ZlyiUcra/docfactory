@@ -76,9 +76,9 @@
       "id": "ecma262/syntax-directed-operations",
       "title": "8 Syntax-Directed Operations",
       "url": "https://tc39.es/ecma262/multipage/syntax-directed-operations.html#sec-syntax-directed-operations",
-      "fetched": "2026-09-01",
-      "chars": 85282,
-      "sha256": "f7ab491901ddbba1782695184930d664d4f32758d2794cac5841b7fb5fb5896c",
+      "fetched": "2026-09-10",
+      "chars": 85339,
+      "sha256": "982108af099dfae9d9be11850f99b427f8927be1eaab30b87e4651574f72d016",
       "source": "ecma262"
     },
     {
@@ -96,9 +96,9 @@
       "id": "ecma262/ordinary-and-exotic-objects-behaviours",
       "title": "10 Ordinary and Exotic Objects Behaviours",
       "url": "https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-ordinary-and-exotic-objects-behaviours",
-      "fetched": "2026-09-01",
-      "chars": 141278,
-      "sha256": "58e38a86c4dd25f28c8dda6fcb32884b3ee7c97892e5a465385f591299e52d94",
+      "fetched": "2026-09-10",
+      "chars": 141302,
+      "sha256": "9b4cb26c507f3d9ef9fadfc4558d493f29ed2d229912c9e6739ca027a92f4e22",
       "source": "ecma262"
     },
     {
@@ -126,9 +126,9 @@
       "id": "ecma262/ecmascript-language-expressions",
       "title": "13 ECMAScript Language: Expressions",
       "url": "https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#sec-ecmascript-language-expressions",
-      "fetched": "2026-09-01",
-      "chars": 107736,
-      "sha256": "f808ebb951c26044b3e728204912be9e01b767a311ed0e48468705693faf2aae",
+      "fetched": "2026-09-10",
+      "chars": 107720,
+      "sha256": "ca02cdea698cab2f3394a6956c5c0edc70d5517a762d1831ba10d2f94738318d",
       "source": "ecma262"
     },
     {
@@ -136,9 +136,9 @@
       "id": "ecma262/ecmascript-language-statements-and-declarations",
       "title": "14 ECMAScript Language: Statements and Declarations",
       "url": "https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-ecmascript-language-statements-and-declarations",
-      "fetched": "2026-09-01",
-      "chars": 74745,
-      "sha256": "3c2e0f7ef81b3e33eef6b371a5ee4f352282cbda2201bd37429418157c5e993e",
+      "fetched": "2026-09-10",
+      "chars": 74702,
+      "sha256": "c2ced8a968f81e74ec66eefbe7c886aa0838e3265894d43692263b282afe728d",
       "source": "ecma262"
     },
     {
@@ -206,9 +206,9 @@
       "id": "ecma262/numbers-and-dates",
       "title": "21 Numbers and Dates",
       "url": "https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-numbers-and-dates",
-      "fetched": "2026-09-01",
-      "chars": 125067,
-      "sha256": "1c5c7cf63d13c33ed629fd1f9e073c242174970879e1a025e1a4f7eb0c5ba627",
+      "fetched": "2026-09-10",
+      "chars": 125120,
+      "sha256": "30b642189ba50b82988961784ecae2cfe3fa9541a2ef51994099162d60ec884b",
       "source": "ecma262"
     },
     {
@@ -216,9 +216,9 @@
       "id": "ecma262/text-processing",
       "title": "22 Text Processing",
       "url": "https://tc39.es/ecma262/multipage/text-processing.html#sec-text-processing",
-      "fetched": "2026-09-01",
-      "chars": 189395,
-      "sha256": "e052821f13638bdb2548b7a3fcda0dae0e8a7260a51d191178b189946461ec34",
+      "fetched": "2026-09-10",
+      "chars": 189391,
+      "sha256": "dddc225ed4e4cae8ea07415fd00275019de0a9fda796c07bb5fa3ba1444cf47c",
       "source": "ecma262"
     },
     {
@@ -226,9 +226,9 @@
       "id": "ecma262/indexed-collections",
       "title": "23 Indexed Collections",
       "url": "https://tc39.es/ecma262/multipage/indexed-collections.html#sec-indexed-collections",
-      "fetched": "2026-09-01",
-      "chars": 152811,
-      "sha256": "d8f252e050ea068c68d74a991df807ae65eb511a2e90c40cb7dbca98488230f2",
+      "fetched": "2026-09-10",
+      "chars": 152358,
+      "sha256": "01023aa7890c271a7ff5189799bfabeb11ed265971bf146abd9f3e7dfde014d8",
       "source": "ecma262"
     },
     {
@@ -246,9 +246,9 @@
       "id": "ecma262/structured-data",
       "title": "25 Structured Data",
       "url": "https://tc39.es/ecma262/multipage/structured-data.html#sec-structured-data",
-      "fetched": "2026-09-01",
-      "chars": 133427,
-      "sha256": "8628f23ee15afc4723e91e83eb4775527e0ed572a4558c21da0255beccd819f8",
+      "fetched": "2026-09-10",
+      "chars": 133458,
+      "sha256": "8f93c55de9886a382ba92da4a8f80a218d26552446351934dcb3e385a88d3fef",
       "source": "ecma262"
     },
     {
@@ -266,9 +266,9 @@
       "id": "ecma262/control-abstraction-objects",
       "title": "27 Control Abstraction Objects",
       "url": "https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-control-abstraction-objects",
-      "fetched": "2026-09-01",
-      "chars": 152816,
-      "sha256": "1adf9181399cce92e6f7ba23c2d4d3bd3925cc7ef450a8aed77b24002c50b701",
+      "fetched": "2026-09-10",
+      "chars": 152832,
+      "sha256": "98c947f0103e4edb0b0214bd215526bf192982ef7d61be78bb5775745e547777",
       "source": "ecma262"
     },
     {
@@ -306,9 +306,9 @@
       "id": "ecma262/additional-ecmascript-features-for-web-browsers",
       "title": "Annex B (normative) Additional ECMAScript Features for Web Browsers",
       "url": "https://tc39.es/ecma262/multipage/additional-ecmascript-features-for-web-browsers.html",
-      "fetched": "2026-09-01",
-      "chars": 38200,
-      "sha256": "3f9d49b3fc9ddd56b4b0569e004a65a5509e86d13988e43c150b79a00d51f54d",
+      "fetched": "2026-09-10",
+      "chars": 38185,
+      "sha256": "1bb94aeb6b01595338e34b523a96d76ddc54b23f77d461c406f90f2aaab1b761",
       "source": "ecma262"
     },
     {

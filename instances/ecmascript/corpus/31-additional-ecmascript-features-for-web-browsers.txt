@@ -1,6 +1,6 @@
 # Annex B (normative) Additional ECMAScript Features for Web Browsers
 # джерело: https://tc39.es/ecma262/multipage/additional-ecmascript-features-for-web-browsers.html
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 Annex B (normative) Additional ECMAScript Features for Web Browsers
 
@@ -1258,12 +1258,12 @@ Expression
 )
 Statement
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Let lhs be ? ResolveBinding ( bindingId ).
+- Let lhs be ? ResolveBinding ( name ).
 
 - If IsAnonymousFunctionDefinition ( Initializer ) is true , then
-- Let value be ? NamedEvaluation of Initializer with argument bindingId .
+- Let value be ? NamedEvaluation of Initializer with argument name .
 
 - Else,
 - Let rhs be ? Evaluation of Initializer .

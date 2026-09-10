@@ -1,6 +1,6 @@
 # 27 Control Abstraction Objects
 # джерело: https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-control-abstraction-objects
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 27 Control Abstraction Objects
 
@@ -1346,8 +1346,8 @@ The abstract operation AsyncFromSyncIteratorContinuation takes arguments result 
 
 - IfAbruptRejectPromise ( valueWrapper , promiseCapability ).
 
-- Let unwrap be a new Abstract Closure with parameters ( v ) that captures done and performs the following steps when called:
-- Return CreateIteratorResultObject ( v , done ).
+- Let unwrap be a new Abstract Closure with parameters ( value ) that captures done and performs the following steps when called:
+- Return CreateIteratorResultObject ( value , done ).
 
 - Let onFulfilled be CreateBuiltinFunction ( unwrap , 1, "" , « »).
 
@@ -3973,8 +3973,8 @@ The abstract operation Await takes argument arg (an ECMAScript language value ) 
 
 - Let promise be ? PromiseResolve ( %Promise% , arg ).
 
-- Let fulfilledClosure be a new Abstract Closure with parameters ( v ) that captures asyncContext and performs the following steps when called:
-- Perform Completion ( RunSuspendedContext ( asyncContext , NormalCompletion ( v ))).
+- Let fulfilledClosure be a new Abstract Closure with parameters ( value ) that captures asyncContext and performs the following steps when called:
+- Perform Completion ( RunSuspendedContext ( asyncContext , NormalCompletion ( value ))).
 
 - NOTE : The Completion Record returned by RunSuspendedContext is intentionally ignored.
 

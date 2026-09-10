@@ -1,6 +1,6 @@
 # 25 Structured Data
 # джерело: https://tc39.es/ecma262/multipage/structured-data.html#sec-structured-data
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 25 Structured Data
 
@@ -649,9 +649,9 @@ This method performs the following steps when called:
 
 - If IsDetachedBuffer ( obj ) is true , throw a TypeError exception.
 
-- Let fromBuf be obj . [[ArrayBufferData]] .
+- Let fromBlock be obj . [[ArrayBufferData]] .
 
-- Let toBuf be new . [[ArrayBufferData]] .
+- Let toBlock be new . [[ArrayBufferData]] .
 
 - Let currentLength be obj . [[ArrayBufferByteLength]] .
 
@@ -660,7 +660,7 @@ This method performs the following steps when called:
 - If maxCount > 0, then
 - Let count be min ( newLength , maxCount ).
 
-- Perform CopyDataBlockBytes ( toBuf , 0, fromBuf , first , count ).
+- Perform CopyDataBlockBytes ( toBlock , 0, fromBlock , first , count ).
 
 - Return new .
 
@@ -744,9 +744,9 @@ The abstract operation AllocateSharedArrayBuffer takes arguments ctor (a constru
 
 - Let obj be ? OrdinaryCreateFromConstructor ( ctor , "%SharedArrayBuffer.prototype%" , slots ).
 
-- If allocatingGrowableBuffer is true , let allocLength be maxByteLength ; else let allocLength be byteLength .
+- If allocatingGrowableBuffer is true , let allocationLength be maxByteLength ; else let allocationLength be byteLength .
 
-- Let block be ? CreateSharedByteDataBlock ( allocLength ).
+- Let block be ? CreateSharedByteDataBlock ( allocationLength ).
 
 - Set obj . [[ArrayBufferData]] to block .
 
@@ -996,11 +996,11 @@ This method performs the following steps when called:
 
 - If ArrayBufferByteLength ( new , seq-cst ) < newLength , throw a TypeError exception.
 
-- Let fromBuf be obj . [[ArrayBufferData]] .
+- Let fromBlock be obj . [[ArrayBufferData]] .
 
-- Let toBuf be new . [[ArrayBufferData]] .
+- Let toBlock be new . [[ArrayBufferData]] .
 
-- Perform CopyDataBlockBytes ( toBuf , 0, fromBuf , first , newLength ).
+- Perform CopyDataBlockBytes ( toBlock , 0, fromBlock , first , newLength ).
 
 - Return new .
 

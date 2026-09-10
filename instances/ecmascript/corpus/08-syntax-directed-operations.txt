@@ -1,6 +1,6 @@
 # 8 Syntax-Directed Operations
 # джерело: https://tc39.es/ecma262/multipage/syntax-directed-operations.html#sec-syntax-directed-operations
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 8 Syntax-Directed Operations
 
@@ -4612,49 +4612,49 @@ SingleNameBinding :
 BindingIdentifier
 Initializer opt
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Let lhs be ? ResolveBinding ( bindingId , envRecord ).
+- Let lhs be ? ResolveBinding ( name , envRecord ).
 
-- Let v be undefined .
+- Let value be undefined .
 
 - If iteratorRecord . [[Done]] is false , then
 - Let next be ? IteratorStepValue ( iteratorRecord ).
 
 - If next is not done , then
-- Set v to next .
+- Set value to next .
 
-- If Initializer is present and v is undefined , then
+- If Initializer is present and value is undefined , then
 - If IsAnonymousFunctionDefinition ( Initializer ) is true , then
-- Set v to ? NamedEvaluation of Initializer with argument bindingId .
+- Set value to ? NamedEvaluation of Initializer with argument name .
 
 - Else,
 - Let defaultValue be ? Evaluation of Initializer .
 
-- Set v to ? GetValue ( defaultValue ).
+- Set value to ? GetValue ( defaultValue ).
 
-- If envRecord is undefined , return ? PutValue ( lhs , v ).
+- If envRecord is undefined , return ? PutValue ( lhs , value ).
 
-- Return ? InitializeReferencedBinding ( lhs , v ).
+- Return ? InitializeReferencedBinding ( lhs , value ).
 
 BindingElement :
 BindingPattern
 Initializer opt
 
-- Let v be undefined .
+- Let value be undefined .
 
 - If iteratorRecord . [[Done]] is false , then
 - Let next be ? IteratorStepValue ( iteratorRecord ).
 
 - If next is not done , then
-- Set v to next .
+- Set value to next .
 
-- If Initializer is present and v is undefined , then
+- If Initializer is present and value is undefined , then
 - Let defaultValue be ? Evaluation of Initializer .
 
-- Set v to ? GetValue ( defaultValue ).
+- Set value to ? GetValue ( defaultValue ).
 
-- Return ? BindingInitialization of BindingPattern with arguments v and envRecord .
+- Return ? BindingInitialization of BindingPattern with arguments value and envRecord .
 
 BindingRestElement :
 ...
@@ -4726,16 +4726,16 @@ FormalParameter
 
 ArrowParameters : BindingIdentifier
 
-- Let v be undefined .
+- Let value be undefined .
 
 - Assert : iteratorRecord . [[Done]] is false .
 
 - Let next be ? IteratorStepValue ( iteratorRecord ).
 
 - If next is not done , then
-- Set v to next .
+- Set value to next .
 
-- Return ? BindingInitialization of BindingIdentifier with arguments v and envRecord .
+- Return ? BindingInitialization of BindingIdentifier with arguments value and envRecord .
 
 ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
 
@@ -4745,16 +4745,16 @@ ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList
 
 AsyncArrowBindingIdentifier : BindingIdentifier
 
-- Let v be undefined .
+- Let value be undefined .
 
 - Assert : iteratorRecord . [[Done]] is false .
 
 - Let next be ? IteratorStepValue ( iteratorRecord ).
 
 - If next is not done , then
-- Set v to next .
+- Set value to next .
 
-- Return ? BindingInitialization of BindingIdentifier with arguments v and envRecord .
+- Return ? BindingInitialization of BindingIdentifier with arguments value and envRecord .
 
 8.6.4 Static Semantics: AssignmentTargetType
 

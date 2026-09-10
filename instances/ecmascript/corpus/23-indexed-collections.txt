@@ -1,6 +1,6 @@
 # 23 Indexed Collections
 # джерело: https://tc39.es/ecma262/multipage/indexed-collections.html#sec-indexed-collections
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 23 Indexed Collections
 
@@ -959,16 +959,16 @@ It performs the following steps when called:
 
 - Let length be ? LengthOfArrayLike ( obj ).
 
-- If separator is undefined , let sep be "," .
+- If separator is undefined , let separatorString be "," .
 
-- Else, let sep be ? ToString ( separator ).
+- Else, let separatorString be ? ToString ( separator ).
 
 - Let result be the empty String.
 
 - Let k be 0.
 
 - Repeat, while k < length ,
-- If k > 0, set result to the string-concatenation of result and sep .
+- If k > 0, set result to the string-concatenation of result and separatorString .
 
 - Let element be ? Get ( obj , ! ToString ( 𝔽 ( k ))).
 
@@ -2357,8 +2357,6 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
 - Let kValue be values [ k ].
 
 - If mapping is true , then
@@ -2367,7 +2365,7 @@ This method performs the following steps when called:
 - Else,
 - Let mappedValue be kValue .
 
-- Perform ? Set ( targetObj , propertyKey , mappedValue , true ).
+- Perform ? TypedArraySetElement ( targetObj , 𝔽 ( k ), mappedValue ).
 
 - Set k to k + 1.
 
@@ -2394,7 +2392,7 @@ This method performs the following steps when called:
 - Else,
 - Let mappedValue be kValue .
 
-- Perform ? Set ( targetObj , propertyKey , mappedValue , true ).
+- Perform ? TypedArraySetElement ( targetObj , 𝔽 ( k ), mappedValue ).
 
 - Set k to k + 1.
 
@@ -2417,9 +2415,7 @@ This method performs the following steps when called:
 - Repeat, while k < length ,
 - Let kValue be items [ k ].
 
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Perform ? Set ( newObj , propertyKey , kValue , true ).
+- Perform ? TypedArraySetElement ( newObj , 𝔽 ( k ), kValue ).
 
 - Set k to k + 1.
 
@@ -2466,7 +2462,7 @@ The %TypedArray% prototype object :
 
 - If k < 0 or k ≥ length , return undefined .
 
-- Return ! Get ( obj , ! ToString ( 𝔽 ( k ))).
+- Return TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 23.2.3.2 get %TypedArray%.prototype.buffer
 
@@ -2617,9 +2613,7 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Let testResult be ToBoolean (? Call ( callback , thisArg , « kValue , 𝔽 ( k ), obj »)).
 
@@ -2660,9 +2654,7 @@ This method performs the following steps when called:
 - Let k be startIndex .
 
 - Repeat, while k < endIndex ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Perform ! Set ( obj , propertyKey , value , true ).
+- Perform ! TypedArraySetElement ( obj , 𝔽 ( k ), value ).
 
 - Set k to k + 1.
 
@@ -2689,9 +2681,7 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Let selected be ToBoolean (? Call ( callback , thisArg , « kValue , 𝔽 ( k ), obj »)).
 
@@ -2707,7 +2697,7 @@ This method performs the following steps when called:
 - Let n be 0.
 
 - For each element element of kept , do
-- Perform ! Set ( result , ! ToString ( 𝔽 ( n )), element , true ).
+- Perform ! TypedArraySetElement ( result , 𝔽 ( n ), element ).
 
 - Set n to n + 1.
 
@@ -2804,9 +2794,7 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Perform ? Call ( callback , thisArg , « kValue , 𝔽 ( k ), obj »).
 
@@ -2833,7 +2821,7 @@ This method performs the following steps when called:
 - Let k be ? ToClampedIndex ( fromIndex , length ).
 
 - Repeat, while k < length ,
-- Let elementK be ! Get ( obj , ! ToString ( 𝔽 ( k ))).
+- Let elementK be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - If SameValueZero ( searchElement , elementK ) is true , return true .
 
@@ -2865,7 +2853,7 @@ This method performs the following steps when called:
 - Let kPresent be ! HasProperty ( obj , propertyKey ).
 
 - If kPresent is true , then
-- Let elementK be ! Get ( obj , propertyKey ).
+- Let elementK be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - If IsStrictlyEqual ( searchElement , elementK ) is true , return 𝔽 ( k ).
 
@@ -2887,18 +2875,18 @@ This method performs the following steps when called:
 
 - Let length be TypedArrayLength ( taRecord ).
 
-- If separator is undefined , let sep be "," .
+- If separator is undefined , let separatorString be "," .
 
-- Else, let sep be ? ToString ( separator ).
+- Else, let separatorString be ? ToString ( separator ).
 
 - Let result be the empty String.
 
 - Let k be 0.
 
 - Repeat, while k < length ,
-- If k > 0, set result to the string-concatenation of result and sep .
+- If k > 0, set result to the string-concatenation of result and separatorString .
 
-- Let element be ! Get ( obj , ! ToString ( 𝔽 ( k ))).
+- Let element be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - If element is not undefined , then
 - Let elementString be ! ToString ( element ).
@@ -2943,7 +2931,7 @@ This method performs the following steps when called:
 - Let kPresent be ! HasProperty ( obj , propertyKey ).
 
 - If kPresent is true , then
-- Let elementK be ! Get ( obj , propertyKey ).
+- Let elementK be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - If IsStrictlyEqual ( searchElement , elementK ) is true , return 𝔽 ( k ).
 
@@ -2992,13 +2980,11 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Let mappedValue be ? Call ( callback , thisArg , « kValue , 𝔽 ( k ), obj »).
 
-- Perform ? Set ( result , propertyKey , mappedValue , true ).
+- Perform ? TypedArraySetElement ( result , 𝔽 ( k ), mappedValue ).
 
 - Set k to k + 1.
 
@@ -3030,16 +3016,12 @@ This method performs the following steps when called:
 - Set accumulator to initialValue .
 
 - Else,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Set accumulator to ! Get ( obj , propertyKey ).
+- Set accumulator to TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Set k to k + 1.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Set accumulator to ? Call ( callback , undefined , « accumulator , kValue , 𝔽 ( k ), obj »).
 
@@ -3073,16 +3055,12 @@ This method performs the following steps when called:
 - Set accumulator to initialValue .
 
 - Else,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Set accumulator to ! Get ( obj , propertyKey ).
+- Set accumulator to TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Set k to k - 1.
 
 - Repeat, while k ≥ 0,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Set accumulator to ? Call ( callback , undefined , « accumulator , kValue , 𝔽 ( k ), obj »).
 
@@ -3111,17 +3089,13 @@ This method performs the following steps when called:
 - Repeat, while lower ≠ middle ,
 - Let upper be length - lower - 1.
 
-- Let upperP be ! ToString ( 𝔽 ( upper )).
+- Let lowerValue be TypedArrayGetElement ( obj , 𝔽 ( lower )).
 
-- Let lowerP be ! ToString ( 𝔽 ( lower )).
+- Let upperValue be TypedArrayGetElement ( obj , 𝔽 ( upper )).
 
-- Let lowerValue be ! Get ( obj , lowerP ).
+- Perform ! TypedArraySetElement ( obj , 𝔽 ( lower ), upperValue ).
 
-- Let upperValue be ! Get ( obj , upperP ).
-
-- Perform ! Set ( obj , lowerP , upperValue , true ).
-
-- Perform ! Set ( obj , upperP , lowerValue , true ).
+- Perform ! TypedArraySetElement ( obj , 𝔽 ( upper ), lowerValue ).
 
 - Set lower to lower + 1.
 
@@ -3323,11 +3297,9 @@ This method performs the following steps when called:
 - Let k be startIndex .
 
 - Repeat, while k < endIndex ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
-- Let kValue be ! Get ( obj , propertyKey ).
-
-- Perform ! Set ( resultArray , ! ToString ( 𝔽 ( n )), kValue , true ).
+- Perform ! TypedArraySetElement ( resultArray , 𝔽 ( n ), kValue ).
 
 - Set k to k + 1.
 
@@ -3354,9 +3326,7 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
-- Let kValue be ! Get ( obj , propertyKey ).
+- Let kValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
 - Let testResult be ToBoolean (? Call ( callback , thisArg , « kValue , 𝔽 ( k ), obj »)).
 
@@ -3394,7 +3364,7 @@ It performs the following steps when called:
 - Let j be 0.
 
 - Repeat, while j < length ,
-- Perform ! Set ( obj , ! ToString ( 𝔽 ( j )), sortedList [ j ], true ).
+- Perform ! TypedArraySetElement ( obj , 𝔽 ( j ), sortedList [ j ]).
 
 - Set j to j + 1.
 
@@ -3468,13 +3438,11 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let from be ! ToString ( 𝔽 ( length - k - 1)).
+- Let from be length - k - 1.
 
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
+- Let fromValue be TypedArrayGetElement ( obj , 𝔽 ( from )).
 
-- Let fromValue be ! Get ( obj , from ).
-
-- Perform ! Set ( resultArray , propertyKey , fromValue , true ).
+- Perform ! TypedArraySetElement ( resultArray , 𝔽 ( k ), fromValue ).
 
 - Set k to k + 1.
 
@@ -3504,7 +3472,7 @@ This method performs the following steps when called:
 - Let j be 0.
 
 - Repeat, while j < length ,
-- Perform ! Set ( resultArray , ! ToString ( 𝔽 ( j )), sortedList [ j ], true ).
+- Perform ! TypedArraySetElement ( resultArray , 𝔽 ( j ), sortedList [ j ]).
 
 - Set j to j + 1.
 
@@ -3547,13 +3515,11 @@ This method performs the following steps when called:
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
 - If k = actualIndex , let fromValue be numericValue .
 
-- Else, let fromValue be ! Get ( obj , propertyKey ).
+- Else, let fromValue be TypedArrayGetElement ( obj , 𝔽 ( k )).
 
-- Perform ! Set ( resultArray , propertyKey , fromValue , true ).
+- Perform ! TypedArraySetElement ( resultArray , 𝔽 ( k ), fromValue ).
 
 - Set k to k + 1.
 
@@ -3905,11 +3871,9 @@ The abstract operation InitializeTypedArrayFromList takes arguments obj (a Typed
 - Let k be 0.
 
 - Repeat, while k < length ,
-- Let propertyKey be ! ToString ( 𝔽 ( k )).
-
 - Let kValue be values [ k ].
 
-- Perform ? Set ( obj , propertyKey , kValue , true ).
+- Perform ? TypedArraySetElement ( obj , 𝔽 ( k ), kValue ).
 
 - Set k to k + 1.
 
@@ -3930,7 +3894,7 @@ The abstract operation InitializeTypedArrayFromArrayLike takes arguments obj (a 
 
 - Let kValue be ? Get ( arrayLike , propertyKey ).
 
-- Perform ? Set ( obj , propertyKey , kValue , true ).
+- Perform ? TypedArraySetElement ( obj , 𝔽 ( k ), kValue ).
 
 - Set k to k + 1.
 
@@ -4016,15 +3980,15 @@ A Uint8Array is a particular kind of TypedArray as described above. In addition,
 
 - If string is not a String , throw a TypeError exception.
 
-- Let opts be ? GetOptionsObject ( options ).
+- Let optionsObj be ? GetOptionsObject ( options ).
 
-- Let alphabet be ? Get ( opts , "alphabet" ).
+- Let alphabet be ? Get ( optionsObj , "alphabet" ).
 
 - If alphabet is undefined , set alphabet to "base64" .
 
 - If alphabet is neither "base64" nor "base64url" , throw a TypeError exception.
 
-- Let lastChunkHandling be ? Get ( opts , "lastChunkHandling" ).
+- Let lastChunkHandling be ? Get ( optionsObj , "lastChunkHandling" ).
 
 - If lastChunkHandling is undefined , set lastChunkHandling to "loose" .
 
@@ -4074,15 +4038,15 @@ A Uint8Array is a particular kind of TypedArray as described above. In addition,
 
 - If string is not a String , throw a TypeError exception.
 
-- Let opts be ? GetOptionsObject ( options ).
+- Let optionsObj be ? GetOptionsObject ( options ).
 
-- Let alphabet be ? Get ( opts , "alphabet" ).
+- Let alphabet be ? Get ( optionsObj , "alphabet" ).
 
 - If alphabet is undefined , set alphabet to "base64" .
 
 - If alphabet is neither "base64" nor "base64url" , throw a TypeError exception.
 
-- Let lastChunkHandling be ? Get ( opts , "lastChunkHandling" ).
+- Let lastChunkHandling be ? Get ( optionsObj , "lastChunkHandling" ).
 
 - If lastChunkHandling is undefined , set lastChunkHandling to "loose" .
 
@@ -4156,15 +4120,15 @@ A Uint8Array is a particular kind of TypedArray as described above. In addition,
 
 - Perform ? ValidateUint8Array ( obj ).
 
-- Let opts be ? GetOptionsObject ( options ).
+- Let optionsObj be ? GetOptionsObject ( options ).
 
-- Let alphabet be ? Get ( opts , "alphabet" ).
+- Let alphabet be ? Get ( optionsObj , "alphabet" ).
 
 - If alphabet is undefined , set alphabet to "base64" .
 
 - If alphabet is neither "base64" nor "base64url" , throw a TypeError exception.
 
-- Let omitPadding be ToBoolean (? Get ( opts , "omitPadding" )).
+- Let omitPadding be ToBoolean (? Get ( optionsObj , "omitPadding" )).
 
 - Let toEncode be ? GetUint8ArrayBytes ( obj ).
 

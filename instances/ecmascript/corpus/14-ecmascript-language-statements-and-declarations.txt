@@ -1,6 +1,6 @@
 # 14 ECMAScript Language: Statements and Declarations
 # джерело: https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-ecmascript-language-statements-and-declarations
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 14 ECMAScript Language: Statements and Declarations
 
@@ -389,12 +389,12 @@ LexicalBinding :
 BindingIdentifier
 Initializer
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Let lhs be ! ResolveBinding ( bindingId ).
+- Let lhs be ! ResolveBinding ( name ).
 
 - If IsAnonymousFunctionDefinition ( Initializer ) is true , then
-- Let value be ? NamedEvaluation of Initializer with argument bindingId .
+- Let value be ? NamedEvaluation of Initializer with argument name .
 
 - Else,
 - Let rhs be ? Evaluation of Initializer .
@@ -482,12 +482,12 @@ VariableDeclaration :
 BindingIdentifier
 Initializer
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Let lhs be ? ResolveBinding ( bindingId ).
+- Let lhs be ? ResolveBinding ( name ).
 
 - If IsAnonymousFunctionDefinition ( Initializer ) is true , then
-- Let value be ? NamedEvaluation of Initializer with argument bindingId .
+- Let value be ? NamedEvaluation of Initializer with argument name .
 
 - Else,
 - Let rhs be ? Evaluation of Initializer .
@@ -680,15 +680,15 @@ SingleNameBinding :
 BindingIdentifier
 Initializer opt
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Let lhs be ? ResolveBinding ( bindingId , envRecord ).
+- Let lhs be ? ResolveBinding ( name , envRecord ).
 
 - Set value to ? GetV ( value , propertyName ).
 
 - If Initializer is present and value is undefined , then
 - If IsAnonymousFunctionDefinition ( Initializer ) is true , then
-- Set value to ? NamedEvaluation of Initializer with argument bindingId .
+- Set value to ? NamedEvaluation of Initializer with argument name .
 
 - Else,
 - Let defaultValue be ? Evaluation of Initializer .
@@ -1205,9 +1205,9 @@ The abstract operation ForBodyEvaluation takes arguments test (an Expression Par
 - Perform ? CreatePerIterationEnvironment ( perIterationBindings ).
 
 - If increment is not empty , then
-- Let incRef be ? Evaluation of increment .
+- Let incrementRef be ? Evaluation of increment .
 
-- Perform ? GetValue ( incRef ).
+- Perform ? GetValue ( incrementRef ).
 
 14.7.4.4 CreatePerIterationEnvironment ( perIterationBindings )
 
@@ -1943,9 +1943,9 @@ yield
 
 await
 
-- Let bindingId be the StringValue of BindingIdentifier .
+- Let name be the StringValue of BindingIdentifier .
 
-- Return ? ResolveBinding ( bindingId ).
+- Return ? ResolveBinding ( name ).
 
 14.7.5.9 EnumerateObjectProperties ( obj )
 

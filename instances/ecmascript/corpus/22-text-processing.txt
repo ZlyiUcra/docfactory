@@ -1,6 +1,6 @@
 # 22 Text Processing
 # джерело: https://tc39.es/ecma262/multipage/text-processing.html#sec-text-processing
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 22 Text Processing
 
@@ -2430,9 +2430,9 @@ GroupName ::
 RegExpIdentifierName
 >
 
-- Let idTextUnescaped be the RegExpIdentifierCodePoints of RegExpIdentifierName .
+- Let nameUnescaped be the RegExpIdentifierCodePoints of RegExpIdentifierName .
 
-- Return CodePointsToString ( idTextUnescaped ).
+- Return CodePointsToString ( nameUnescaped ).
 
 22.2.1.11 Static Semantics: RegExpIdentifierCodePoints
 

@@ -1,6 +1,6 @@
 # 13 ECMAScript Language: Expressions
 # джерело: https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#sec-ecmascript-language-expressions
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 13 ECMAScript Language: Expressions
 
@@ -113,9 +113,9 @@ IdentifierStart
 IdentifierName
 IdentifierPart
 
-- Let idTextUnescaped be the IdentifierCodePoints of IdentifierName .
+- Let nameUnescaped be the IdentifierCodePoints of IdentifierName .
 
-- Return CodePointsToString ( idTextUnescaped ).
+- Return CodePointsToString ( nameUnescaped ).
 
 IdentifierReference : yield
 
@@ -4016,22 +4016,19 @@ Initializer opt
 - If IsAnonymousFunctionDefinition ( Initializer ) is true and IsIdentifierRef of DestructuringAssignmentTarget is true , then
 - Let target be the StringValue of DestructuringAssignmentTarget .
 
-- Let v be ? NamedEvaluation of Initializer with argument target .
+- Set value to ? NamedEvaluation of Initializer with argument target .
 
 - Else,
 - Let defaultValue be ? Evaluation of Initializer .
 
-- Let v be ? GetValue ( defaultValue ).
-
-- Else,
-- Let v be value .
+- Set value to ? GetValue ( defaultValue ).
 
 - If DestructuringAssignmentTarget is either an ObjectLiteral or an ArrayLiteral , then
 - Let nestedAssignmentPattern be the AssignmentPattern that is covered by DestructuringAssignmentTarget .
 
-- Return ? DestructuringAssignmentEvaluation of nestedAssignmentPattern with argument v .
+- Return ? DestructuringAssignmentEvaluation of nestedAssignmentPattern with argument value .
 
-- Return ? PutValue ( leftRef , v ).
+- Return ? PutValue ( leftRef , value ).
 
 Note
 Left to right evaluation order is maintained by evaluating a DestructuringAssignmentTarget that is not a destructuring pattern prior to accessing the iterator or evaluating the Initializer .

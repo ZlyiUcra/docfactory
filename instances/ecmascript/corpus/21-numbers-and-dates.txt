@@ -1,6 +1,6 @@
 # 21 Numbers and Dates
 # джерело: https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-numbers-and-dates
-# отримано: 2026-09-01
+# отримано: 2026-09-10
 
 21 Numbers and Dates
 
@@ -2266,15 +2266,15 @@ This function performs the following steps when called:
 - Let tv be value . [[DateValue]] .
 
 - Else,
-- Let v be ? ToPrimitive ( value ).
+- Let primitive be ? ToPrimitive ( value ).
 
-- If v is a String , then
-- Assert : The next step never returns an abrupt completion because v is a String .
+- If primitive is a String , then
+- Assert : The next step never returns an abrupt completion because primitive is a String .
 
-- Let tv be the result of parsing v as a date, in exactly the same manner as for the parse method ( 21.4.3.2 ).
+- Let tv be the result of parsing primitive as a date, in exactly the same manner as for the parse method ( 21.4.3.2 ).
 
 - Else,
-- Let tv be ? ToNumber ( v ).
+- Let tv be ? ToNumber ( primitive ).
 
 - Let dv be TimeClip ( tv ).
 
@@ -3329,9 +3329,9 @@ The abstract operation TimeZoneString takes argument tv (an integral Number ) an
 
 - Let offsetHour be ToZeroPaddedDecimalString ( HourFromTime ( 𝔽 ( absOffsetMilliseconds )), 2).
 
-- Let tzName be an implementation-defined string that is either the empty String or the string-concatenation of the code unit 0x0020 (SPACE), the code unit 0x0028 (LEFT PARENTHESIS), an implementation-defined timezone name, and the code unit 0x0029 (RIGHT PARENTHESIS).
+- Let timeZoneName be an implementation-defined string that is either the empty String or the string-concatenation of the code unit 0x0020 (SPACE), the code unit 0x0028 (LEFT PARENTHESIS), an implementation-defined time zone name, and the code unit 0x0029 (RIGHT PARENTHESIS).
 
-- Return the string-concatenation of offsetSign , offsetHour , offsetMinute , and tzName .
+- Return the string-concatenation of offsetSign , offsetHour , offsetMinute , and timeZoneName .
 
 21.4.4.41.4 ToDateString ( tv )
 
